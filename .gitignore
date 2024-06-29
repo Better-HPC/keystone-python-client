@@ -1,0 +1,13 @@
+# Distribution and packaging
+__pycache__/
+dist/
+
+# IDE / Developer
+.idea/
+*.env
+
+# OS
+.DS_Store
+
+# Documentation
+site/
