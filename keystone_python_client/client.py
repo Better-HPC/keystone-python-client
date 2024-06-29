@@ -15,6 +15,7 @@ class KeystoneClient:
 
     # API endpoints
     authentication_new = "authentication/new/"
+    authentication_blacklist = "authentication/backlist/"
 
     def __init__(self, url: str) -> None:
         """Initialize the class
@@ -60,3 +61,25 @@ class KeystoneClient:
         response.raise_for_status()
         self._refresh_token = response.json().get("refresh")
         self._access_token = response.json().get("access")
+
+    def logout(self, timeout: int = default_timeout) -> None:
+        """Log out and blacklist any active JWTs
+
+        Args:
+            timeout: Seconds before the requests times out
+        """
+
+        response = requests.post(
+            f"{self.url}/{self.authentication_blacklist}",
+            data={"refresh": self.refresh_token},
+            timeout=timeout
+        )
+
+        try:
+            response.raise_for_status()
+
+        except Exception as excep:
+            warn(str(excep))
+
+        self._refresh_token = None
+        self._access_token = None
