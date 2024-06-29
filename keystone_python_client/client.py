@@ -15,7 +15,7 @@ class KeystoneClient:
 
     # API endpoints
     authentication_new = "authentication/new/"
-    authentication_blacklist = "authentication/backlist/"
+    authentication_blacklist = "authentication/blacklist/"
 
     def __init__(self, url: str) -> None:
         """Initialize the class
@@ -83,3 +83,165 @@ class KeystoneClient:
 
         self._refresh_token = None
         self._access_token = None
+
+    def _get_headers(self) -> Dict[str, str]:
+        """Return header data for API requests
+
+        Returns:
+            A dictionary with header data
+        """
+
+        if not self._access_token:
+            return dict()
+
+        return {
+            "Authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json"
+        }
+
+    def http_get(
+        self,
+        endpoint: str,
+        params: Optional[Dict[str, Any]] = None,
+        timeout: int = default_timeout
+    ) -> requests.Response:
+        """Send a GET request to an API endpoint
+
+        Args:
+            endpoint: API endpoint to send the request to
+            params: Query parameters to include in the request
+            timeout: Number of seconds before the requests times out
+
+        Returns:
+            The response from the API in the specified format
+
+        Raises:
+            requests.HTTPError: If the request returns an error code
+        """
+
+        response = requests.get(
+            f"{self.url}/{endpoint}",
+            headers=self._get_headers(),
+            params=params,
+            timeout=timeout
+        )
+
+        response.raise_for_status()
+        return response
+
+    def http_post(
+        self,
+        endpoint: str,
+        data: Optional[Dict[str, Any]] = None,
+        timeout: int = default_timeout
+    ) -> requests.Response:
+        """Send a POST request to an API endpoint
+
+        Args:
+            endpoint: API endpoint to send the request to
+            data: JSON data to include in the POST request
+            timeout: Number of seconds before the requests times out
+
+        Returns:
+            The response from the API in the specified format
+
+        Raises:
+            requests.HTTPError: If the request returns an error code
+        """
+
+        response = requests.post(
+            f"{self.url}/{endpoint}",
+            headers=self._get_headers(),
+            json=data,
+            timeout=timeout
+        )
+
+        response.raise_for_status()
+        return response
+
+    def http_patch(
+        self,
+        endpoint: str,
+        data: Optional[Dict[str, Any]] = None,
+        timeout: int = default_timeout
+    ) -> requests.Response:
+        """Send a PATCH request to an API endpoint
+
+        Args:
+            endpoint: API endpoint to send the request to
+            data: JSON data to include in the PATCH request
+            timeout: Number of seconds before the requests times out
+
+        Returns:
+            The response from the API in the specified format
+
+        Raises:
+            requests.HTTPError: If the request returns an error code
+        """
+
+        response = requests.patch(
+            f"{self.url}/{endpoint}",
+            headers=self._get_headers(),
+            json=data,
+            timeout=timeout
+        )
+
+        response.raise_for_status()
+        return response
+
+    def http_put(
+        self,
+        endpoint: str,
+        data: Optional[Dict[str, Any]] = None,
+        timeout: int = default_timeout
+    ) -> requests.Response:
+        """Send a PUT request to an endpoint
+
+        Args:
+            endpoint: API endpoint to send the request to
+            data: JSON data to include in the PUT request
+            timeout: Number of seconds before the requests times out
+
+        Returns:
+            The API response
+
+        Raises:
+            requests.HTTPError: If the request returns an error code
+        """
+
+        response = requests.put(
+            f"{self.url}/{endpoint}",
+            headers=self._get_headers(),
+            json=data,
+            timeout=timeout
+        )
+
+        response.raise_for_status()
+        return response
+
+    def http_delete(
+        self,
+        endpoint: str,
+        timeout: int = default_timeout
+    ) -> requests.Response:
+        """Send a DELETE request to an endpoint
+
+        Args:
+            endpoint: API endpoint to send the request to
+            timeout: Number of seconds before the requests times out
+
+        Returns:
+            The API response
+
+        Raises:
+            requests.HTTPError: If the request returns an error code
+        """
+
+        response = requests.delete(
+            f"{self.url}/{endpoint}",
+            headers=self._get_headers(),
+            timeout=timeout
+        )
+
+        response.raise_for_status()
+        return response
