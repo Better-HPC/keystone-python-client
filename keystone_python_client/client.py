@@ -1,10 +1,13 @@
 from typing import *
-
-__all__ = ["KeystoneClient"]
-
 from warnings import warn
 
 import requests
+
+__all__ = ["KeystoneClient"]
+
+ContentType = Literal['json', 'text', 'content']
+ResponseContent = Union[Dict[str, Any], str, bytes]
+QueryResult = Union[None, dict, List[dict]]
 
 
 class KeystoneClient:
@@ -78,8 +81,8 @@ class KeystoneClient:
         try:
             response.raise_for_status()
 
-        except Exception as excep:
-            warn(str(excep))
+        except Exception as exception:
+            warn(str(exception))
 
         self._refresh_token = None
         self._access_token = None
@@ -110,7 +113,7 @@ class KeystoneClient:
         Args:
             endpoint: API endpoint to send the request to
             params: Query parameters to include in the request
-            timeout: Number of seconds before the requests times out
+            timeout: Number of seconds before the request times out
 
         Returns:
             The response from the API in the specified format
@@ -140,7 +143,7 @@ class KeystoneClient:
         Args:
             endpoint: API endpoint to send the request to
             data: JSON data to include in the POST request
-            timeout: Number of seconds before the requests times out
+            timeout: Number of seconds before the request times out
 
         Returns:
             The response from the API in the specified format
@@ -170,7 +173,7 @@ class KeystoneClient:
         Args:
             endpoint: API endpoint to send the request to
             data: JSON data to include in the PATCH request
-            timeout: Number of seconds before the requests times out
+            timeout: Number of seconds before the request times out
 
         Returns:
             The response from the API in the specified format
@@ -200,7 +203,7 @@ class KeystoneClient:
         Args:
             endpoint: API endpoint to send the request to
             data: JSON data to include in the PUT request
-            timeout: Number of seconds before the requests times out
+            timeout: Number of seconds before the request times out
 
         Returns:
             The API response
@@ -228,7 +231,7 @@ class KeystoneClient:
 
         Args:
             endpoint: API endpoint to send the request to
-            timeout: Number of seconds before the requests times out
+            timeout: Number of seconds before the request times out
 
         Returns:
             The API response
@@ -245,3 +248,35 @@ class KeystoneClient:
 
         response.raise_for_status()
         return response
+
+    def _retrieve_records(
+        self,
+        endpoint: str,
+        pk: Optional[int] = None,
+        filters: Optional[dict] = None,
+        timeout=default_timeout
+    ) -> QueryResult:
+        """Fetch data from the specified endpoint with optional primary key and filters
+
+        Args:
+            endpoint: The API endpoint to send the GET request to
+            pk: Optional primary key to fetch a specific record
+            filters: Optional query parameters to include in the request
+            timeout: Number of seconds before the request times out
+
+        Returns:
+            The response from the API in JSON format
+        """
+
+        if pk is not None:
+            endpoint = f'{endpoint}/{pk}/'
+
+        try:
+            response = self.http_get(endpoint, params=filters, timeout=timeout)
+            return response.json()
+
+        except requests.HTTPError as exception:
+            if exception.response.status_code == 404:
+                return None
+
+            raise
