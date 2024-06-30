@@ -37,15 +37,3 @@ jobs:
           print-hash: true
           user: ${{ secrets.REPO_USER }}
           password: ${{ secrets.REPO_PASSWORD }}
-
-  trigger-docs:
-    name: Trigger Docs
-    runs-on: ubuntu-latest
-    steps:
-      - name: Update docs
-        uses: pitt-crc/keystone-docs/.github/actions/update-action/@main
-        with:
-          keystone-gitops-id: ${{ secrets.KEYSTONE_GITOPS_ID }}
-          keystone-gitops-pk: ${{ secrets.KEYSTONE_GITOPS_PK }}
-          repo-name: keystone-python-client
-          tag: v${{ inputs.version }}
