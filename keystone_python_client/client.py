@@ -54,6 +54,7 @@ class KeystoneClient:
         self.url = url
         self.auto_refresh = auto_refresh
 
+        self._api_version: Optional[str] = None
         self._access_token: Optional[str] = None
         self._access_expiration: Optional[datetime] = None
         self._refresh_token: Optional[str] = None
@@ -111,16 +112,6 @@ class KeystoneClient:
                 return None
 
             raise
-
-    @property
-    def is_authenticated(self) -> None:
-        """Return whether the client instance has been authenticated"""
-
-        now = datetime.now()
-        has_token = self._refresh_token is not None
-        access_token_valid = self._access_expiration > now
-        access_token_refreshable = self._refresh_expiration > now
-        return has_token and (access_token_valid or access_token_refreshable)
 
     def _get_headers(self) -> Dict[str, str]:
         """Return header data for API requests
@@ -263,6 +254,27 @@ class KeystoneClient:
         """
 
         return self._send_request("delete", endpoint, timeout=timeout)
+
+    @property
+    def is_authenticated(self) -> None:
+        """Return whether the client instance has been authenticated"""
+
+        now = datetime.now()
+        has_token = self._refresh_token is not None
+        access_token_valid = self._access_expiration > now
+        access_token_refreshable = self._refresh_expiration > now
+        return has_token and (access_token_valid or access_token_refreshable)
+
+    @property
+    def api_version(self) -> str:
+        """Return the version number of the API server"""
+
+        if self._api_version is None:
+            response = self.http_get("version")
+            response.raise_for_status()
+            self._api_version = response.text
+
+        return self._api_version
 
     def login(self, username: str, password: str, timeout: int = default_timeout) -> None:
         """Log in to the Keystone API and cache the returned JWT
