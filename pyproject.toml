@@ -1,3 +1,7 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
 [tool.poetry]
 name = "keystone-client"
 version = "0.0.0"
@@ -10,7 +14,8 @@ python = "^3.8"
 requests = "^2.32.3"
 pyjwt = "^2.8.0"
 
+[tool.poetry.group.tests]
+optional = true
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[tool.poetry.group.tests.dependencies]
+coverage = "*"

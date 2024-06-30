@@ -28,7 +28,7 @@ jobs:
           virtualenvs-create: false
 
       - name: Install dependencies
-        run: poetry install
+        run: poetry install --with tests
 
       - name: Run tests with coverage
         run: poetry run coverage run -m unittest discover
