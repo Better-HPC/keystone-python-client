@@ -60,12 +60,20 @@ class KeystoneClient:
         self._refresh_expiration: Optional[datetime] = None
 
     def __new__(cls, *args, **kwargs) -> KeystoneClient:
-        """Dynamically create CRUD methods for each endpoint in the API schema"""
+        """Dynamically create CRUD methods for each endpoint in the API schema
+
+        Dynamic method are only generated of they do not already implemented
+        in the class definition.
+        """
 
         instance: KeystoneClient = super().__new__(cls)
         for key, endpoint in zip(cls.schema._fields, cls.schema):
-            new_method = partial(instance._retrieve_records, _endpoint=endpoint)
-            setattr(instance, f'retrieve_{key}', new_method)
+
+            # Create a retrieve method
+            retrieve_name = f'retrieve_{key}'
+            if not hasattr(instance, retrieve_name):
+                retrieve_method = partial(instance._retrieve_records, _endpoint=endpoint)
+                setattr(instance, f'retrieve_{key}', retrieve_method)
 
         return instance
 
