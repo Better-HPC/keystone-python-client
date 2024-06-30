@@ -1,0 +1,41 @@
+name: 🤖 Build
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'Set the version number of the compiled application.'
+        default: '0.0.0'
+        required: false
+        type: string
+
+jobs:
+  build-python:
+    name: Python Distribution
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: false
+
+      - name: Set package version
+        run: poetry version "${{ inputs.version }}"
+
+      - name: Build Python distribution
+        run: poetry build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: keystone-client-python
+          path: dist
