@@ -1,6 +1,6 @@
 # Keystone Python Client
 
-A light-weight Python for wrapping the Keystone API. 
+A light-weight Python client for wrapping the Keystone API. 
 
 ## Resources
 
