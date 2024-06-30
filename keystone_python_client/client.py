@@ -42,14 +42,17 @@ class KeystoneClient:
         users='users/users/',
     )
 
-    def __init__(self, url: str) -> None:
+    def __init__(self, url: str, auto_refresh: bool = True) -> None:
         """Initialize the class
 
         Args:
-            url: The base API URL
+            url: The base URL for a running Keystone API server
+            auto_refresh: Automatically refresh authentication tokens
         """
 
         self.url = url
+        self.auto_refresh = auto_refresh
+
         self._access_token: Optional[str] = None
         self._access_expiration: Optional[datetime] = None
         self._refresh_token: Optional[str] = None
@@ -198,6 +201,25 @@ class KeystoneClient:
             "Content-Type": "application/json"
         }
 
+    def _send_request(self, method: str, url: str, timeout: int = default_timeout, **kwargs) -> requests.Response:
+        """Send an HTTP request
+
+        Args:
+            method: The HTTP method to use
+            url: The complete url to send the request to
+            timeout: Seconds before the request times out
+
+        Returns:
+            An HTTP response
+        """
+
+        if self.auto_refresh:
+            self.refresh(force=False, timeout=timeout)
+
+        response = requests.request(method, url, **kwargs)
+        response.raise_for_status()
+        return response
+
     def http_get(
         self,
         endpoint: str,
@@ -218,16 +240,7 @@ class KeystoneClient:
             requests.HTTPError: If the request returns an error code
         """
 
-        self.refresh(force=False, timeout=timeout)
-        response = requests.get(
-            f"{self.url}/{endpoint}",
-            headers=self._get_headers(),
-            params=params,
-            timeout=timeout
-        )
-
-        response.raise_for_status()
-        return response
+        return self._send_request("get", endpoint, params=params, timeout=timeout)
 
     def http_post(
         self,
@@ -249,16 +262,7 @@ class KeystoneClient:
             requests.HTTPError: If the request returns an error code
         """
 
-        self.refresh(force=False, timeout=timeout)
-        response = requests.post(
-            f"{self.url}/{endpoint}",
-            headers=self._get_headers(),
-            json=data,
-            timeout=timeout
-        )
-
-        response.raise_for_status()
-        return response
+        return self._send_request("post", endpoint, data=data, timeout=timeout)
 
     def http_patch(
         self,
@@ -280,16 +284,7 @@ class KeystoneClient:
             requests.HTTPError: If the request returns an error code
         """
 
-        self.refresh(force=False, timeout=timeout)
-        response = requests.patch(
-            f"{self.url}/{endpoint}",
-            headers=self._get_headers(),
-            json=data,
-            timeout=timeout
-        )
-
-        response.raise_for_status()
-        return response
+        return self._send_request("patch", endpoint, data=data, timeout=timeout)
 
     def http_put(
         self,
@@ -311,16 +306,7 @@ class KeystoneClient:
             requests.HTTPError: If the request returns an error code
         """
 
-        self.refresh(force=False, timeout=timeout)
-        response = requests.put(
-            f"{self.url}/{endpoint}",
-            headers=self._get_headers(),
-            json=data,
-            timeout=timeout
-        )
-
-        response.raise_for_status()
-        return response
+        return self._send_request("put", endpoint, data=data, timeout=timeout)
 
     def http_delete(
         self,
@@ -340,12 +326,4 @@ class KeystoneClient:
             requests.HTTPError: If the request returns an error code
         """
 
-        self.refresh(force=False, timeout=timeout)
-        response = requests.delete(
-            f"{self.url}/{endpoint}",
-            headers=self._get_headers(),
-            timeout=timeout
-        )
-
-        response.raise_for_status()
-        return response
+        return self._send_request("delete", endpoint, timeout=timeout)
