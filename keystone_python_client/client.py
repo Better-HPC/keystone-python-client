@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from collections import namedtuple
+from functools import partial
 from typing import *
 from warnings import warn
 
@@ -5,9 +9,18 @@ import requests
 
 __all__ = ["KeystoneClient"]
 
+# Custom types
 ContentType = Literal['json', 'text', 'content']
 ResponseContent = Union[Dict[str, Any], str, bytes]
 QueryResult = Union[None, dict, List[dict]]
+
+# API schema mapping human-readable, python-friendly names to API endpoints
+Schema = namedtuple('Schema', [
+    'allocations',
+    'requests',
+    'research_groups',
+    'users',
+])
 
 
 class KeystoneClient:
@@ -19,6 +32,12 @@ class KeystoneClient:
     # API endpoints
     authentication_new = "authentication/new/"
     authentication_blacklist = "authentication/blacklist/"
+    schema = Schema(
+        allocations='allocations/allocations/',
+        requests='allocations/requests/',
+        research_groups='users/researchgroups/',
+        users='users/users/',
+    )
 
     def __init__(self, url: str) -> None:
         """Initialize the class
@@ -30,6 +49,51 @@ class KeystoneClient:
         self.url = url
         self._access_token: Optional[str] = None
         self._refresh_token: Optional[str] = None
+
+    def __new__(cls, *args, **kwargs) -> KeystoneClient:
+        """Dynamically create CRUD methods for each endpoint in the API schema"""
+
+        instance: KeystoneClient = super().__new__(cls)
+        for key, endpoint in zip(cls.schema._fields, cls.schema):
+            new_method = partial(instance._retrieve_records, _endpoint=endpoint)
+            setattr(instance, f'retrieve_{key}', new_method)
+
+        return instance
+
+    def _retrieve_records(
+        self,
+        _endpoint: str,
+        pk: Optional[int] = None,
+        filters: Optional[dict] = None,
+        timeout=default_timeout
+    ) -> QueryResult:
+        """Retrieve data from the specified endpoint with optional primary key and filters
+
+        A single record is returned when specifying a primary key, otherwise the returned
+        object is a list of records. In either case, the return value is `None` when no data
+        is available for the query.
+
+        Args:
+            pk: Optional primary key to fetch a specific record
+            filters: Optional query parameters to include in the request
+            timeout: Number of seconds before the request times out
+
+        Returns:
+            The response from the API in JSON format
+        """
+
+        if pk is not None:
+            _endpoint = f'{_endpoint}/{pk}/'
+
+        try:
+            response = self.http_get(_endpoint, params=filters, timeout=timeout)
+            return response.json()
+
+        except requests.HTTPError as exception:
+            if exception.response.status_code == 404:
+                return None
+
+            raise
 
     @property
     def access_token(self) -> Union[str, None]:
@@ -248,35 +312,3 @@ class KeystoneClient:
 
         response.raise_for_status()
         return response
-
-    def _retrieve_records(
-        self,
-        endpoint: str,
-        pk: Optional[int] = None,
-        filters: Optional[dict] = None,
-        timeout=default_timeout
-    ) -> QueryResult:
-        """Fetch data from the specified endpoint with optional primary key and filters
-
-        Args:
-            endpoint: The API endpoint to send the GET request to
-            pk: Optional primary key to fetch a specific record
-            filters: Optional query parameters to include in the request
-            timeout: Number of seconds before the request times out
-
-        Returns:
-            The response from the API in JSON format
-        """
-
-        if pk is not None:
-            endpoint = f'{endpoint}/{pk}/'
-
-        try:
-            response = self.http_get(endpoint, params=filters, timeout=timeout)
-            return response.json()
-
-        except requests.HTTPError as exception:
-            if exception.response.status_code == 404:
-                return None
-
-            raise
