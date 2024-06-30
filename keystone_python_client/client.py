@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from collections import namedtuple
+from datetime import datetime
 from functools import partial
 from typing import *
 from warnings import warn
 
+import jwt
 import requests
 
 __all__ = ["KeystoneClient"]
@@ -32,6 +34,7 @@ class KeystoneClient:
     # API endpoints
     authentication_new = "authentication/new/"
     authentication_blacklist = "authentication/blacklist/"
+    authentication_refresh = "authentication/refresh/"
     schema = Schema(
         allocations='allocations/allocations/',
         requests='allocations/requests/',
@@ -48,7 +51,9 @@ class KeystoneClient:
 
         self.url = url
         self._access_token: Optional[str] = None
+        self._access_expiration: Optional[datetime] = None
         self._refresh_token: Optional[str] = None
+        self._refresh_expiration: Optional[datetime] = None
 
     def __new__(cls, *args, **kwargs) -> KeystoneClient:
         """Dynamically create CRUD methods for each endpoint in the API schema"""
@@ -76,7 +81,7 @@ class KeystoneClient:
         Args:
             pk: Optional primary key to fetch a specific record
             filters: Optional query parameters to include in the request
-            timeout: Number of seconds before the request times out
+            timeout: Seconds before the request times out
 
         Returns:
             The response from the API in JSON format
@@ -96,16 +101,10 @@ class KeystoneClient:
             raise
 
     @property
-    def access_token(self) -> Union[str, None]:
-        """Return the JSON access token"""
+    def is_authenticated(self) -> None:
+        """Return whether the client instance has been authenticated"""
 
-        return self._access_token
-
-    @property
-    def refresh_token(self) -> Union[str, None]:
-        """Return the JSON refresh token"""
-
-        return self._refresh_token
+        return self._refresh_token is not None and self._refresh_expiration > datetime.now()
 
     def login(self, username: str, password: str, timeout: int = default_timeout) -> None:
         """Log in to the Keystone API and cache the returned JWT
@@ -113,7 +112,7 @@ class KeystoneClient:
         Args:
             username: The authentication username
             password: The authentication password
-            timeout: Seconds before the requests times out
+            timeout: Seconds before the request times out
 
         Raises:
             requests.HTTPError: If the login request fails
@@ -126,19 +125,24 @@ class KeystoneClient:
         )
 
         response.raise_for_status()
+        refresh_payload = jwt.decode(self._refresh_token, options={"verify_signature": False})
         self._refresh_token = response.json().get("refresh")
+        self._refresh_expiration = datetime.fromtimestamp(refresh_payload["exp"])
+
+        access_payload = jwt.decode(self._access_token, options={"verify_signature": False})
         self._access_token = response.json().get("access")
+        self._access_expiration = datetime.fromtimestamp(access_payload["exp"])
 
     def logout(self, timeout: int = default_timeout) -> None:
         """Log out and blacklist any active JWTs
 
         Args:
-            timeout: Seconds before the requests times out
+            timeout: Seconds before the request times out
         """
 
         response = requests.post(
             f"{self.url}/{self.authentication_blacklist}",
-            data={"refresh": self.refresh_token},
+            data={"refresh": self._refresh_token},
             timeout=timeout
         )
 
@@ -149,7 +153,35 @@ class KeystoneClient:
             warn(str(exception))
 
         self._refresh_token = None
+        self._refresh_expiration = None
         self._access_token = None
+        self._access_expiration = None
+
+    def refresh(self, force: bool = True, timeout: int = default_timeout) -> None:
+        """Refresh the JWT access token
+        
+        Args:
+            timeout: Seconds before the request times out
+            force: Refresh the access token even if it has not expired yet
+        """
+
+        now = datetime.now()
+        if self._access_expiration > now and not force:
+            return
+
+        if self._refresh_expiration > now:
+            raise RuntimeError('Refresh token has expired. Login again to continue.')
+
+        response = requests.post(
+            f"{self.url}/{self.authentication_refresh}",
+            data={"refresh": self._refresh_token},
+            timeout=timeout
+        )
+
+        response.raise_for_status()
+        refresh_payload = jwt.decode(self._refresh_token, options={"verify_signature": False})
+        self._refresh_token = response.json().get("refresh")
+        self._refresh_expiration = datetime.fromtimestamp(refresh_payload["exp"])
 
     def _get_headers(self) -> Dict[str, str]:
         """Return header data for API requests
@@ -162,7 +194,7 @@ class KeystoneClient:
             return dict()
 
         return {
-            "Authorization": f"Bearer {self.access_token}",
+            "Authorization": f"Bearer {self._access_token}",
             "Content-Type": "application/json"
         }
 
@@ -177,7 +209,7 @@ class KeystoneClient:
         Args:
             endpoint: API endpoint to send the request to
             params: Query parameters to include in the request
-            timeout: Number of seconds before the request times out
+            timeout: Seconds before the request times out
 
         Returns:
             The response from the API in the specified format
@@ -186,6 +218,7 @@ class KeystoneClient:
             requests.HTTPError: If the request returns an error code
         """
 
+        self.refresh(force=False, timeout=timeout)
         response = requests.get(
             f"{self.url}/{endpoint}",
             headers=self._get_headers(),
@@ -207,7 +240,7 @@ class KeystoneClient:
         Args:
             endpoint: API endpoint to send the request to
             data: JSON data to include in the POST request
-            timeout: Number of seconds before the request times out
+            timeout: Seconds before the request times out
 
         Returns:
             The response from the API in the specified format
@@ -216,6 +249,7 @@ class KeystoneClient:
             requests.HTTPError: If the request returns an error code
         """
 
+        self.refresh(force=False, timeout=timeout)
         response = requests.post(
             f"{self.url}/{endpoint}",
             headers=self._get_headers(),
@@ -237,7 +271,7 @@ class KeystoneClient:
         Args:
             endpoint: API endpoint to send the request to
             data: JSON data to include in the PATCH request
-            timeout: Number of seconds before the request times out
+            timeout: Seconds before the request times out
 
         Returns:
             The response from the API in the specified format
@@ -246,6 +280,7 @@ class KeystoneClient:
             requests.HTTPError: If the request returns an error code
         """
 
+        self.refresh(force=False, timeout=timeout)
         response = requests.patch(
             f"{self.url}/{endpoint}",
             headers=self._get_headers(),
@@ -267,7 +302,7 @@ class KeystoneClient:
         Args:
             endpoint: API endpoint to send the request to
             data: JSON data to include in the PUT request
-            timeout: Number of seconds before the request times out
+            timeout: Seconds before the request times out
 
         Returns:
             The API response
@@ -276,6 +311,7 @@ class KeystoneClient:
             requests.HTTPError: If the request returns an error code
         """
 
+        self.refresh(force=False, timeout=timeout)
         response = requests.put(
             f"{self.url}/{endpoint}",
             headers=self._get_headers(),
@@ -295,7 +331,7 @@ class KeystoneClient:
 
         Args:
             endpoint: API endpoint to send the request to
-            timeout: Number of seconds before the request times out
+            timeout: Seconds before the request times out
 
         Returns:
             The API response
@@ -304,6 +340,7 @@ class KeystoneClient:
             requests.HTTPError: If the request returns an error code
         """
 
+        self.refresh(force=False, timeout=timeout)
         response = requests.delete(
             f"{self.url}/{endpoint}",
             headers=self._get_headers(),
