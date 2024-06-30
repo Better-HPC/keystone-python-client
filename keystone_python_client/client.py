@@ -105,6 +105,7 @@ class KeystoneClient:
 
         try:
             response = self.http_get(_endpoint, params=filters, timeout=timeout)
+            response.raise_for_status()
             return response.json()
 
         except requests.HTTPError as exception:
