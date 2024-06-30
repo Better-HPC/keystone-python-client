@@ -15,6 +15,7 @@ __all__ = ["KeystoneClient"]
 ContentType = Literal['json', 'text', 'content']
 ResponseContent = Union[Dict[str, Any], str, bytes]
 QueryResult = Union[None, dict, List[dict]]
+HTTPMethod = Literal['get', 'post', 'put', 'patch', 'delete']
 
 # API schema mapping human-readable, python-friendly names to API endpoints
 Schema = namedtuple('Schema', [
@@ -107,84 +108,11 @@ class KeystoneClient:
     def is_authenticated(self) -> None:
         """Return whether the client instance has been authenticated"""
 
-        return self._refresh_token is not None and self._refresh_expiration > datetime.now()
-
-    def login(self, username: str, password: str, timeout: int = default_timeout) -> None:
-        """Log in to the Keystone API and cache the returned JWT
-
-        Args:
-            username: The authentication username
-            password: The authentication password
-            timeout: Seconds before the request times out
-
-        Raises:
-            requests.HTTPError: If the login request fails
-        """
-
-        response = requests.post(
-            f"{self.url}/{self.authentication_new}",
-            json={"username": username, "password": password},
-            timeout=timeout
-        )
-
-        response.raise_for_status()
-        refresh_payload = jwt.decode(self._refresh_token, options={"verify_signature": False})
-        self._refresh_token = response.json().get("refresh")
-        self._refresh_expiration = datetime.fromtimestamp(refresh_payload["exp"])
-
-        access_payload = jwt.decode(self._access_token, options={"verify_signature": False})
-        self._access_token = response.json().get("access")
-        self._access_expiration = datetime.fromtimestamp(access_payload["exp"])
-
-    def logout(self, timeout: int = default_timeout) -> None:
-        """Log out and blacklist any active JWTs
-
-        Args:
-            timeout: Seconds before the request times out
-        """
-
-        response = requests.post(
-            f"{self.url}/{self.authentication_blacklist}",
-            data={"refresh": self._refresh_token},
-            timeout=timeout
-        )
-
-        try:
-            response.raise_for_status()
-
-        except Exception as exception:
-            warn(str(exception))
-
-        self._refresh_token = None
-        self._refresh_expiration = None
-        self._access_token = None
-        self._access_expiration = None
-
-    def refresh(self, force: bool = True, timeout: int = default_timeout) -> None:
-        """Refresh the JWT access token
-        
-        Args:
-            timeout: Seconds before the request times out
-            force: Refresh the access token even if it has not expired yet
-        """
-
         now = datetime.now()
-        if self._access_expiration > now and not force:
-            return
-
-        if self._refresh_expiration > now:
-            raise RuntimeError('Refresh token has expired. Login again to continue.')
-
-        response = requests.post(
-            f"{self.url}/{self.authentication_refresh}",
-            data={"refresh": self._refresh_token},
-            timeout=timeout
-        )
-
-        response.raise_for_status()
-        refresh_payload = jwt.decode(self._refresh_token, options={"verify_signature": False})
-        self._refresh_token = response.json().get("refresh")
-        self._refresh_expiration = datetime.fromtimestamp(refresh_payload["exp"])
+        has_token = self._refresh_token is not None
+        access_token_valid = self._access_expiration > now
+        access_token_refreshable = self._refresh_expiration > now
+        return has_token and (access_token_valid or access_token_refreshable)
 
     def _get_headers(self) -> Dict[str, str]:
         """Return header data for API requests
@@ -201,7 +129,7 @@ class KeystoneClient:
             "Content-Type": "application/json"
         }
 
-    def _send_request(self, method: str, url: str, timeout: int = default_timeout, **kwargs) -> requests.Response:
+    def _send_request(self, method: HTTPMethod, url: str, timeout: int = default_timeout, **kwargs) -> requests.Response:
         """Send an HTTP request
 
         Args:
@@ -327,3 +255,86 @@ class KeystoneClient:
         """
 
         return self._send_request("delete", endpoint, timeout=timeout)
+
+    def login(self, username: str, password: str, timeout: int = default_timeout) -> None:
+        """Log in to the Keystone API and cache the returned JWT
+
+        Args:
+            username: The authentication username
+            password: The authentication password
+            timeout: Seconds before the request times out
+
+        Raises:
+            requests.HTTPError: If the login request fails
+        """
+
+        response = requests.post(
+            f"{self.url}/{self.authentication_new}",
+            json={"username": username, "password": password},
+            timeout=timeout
+        )
+
+        response.raise_for_status()
+
+        # Parse data from the refresh token
+        refresh_payload = jwt.decode(self._refresh_token, options={"verify_signature": False})
+        self._refresh_token = response.json().get("refresh")
+        self._refresh_expiration = datetime.fromtimestamp(refresh_payload["exp"])
+
+        # Parse data from the access token
+        access_payload = jwt.decode(self._access_token, options={"verify_signature": False})
+        self._access_token = response.json().get("access")
+        self._access_expiration = datetime.fromtimestamp(access_payload["exp"])
+
+    def logout(self, timeout: int = default_timeout) -> None:
+        """Log out and blacklist any active JWTs
+
+        Args:
+            timeout: Seconds before the request times out
+        """
+
+        if self._refresh_token is not None:
+            response = requests.post(
+                f"{self.url}/{self.authentication_blacklist}",
+                data={"refresh": self._refresh_token},
+                timeout=timeout
+            )
+
+            try:
+                response.raise_for_status()
+
+            except Exception as exception:
+                warn(str(exception))
+
+        self._refresh_token = None
+        self._refresh_expiration = None
+        self._access_token = None
+        self._access_expiration = None
+
+    def refresh(self, force: bool = True, timeout: int = default_timeout) -> None:
+        """Refresh the JWT access token
+
+        Args:
+            timeout: Seconds before the request times out
+            force: Refresh the access token even if it has not expired yet
+        """
+
+        # Don't refresh the token if it's not necessary
+        now = datetime.now()
+        if self._access_expiration > now and not force:
+            return
+
+        # Alert the user when a refresh is not possible
+        if self._refresh_expiration > now:
+            raise RuntimeError('Refresh token has expired. Login again to continue.')
+
+        response = requests.post(
+            f"{self.url}/{self.authentication_refresh}",
+            data={"refresh": self._refresh_token},
+            timeout=timeout
+        )
+
+        response.raise_for_status()
+        refresh_payload = jwt.decode(self._refresh_token, options={"verify_signature": False})
+        self._refresh_token = response.json().get("refresh")
+        self._refresh_expiration = datetime.fromtimestamp(refresh_payload["exp"])
