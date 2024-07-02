@@ -28,7 +28,7 @@ jobs:
       - name: Fetch build artifact
         uses: actions/download-artifact@v4
         with:
-          name: keystone-api-python
+          name: keystone-client-python
           path: dist
 
       - name: Publish package
