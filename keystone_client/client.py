@@ -369,6 +369,6 @@ class KeystoneClient:
         )
 
         response.raise_for_status()
-        refresh_payload = jwt.decode(self._refresh_token, options={"verify_signature": False})
+        refresh_payload = jwt.decode(self._refresh_token)
         self._refresh_token = response.json().get("refresh")
         self._refresh_expiration = datetime.fromtimestamp(refresh_payload["exp"])
