@@ -1,3 +1,10 @@
+"""Keystone API Client
+
+This module provides a client class `KeystoneAPIClient` for interacting with the
+Keystone API. It streamlines communication with the API, providing methods for
+authentication, data retrieval, and data manipulation.
+"""
+
 from __future__ import annotations
 
 from collections import namedtuple
@@ -9,7 +16,7 @@ from warnings import warn
 import jwt
 import requests
 
-__all__ = ["KeystoneAPIClient"]
+__all__ = ["KeystoneClient"]
 
 # Custom types
 ContentType = Literal["json", "text", "content"]
@@ -26,7 +33,7 @@ Schema = namedtuple("Schema", [
 ])
 
 
-class KeystoneAPIClient:
+class KeystoneClient:
     """Client class for submitting requests to the Keystone API"""
 
     # Default API behavior
@@ -60,14 +67,14 @@ class KeystoneAPIClient:
         self._refresh_token: Optional[str] = None
         self._refresh_expiration: Optional[datetime] = None
 
-    def __new__(cls, *args, **kwargs) -> KeystoneAPIClient:
+    def __new__(cls, *args, **kwargs) -> KeystoneClient:
         """Dynamically create CRUD methods for each endpoint in the API schema
 
         Dynamic method are only generated of they do not already implemented
         in the class definition.
         """
 
-        instance: KeystoneAPIClient = super().__new__(cls)
+        instance: KeystoneClient = super().__new__(cls)
         for key, endpoint in zip(cls.schema._fields, cls.schema):
 
             # Create a retrieve method
@@ -129,7 +136,13 @@ class KeystoneAPIClient:
             "Content-Type": "application/json"
         }
 
-    def _send_request(self, method: HTTPMethod, url: str, timeout: int = default_timeout, **kwargs) -> requests.Response:
+    def _send_request(
+        self,
+        method: HTTPMethod,
+        url: str,
+        timeout: int = default_timeout,
+        **kwargs
+    ) -> requests.Response:
         """Send an HTTP request
 
         Args:
@@ -298,12 +311,12 @@ class KeystoneAPIClient:
         response.raise_for_status()
 
         # Parse data from the refresh token
-        refresh_payload = jwt.decode(self._refresh_token, options={"verify_signature": False})
+        refresh_payload = jwt.decode(self._refresh_token)
         self._refresh_token = response.json().get("refresh")
         self._refresh_expiration = datetime.fromtimestamp(refresh_payload["exp"])
 
         # Parse data from the access token
-        access_payload = jwt.decode(self._access_token, options={"verify_signature": False})
+        access_payload = jwt.decode(self._access_token)
         self._access_token = response.json().get("access")
         self._access_expiration = datetime.fromtimestamp(access_payload["exp"])
 
