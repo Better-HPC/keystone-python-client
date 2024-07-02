@@ -1,3 +1,10 @@
+"""Keystone API Client
+
+This module provides a client class `KeystoneAPIClient` for interacting with the
+Keystone API. It streamlines communication with the API, providing methods for
+authentication, data retrieval, and data manipulation.
+"""
+
 from __future__ import annotations
 
 from collections import namedtuple
@@ -12,17 +19,17 @@ import requests
 __all__ = ["KeystoneClient"]
 
 # Custom types
-ContentType = Literal['json', 'text', 'content']
+ContentType = Literal["json", "text", "content"]
 ResponseContent = Union[Dict[str, Any], str, bytes]
 QueryResult = Union[None, dict, List[dict]]
-HTTPMethod = Literal['get', 'post', 'put', 'patch', 'delete']
+HTTPMethod = Literal["get", "post", "put", "patch", "delete"]
 
 # API schema mapping human-readable, python-friendly names to API endpoints
-Schema = namedtuple('Schema', [
-    'allocations',
-    'requests',
-    'research_groups',
-    'users',
+Schema = namedtuple("Schema", [
+    "allocations",
+    "requests",
+    "research_groups",
+    "users",
 ])
 
 
@@ -37,10 +44,10 @@ class KeystoneClient:
     authentication_blacklist = "authentication/blacklist/"
     authentication_refresh = "authentication/refresh/"
     schema = Schema(
-        allocations='allocations/allocations/',
-        requests='allocations/requests/',
-        research_groups='users/researchgroups/',
-        users='users/users/',
+        allocations="allocations/allocations/",
+        requests="allocations/requests/",
+        research_groups="users/researchgroups/",
+        users="users/users/",
     )
 
     def __init__(self, url: str, auto_refresh: bool = True) -> None:
@@ -71,10 +78,10 @@ class KeystoneClient:
         for key, endpoint in zip(cls.schema._fields, cls.schema):
 
             # Create a retrieve method
-            retrieve_name = f'retrieve_{key}'
+            retrieve_name = f"retrieve_{key}"
             if not hasattr(instance, retrieve_name):
                 retrieve_method = partial(instance._retrieve_records, _endpoint=endpoint)
-                setattr(instance, f'retrieve_{key}', retrieve_method)
+                setattr(instance, f"retrieve_{key}", retrieve_method)
 
         return instance
 
@@ -101,7 +108,7 @@ class KeystoneClient:
         """
 
         if pk is not None:
-            _endpoint = f'{_endpoint}/{pk}/'
+            _endpoint = f"{_endpoint}/{pk}/"
 
         try:
             response = self.http_get(_endpoint, params=filters, timeout=timeout)
@@ -129,7 +136,13 @@ class KeystoneClient:
             "Content-Type": "application/json"
         }
 
-    def _send_request(self, method: HTTPMethod, url: str, timeout: int = default_timeout, **kwargs) -> requests.Response:
+    def _send_request(
+        self,
+        method: HTTPMethod,
+        url: str,
+        timeout: int = default_timeout,
+        **kwargs
+    ) -> requests.Response:
         """Send an HTTP request
 
         Args:
@@ -142,7 +155,7 @@ class KeystoneClient:
         """
 
         if self.auto_refresh:
-            self.refresh(force=False, timeout=timeout)
+            self._refresh_tokens(force=False, timeout=timeout)
 
         response = requests.request(method, url, **kwargs)
         response.raise_for_status()
@@ -298,12 +311,12 @@ class KeystoneClient:
         response.raise_for_status()
 
         # Parse data from the refresh token
-        refresh_payload = jwt.decode(self._refresh_token, options={"verify_signature": False})
+        refresh_payload = jwt.decode(self._refresh_token)
         self._refresh_token = response.json().get("refresh")
         self._refresh_expiration = datetime.fromtimestamp(refresh_payload["exp"])
 
         # Parse data from the access token
-        access_payload = jwt.decode(self._access_token, options={"verify_signature": False})
+        access_payload = jwt.decode(self._access_token)
         self._access_token = response.json().get("access")
         self._access_expiration = datetime.fromtimestamp(access_payload["exp"])
 
@@ -332,7 +345,7 @@ class KeystoneClient:
         self._access_token = None
         self._access_expiration = None
 
-    def refresh(self, force: bool = True, timeout: int = default_timeout) -> None:
+    def _refresh_tokens(self, force: bool = True, timeout: int = default_timeout) -> None:
         """Refresh the JWT access token
 
         Args:
@@ -347,7 +360,7 @@ class KeystoneClient:
 
         # Alert the user when a refresh is not possible
         if self._refresh_expiration > now:
-            raise RuntimeError('Refresh token has expired. Login again to continue.')
+            raise RuntimeError("Refresh token has expired. Login again to continue.")
 
         response = requests.post(
             f"{self.url}/{self.authentication_refresh}",
