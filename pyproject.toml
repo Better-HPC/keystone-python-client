@@ -3,11 +3,21 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "keystone-client"
+name = "keystone-api-client"
 version = "0.0.0"
 description = "Python client for the Keystone API"
 authors = ["djperrefort <djperrefort@gmail.com>"]
 readme = "README.md"
+packages = [
+    { include = "keystone_client" },
+]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Typing :: Typed"
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"
