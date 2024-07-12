@@ -55,7 +55,7 @@ Dedicate methods are provided for create, retrieve, update, and delete (CRUD) op
 
 !!! warning "Work in Progress"
 
-    Methods for performing crud operations are till under development.
+    Methods for performing CRUD operations are till under development.
     Formal documentation is unavailable at this time.
 
 ### Generic HTTP Requests
