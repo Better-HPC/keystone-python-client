@@ -58,7 +58,7 @@ class KeystoneClient:
             auto_refresh: Automatically refresh authentication tokens
         """
 
-        self.url = url
+        self._url = url.rstrip('/')
         self.auto_refresh = auto_refresh
 
         self._api_version: Optional[str] = None
@@ -139,7 +139,7 @@ class KeystoneClient:
     def _send_request(
         self,
         method: HTTPMethod,
-        url: str,
+        endpoint: str,
         timeout: int = default_timeout,
         **kwargs
     ) -> requests.Response:
@@ -147,7 +147,7 @@ class KeystoneClient:
 
         Args:
             method: The HTTP method to use
-            url: The complete url to send the request to
+            endpoint: The complete url to send the request to
             timeout: Seconds before the request times out
 
         Returns:
@@ -157,9 +157,16 @@ class KeystoneClient:
         if self.auto_refresh:
             self._refresh_tokens(force=False, timeout=timeout)
 
+        url = f'{self.url}/{endpoint}'
         response = requests.request(method, url, **kwargs)
         response.raise_for_status()
         return response
+
+    @property
+    def url(self) -> str:
+        """Return the server URL"""
+
+        return self._url
 
     def http_get(
         self,
@@ -275,8 +282,8 @@ class KeystoneClient:
 
         now = datetime.now()
         has_token = self._refresh_token is not None
-        access_token_valid = self._access_expiration > now
-        access_token_refreshable = self._refresh_expiration > now
+        access_token_valid = self._access_expiration is not None and self._access_expiration > now
+        access_token_refreshable = self._refresh_expiration is not None and self._refresh_expiration > now
         return has_token and (access_token_valid or access_token_refreshable)
 
     @property
@@ -352,6 +359,9 @@ class KeystoneClient:
             timeout: Seconds before the request times out
             force: Refresh the access token even if it has not expired yet
         """
+
+        if not self.is_authenticated:
+            return
 
         # Don't refresh the token if it's not necessary
         now = datetime.now()
