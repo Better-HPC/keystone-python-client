@@ -50,17 +50,14 @@ class KeystoneClient:
         users="users/users/",
     )
 
-    def __init__(self, url: str, auto_refresh: bool = True) -> None:
+    def __init__(self, url: str) -> None:
         """Initialize the class
 
         Args:
             url: The base URL for a running Keystone API server
-            auto_refresh: Automatically refresh authentication tokens
         """
 
         self._url = url.rstrip('/')
-        self.auto_refresh = auto_refresh
-
         self._api_version: Optional[str] = None
         self._access_token: Optional[str] = None
         self._access_expiration: Optional[datetime] = None
@@ -154,8 +151,7 @@ class KeystoneClient:
             An HTTP response
         """
 
-        if self.auto_refresh:
-            self._refresh_tokens(force=False, timeout=timeout)
+        self._refresh_tokens(force=False, timeout=timeout)
 
         url = f'{self.url}/{endpoint}'
         response = requests.request(method, url, **kwargs)
