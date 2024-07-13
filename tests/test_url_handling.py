@@ -11,6 +11,8 @@ class TestUrl(TestCase):
     def test_trailing_slash_removed(self):
         """Test trailing slashes are removed from URLs provided at init"""
 
+        # Test for various numbers of trailing slashes
         url = 'http://test.domain.com'
+        self.assertEqual(url, KeystoneClient(url).url)
         self.assertEqual(url, KeystoneClient(url + '/').url)
         self.assertEqual(url, KeystoneClient(url + '////').url)
