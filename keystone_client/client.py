@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections import namedtuple
 from datetime import datetime
 from functools import partial
-from typing import *
+from typing import Literal, Union
 from warnings import warn
 
 import jwt
@@ -20,8 +20,8 @@ __all__ = ["KeystoneClient"]
 
 # Custom types
 ContentType = Literal["json", "text", "content"]
-ResponseContent = Union[Dict[str, Any], str, bytes]
-QueryResult = Union[None, dict, List[dict]]
+ResponseContent = Union[dict[str, any], str, bytes]
+QueryResult = Union[None, dict, list[dict]]
 HTTPMethod = Literal["get", "post", "put", "patch", "delete"]
 
 # API schema mapping human-readable, python-friendly names to API endpoints
@@ -58,11 +58,11 @@ class KeystoneClient:
         """
 
         self._url = url.rstrip('/')
-        self._api_version: Optional[str] = None
-        self._access_token: Optional[str] = None
-        self._access_expiration: Optional[datetime] = None
-        self._refresh_token: Optional[str] = None
-        self._refresh_expiration: Optional[datetime] = None
+        self._api_version: str | None = None
+        self._access_token: str | None = None
+        self._access_expiration: datetime | None = None
+        self._refresh_token: str | None = None
+        self._refresh_expiration: datetime | None = None
 
     def __new__(cls, *args, **kwargs) -> KeystoneClient:
         """Dynamically create CRUD methods for each endpoint in the API schema
@@ -85,8 +85,8 @@ class KeystoneClient:
     def _retrieve_records(
         self,
         _endpoint: str,
-        pk: Optional[int] = None,
-        filters: Optional[dict] = None,
+        pk: int | None = None,
+        filters: dict | None = None,
         timeout=default_timeout
     ) -> QueryResult:
         """Retrieve data from the specified endpoint with optional primary key and filters
@@ -118,7 +118,7 @@ class KeystoneClient:
 
             raise
 
-    def _get_headers(self) -> Dict[str, str]:
+    def _get_headers(self) -> dict[str, str]:
         """Return header data for API requests
 
         Returns:
@@ -167,7 +167,7 @@ class KeystoneClient:
     def http_get(
         self,
         endpoint: str,
-        params: Optional[Dict[str, Any]] = None,
+        params: dict[str, any] | None = None,
         timeout: int = default_timeout
     ) -> requests.Response:
         """Send a GET request to an API endpoint
@@ -189,7 +189,7 @@ class KeystoneClient:
     def http_post(
         self,
         endpoint: str,
-        data: Optional[Dict[str, Any]] = None,
+        data: dict[str, any] | None = None,
         timeout: int = default_timeout
     ) -> requests.Response:
         """Send a POST request to an API endpoint
@@ -211,7 +211,7 @@ class KeystoneClient:
     def http_patch(
         self,
         endpoint: str,
-        data: Optional[Dict[str, Any]] = None,
+        data: dict[str, any] | None = None,
         timeout: int = default_timeout
     ) -> requests.Response:
         """Send a PATCH request to an API endpoint
@@ -233,7 +233,7 @@ class KeystoneClient:
     def http_put(
         self,
         endpoint: str,
-        data: Optional[Dict[str, Any]] = None,
+        data: dict[str, any] | None = None,
         timeout: int = default_timeout
     ) -> requests.Response:
         """Send a PUT request to an endpoint
