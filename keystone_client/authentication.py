@@ -1,3 +1,5 @@
+"""User authentication and credential management."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -7,7 +9,7 @@ import requests
 
 
 class AuthenticationManager:
-    """JWT token manager"""
+    """User authentication and JWT token manager"""
 
     default_timeout = 15
 
@@ -26,33 +28,41 @@ class AuthenticationManager:
 
         # Attributes to hold JWT data
         self._access_token: str | None = None
-        self._access_expiration: datetime | None = None
         self._refresh_token: str | None = None
-        self._refresh_expiration: datetime | None = None
 
     @property
     def access_token(self) -> str | None:
+        """Return the JWT access token"""
+
         return self._access_token
 
     @property
-    def access_expiration(self) -> str | None:
-        return self._access_expiration
+    def access_expiration(self) -> datetime | None:
+        """Return the expiration datetime of the JWT access token"""
+
+        if self.access_token:
+            return datetime.fromtimestamp(jwt.decode(self.access_token)["exp"])
 
     @property
     def refresh_token(self) -> str | None:
+        """Return the JWT refresh token"""
+
         return self._refresh_token
 
     @property
-    def refresh_expiration(self) -> str | None:
-        return self._refresh_expiration
+    def refresh_expiration(self) -> datetime | None:
+        """Return the expiration datetime of the JWT refresh token"""
+
+        if self.refresh_token:
+            return datetime.fromtimestamp(jwt.decode(self.refresh_token)["exp"])
 
     def is_authenticated(self) -> None:
         """Return whether the client instance has been authenticated"""
 
         now = datetime.now()
-        has_token = self._refresh_token is not None
-        access_token_valid = self._access_expiration is not None and self._access_expiration > now
-        access_token_refreshable = self._refresh_expiration is not None and self._refresh_expiration > now
+        has_token = self.refresh_token is not None
+        access_token_valid = self.access_expiration is not None and self.access_expiration > now
+        access_token_refreshable = self.refresh_expiration is not None and self.refresh_expiration > now
         return has_token and (access_token_valid or access_token_refreshable)
 
     def get_auth_headers(self) -> dict[str, str]:
@@ -62,12 +72,12 @@ class AuthenticationManager:
             A dictionary with header data
         """
 
-        if not self._access_token:
+        if not self.access_token:
             return dict()
 
         self.refresh()
         return {
-            "Authorization": f"Bearer {self._access_token}",
+            "Authorization": f"Bearer {self.access_token}",
             "Content-Type": "application/json"
         }
 
@@ -91,15 +101,9 @@ class AuthenticationManager:
 
         response.raise_for_status()
 
-        # Parse data from the refresh token
-        refresh_payload = jwt.decode(self._refresh_token)
-        self._refresh_token = response.json().get("refresh")
-        self._refresh_expiration = datetime.fromtimestamp(refresh_payload["exp"])
-
-        # Parse data from the access token
-        access_payload = jwt.decode(self._access_token)
-        self._access_token = response.json().get("access")
-        self._access_expiration = datetime.fromtimestamp(access_payload["exp"])
+        json = response.json()
+        self._refresh_token = json.get("refresh")
+        self._access_token = json.get("access")
 
     def logout(self, timeout: int = default_timeout) -> None:
         """Log out and blacklist any active JWTs
@@ -120,9 +124,7 @@ class AuthenticationManager:
 
         # Clear invalidated token data
         self._refresh_token = None
-        self._refresh_expiration = None
         self._access_token = None
-        self._access_expiration = None
 
     def refresh(self, force: bool = False, timeout: int = default_timeout) -> None:
         """Refresh the JWT access token
@@ -137,11 +139,11 @@ class AuthenticationManager:
 
         # Don't refresh the token if it's not necessary
         now = datetime.now()
-        if self._access_expiration > now and not force:
+        if self.access_expiration > now and not force:
             return
 
         # Alert the user when a refresh is not possible
-        if self._refresh_expiration > now:
+        if self.refresh_expiration > now:
             raise RuntimeError("Refresh token has expired. Login again to continue.")
 
         response = requests.post(
@@ -151,6 +153,4 @@ class AuthenticationManager:
         )
 
         response.raise_for_status()
-        refresh_payload = jwt.decode(self._refresh_token)
         self._refresh_token = response.json().get("refresh")
-        self._refresh_expiration = datetime.fromtimestamp(refresh_payload["exp"])

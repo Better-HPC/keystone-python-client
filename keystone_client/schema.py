@@ -1,5 +1,3 @@
-from typing import Tuple
-
 from pydantic import BaseModel
 
 
@@ -9,11 +7,8 @@ class AuthSchema(BaseModel):
     blacklist: str = "authentication/blacklist/"
 
 
-class Schema(BaseModel):
-    auth: AuthSchema = AuthSchema()
-    endpoints: Tuple[str, ...] = (
-        "allocations",
-        "requests",
-        "research_groups",
-        "users",
-    )
+class EndpointSchema(BaseModel):
+    allocations: str = "allocations/allocations/"
+    requests: str = "allocations/requests/"
+    research_groups: str = "users/researchgroups/"
+    users: str = "users/users/"
