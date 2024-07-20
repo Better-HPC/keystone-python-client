@@ -23,6 +23,7 @@ classifiers = [
 python = "^3.9"
 requests = "^2.32.3"
 pyjwt = "^2.8.0"
+pydantic = "^2.8.2"
 
 [tool.poetry.group.tests]
 optional = true

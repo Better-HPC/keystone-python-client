@@ -24,11 +24,11 @@ class HTTPClient:
             url: The base URL for a running Keystone API server
         """
 
-        self._url = url.rstrip('/')
+        self._url = url.rstrip('/') + '/'
         self._auth = AuthenticationManager(
-            self._resolve_endpoint(self.schema.auth.new),
-            self._resolve_endpoint(self.schema.auth.refresh),
-            self._resolve_endpoint(self.schema.auth.blacklist)
+            self.resolve_endpoint(self.schema.auth.new),
+            self.resolve_endpoint(self.schema.auth.refresh),
+            self.resolve_endpoint(self.schema.auth.blacklist)
         )
         self._api_version: str | None = None
 
@@ -38,7 +38,7 @@ class HTTPClient:
 
         return self._url
 
-    def _resolve_endpoint(self, endpoint: str) -> str:
+    def resolve_endpoint(self, endpoint: str) -> str:
         """Resolve a partial endpoint into a fully qualified URL
 
         Args:
@@ -48,7 +48,7 @@ class HTTPClient:
             The fully qualified endpoint URL
         """
 
-        return urllib.parse.urljoin(self.url, endpoint)
+        return urllib.parse.urljoin(self.url, endpoint.strip('/')) + '/'
 
     def _send_request(self, method: HTTPMethod, endpoint: str, **kwargs) -> requests.Response:
         """Send an HTTP request

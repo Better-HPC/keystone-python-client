@@ -12,7 +12,7 @@ from typing import Literal, Union
 
 import requests
 
-from keystone_client.http import HTTPClient
+from .http_client import HTTPClient
 
 # Custom types
 ContentType = Literal["json", "text", "content"]
