@@ -8,11 +8,16 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
 
+    services:
+        api:
+          image: ghcr.io/pitt-crc/keystone-api:latest
+
     strategy:
       fail-fast: false
       matrix:
         python-version: [ "3.9", "3.10", "3.11", "3.12" ]
-
+        ports:
+          - 8000:8000
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
