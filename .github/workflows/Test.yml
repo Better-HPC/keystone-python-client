@@ -3,6 +3,11 @@ name: 🤖 Test
 on:
   workflow_call:
 
+env:
+  DJANGO_SUPERUSER_USERNAME: 'admin'
+  DJANGO_SUPERUSER_EMAIL: 'admin@admin.com'
+  DJANGO_SUPERUSER_PASSWORD: 'admin'
+
 jobs:
   unit-tests:
     name: Unit Tests
@@ -11,13 +16,18 @@ jobs:
     services:
         api:
           image: ghcr.io/pitt-crc/keystone-api:latest
+        ports:
+          - 8000:8000
+        env:
+          DJANGO_SUPERUSER_USERNAME: ${{ env.DJANGO_SUPERUSER_USERNAME }}
+          DJANGO_SUPERUSER_EMAIL: ${{ env.DJANGO_SUPERUSER_EMAIL }}
+          DJANGO_SUPERUSER_PASSWORD: ${{ env.DJANGO_SUPERUSER_PASSWORD }}
 
     strategy:
       fail-fast: false
       matrix:
         python-version: [ "3.9", "3.10", "3.11", "3.12" ]
-        ports:
-          - 8000:8000
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
