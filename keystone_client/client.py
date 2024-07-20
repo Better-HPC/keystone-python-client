@@ -12,7 +12,7 @@ from datetime import datetime
 from functools import partial
 from typing import Literal, Union
 from warnings import warn
-
+import urllib.parse
 import jwt
 import requests
 
@@ -57,7 +57,7 @@ class KeystoneClient:
             url: The base URL for a running Keystone API server
         """
 
-        self._url = url.rstrip('/')
+        self._url = url
         self._api_version: str | None = None
         self._access_token: str | None = None
         self._access_expiration: datetime | None = None
@@ -153,7 +153,7 @@ class KeystoneClient:
 
         self._refresh_tokens(force=False, timeout=timeout)
 
-        url = f'{self.url}/{endpoint}'
+        url = urllib.parse.urljoin(self.url, endpoint)
         response = requests.request(method, url, **kwargs)
         response.raise_for_status()
         return response
@@ -162,7 +162,8 @@ class KeystoneClient:
     def url(self) -> str:
         """Return the server URL"""
 
-        return self._url
+        # Make sure the url includes a single trailing slash
+        return self._url.rstrip('/') + '/'
 
     def http_get(
         self,
