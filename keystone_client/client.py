@@ -45,6 +45,12 @@ class HTTPClient:
 
         return self._url
 
+    def login(self, username: str, password: str) -> None:
+        self._auth.login(username, password)
+
+    def logout(self) -> None:
+        self._auth.logout()
+
     def _send_request(self, method: HTTPMethod, endpoint: str, **kwargs) -> requests.Response:
         """Send an HTTP request
 
@@ -82,7 +88,13 @@ class HTTPClient:
             requests.HTTPError: If the request returns an error code
         """
 
-        return self._send_request("get", endpoint, params=params, timeout=timeout)
+        return self._send_request(
+            "get",
+            endpoint,
+            params=params,
+            headers=self._auth.get_auth_headers(),
+            timeout=timeout
+        )
 
     def http_post(
         self,
@@ -104,7 +116,7 @@ class HTTPClient:
             requests.HTTPError: If the request returns an error code
         """
 
-        return self._send_request("post", endpoint, data=data, timeout=timeout)
+        return self._send_request("post", endpoint, data=data, headers=self._auth.get_auth_headers(), timeout=timeout)
 
     def http_patch(
         self,
@@ -126,7 +138,13 @@ class HTTPClient:
             requests.HTTPError: If the request returns an error code
         """
 
-        return self._send_request("patch", endpoint, data=data, timeout=timeout)
+        return self._send_request(
+            "patch",
+            endpoint,
+            data=data,
+            headers=self._auth.get_auth_headers(),
+            timeout=timeout
+        )
 
     def http_put(
         self,
@@ -148,7 +166,7 @@ class HTTPClient:
             requests.HTTPError: If the request returns an error code
         """
 
-        return self._send_request("put", endpoint, data=data, timeout=timeout)
+        return self._send_request("put", endpoint, data=data, headers=self._auth.get_auth_headers(), timeout=timeout)
 
     def http_delete(
         self,
@@ -168,7 +186,7 @@ class HTTPClient:
             requests.HTTPError: If the request returns an error code
         """
 
-        return self._send_request("delete", endpoint, timeout=timeout)
+        return self._send_request("delete", endpoint, headers=self._auth.get_auth_headers(), timeout=timeout)
 
 
 class KeystoneClient(HTTPClient):
@@ -207,7 +225,7 @@ class KeystoneClient(HTTPClient):
 
     def _retrieve_records(
         self,
-        _endpoint: str,
+        _endpoint: Endpoint,
         pk: int | None = None,
         filters: dict | None = None,
         timeout=default_timeout
@@ -228,10 +246,10 @@ class KeystoneClient(HTTPClient):
         """
 
         if pk is not None:
-            _endpoint = f"{_endpoint}/{pk}/"
+            _endpoint = f"{_endpoint._endpoint}/{pk}/"
 
         try:
-            response = self.http_get(_endpoint, params=filters, timeout=timeout)
+            response = self.http_get(_endpoint.resolve(self.url), params=filters, timeout=timeout)
             response.raise_for_status()
             return response.json()
 

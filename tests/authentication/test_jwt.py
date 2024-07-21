@@ -8,8 +8,8 @@ import jwt
 from keystone_client.authentication import JWT
 
 
-class BaseTests:
-    """Base class containing reusable tests"""
+class BaseParsingTests:
+    """Base class containing reusable tests for token parsing"""
 
     algorithm: str
 
@@ -39,7 +39,7 @@ class BaseTests:
         self.assertEqual(self.refresh_expiration, self.jwt.refresh_expiration)
 
 
-class HS256Parsing(BaseTests, TestCase):
+class HS256Parsing(BaseParsingTests, TestCase):
     """Test JWT token parsing using the HS256 algorithm."""
 
     algorithm = 'HS256'

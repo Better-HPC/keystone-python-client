@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from warnings import warn
 
 import jwt
 import requests
@@ -152,7 +153,11 @@ class AuthenticationManager:
                 timeout=timeout
             )
 
-            response.raise_for_status()
+            try:
+                response.raise_for_status()
+
+            except Exception as error:
+                warn(f"Token blacklist request failed: {error}")
 
         self.jwt = None
 

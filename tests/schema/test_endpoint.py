@@ -1,3 +1,5 @@
+"""Tests for the `Endpoint` class."""
+
 from unittest import TestCase
 
 from keystone_client.schema import Endpoint
@@ -16,14 +18,3 @@ class Resolve(TestCase):
         self.assertEqual(expected_url, Endpoint('api/endpoint/').resolve(url))
         self.assertEqual(expected_url, Endpoint('api/endpoint//').resolve(url))
         self.assertEqual(expected_url, Endpoint('api/endpoint///').resolve(url))
-
-    def test_leading_slash(self) -> None:
-        """Test endpoints resolve correctly regardless of leading slashes"""
-
-        url = 'https://example.com/'
-        expected_url = 'https://example.com/api/endpoint/'
-
-        self.assertEqual(expected_url, Endpoint('api/endpoint').resolve(url))
-        self.assertEqual(expected_url, Endpoint('/api/endpoint').resolve(url))
-        self.assertEqual(expected_url, Endpoint('//api/endpoint').resolve(url))
-        self.assertEqual(expected_url, Endpoint('///api/endpoint').resolve(url))

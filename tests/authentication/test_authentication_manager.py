@@ -60,7 +60,7 @@ class IsAuthenticated(TestCase):
         self.assertTrue(manager.is_authenticated())
 
     def test_expired_jwt(self) -> None:
-        """Test the return value is `False` when the JWT token expired"""
+        """Test the return value is `False` when the JWT token is expired"""
 
         manager = AuthenticationManager(API_HOST)
         manager.jwt = create_token(
@@ -74,7 +74,7 @@ class IsAuthenticated(TestCase):
 class GetAuthHeaders(TestCase):
     """Tests for the `get_auth_headers` method"""
 
-    def test_not_authenticated(self):
+    def test_not_authenticated(self) -> None:
         """Test an error is raised when not authenticated"""
 
         manager = AuthenticationManager(API_HOST)
@@ -82,7 +82,7 @@ class GetAuthHeaders(TestCase):
             manager.get_auth_headers()
 
     def test_headers_match_jwt(self) -> None:
-        """Test the return value is `True` when the JWT token is not expired"""
+        """Test the returned data matches the JWT token"""
 
         manager = AuthenticationManager(API_HOST)
         manager.jwt = create_token(
