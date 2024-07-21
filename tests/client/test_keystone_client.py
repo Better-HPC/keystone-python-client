@@ -4,7 +4,7 @@ import re
 from unittest import TestCase
 
 from keystone_client import KeystoneClient
-from keystone_client.schema import EndpointSchema
+from keystone_client.schema import EndpointSchema, Schema
 from .. import API_HOST
 
 
@@ -37,6 +37,6 @@ class RetrieveMethods(TestCase):
         """Test a method exists for each endpoint in the class schema"""
 
         client = KeystoneClient('http://test.domain.com')
-        for endpoint in EndpointSchema().endpoints:
+        for endpoint in Schema().endpoints.dict():
             method_name = f'retrieve_{endpoint}'
             self.assertTrue(hasattr(client, method_name), f'Method does not exist {method_name}')

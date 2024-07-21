@@ -16,4 +16,4 @@ class EndpointSchema(BaseModel):
 
 class Schema(BaseModel):
     auth: AuthSchema = AuthSchema()
-    endpoint: EndpointSchema = EndpointSchema()
+    endpoints: EndpointSchema = EndpointSchema()

@@ -2,7 +2,7 @@
 
 from unittest import TestCase
 
-from keystone_client import HTTPClient
+from keystone_client.client import HTTPClient
 
 
 class Url(TestCase):

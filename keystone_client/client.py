@@ -212,7 +212,7 @@ class KeystoneClient(HTTPClient):
         """
 
         instance: KeystoneClient = super().__new__(cls)
-        for key, endpoint in cls.schema.dict().items():
+        for key, endpoint in cls.schema.endpoints.dict().items():
 
             # Create a retrieve method
             retrieve_name = f"retrieve_{key}"
