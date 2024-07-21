@@ -8,6 +8,36 @@ import jwt
 import requests
 
 
+class JWT:
+    """JWT authentication tokens"""
+
+    def __init__(self, access: str, refresh: str, algorithm='HS256') -> None:
+        """Initialize a new pair of JWT tokens
+
+        Args:
+            access: The access token
+            refresh: The refresh token
+        """
+
+        self.access = access
+        self.refresh = refresh
+        self.algorithm = algorithm
+
+    @property
+    def access_expiration(self) -> datetime | None:
+        """Return the expiration datetime of the JWT access token"""
+
+        token_data = jwt.decode(self.access, options={"verify_signature": False}, algorithms=self.algorithm)
+        return datetime.fromtimestamp(token_data["exp"])
+
+    @property
+    def refresh_expiration(self) -> datetime | None:
+        """Return the expiration datetime of the JWT refresh token"""
+
+        token_data = jwt.decode(self.refresh, options={"verify_signature": False}, algorithms=self.algorithm)
+        return datetime.fromtimestamp(token_data["exp"])
+
+
 class AuthenticationManager:
     """User authentication and JWT token manager"""
 
@@ -25,45 +55,18 @@ class AuthenticationManager:
         self.auth_url = auth_url
         self.refresh_url = refresh_url
         self.blacklist_url = blacklist_url
+        self.jwt: JWT | None = None
 
-        # Attributes to hold JWT data
-        self._access_token: str | None = None
-        self._refresh_token: str | None = None
-
-    @property
-    def access_token(self) -> str | None:
-        """Return the JWT access token"""
-
-        return self._access_token
-
-    @property
-    def access_expiration(self) -> datetime | None:
-        """Return the expiration datetime of the JWT access token"""
-
-        if self.access_token:
-            return datetime.fromtimestamp(jwt.decode(self.access_token)["exp"])
-
-    @property
-    def refresh_token(self) -> str | None:
-        """Return the JWT refresh token"""
-
-        return self._refresh_token
-
-    @property
-    def refresh_expiration(self) -> datetime | None:
-        """Return the expiration datetime of the JWT refresh token"""
-
-        if self.refresh_token:
-            return datetime.fromtimestamp(jwt.decode(self.refresh_token)["exp"])
-
-    def is_authenticated(self) -> None:
+    def is_authenticated(self) -> bool:
         """Return whether the client instance has been authenticated"""
 
+        if self.jwt is None:
+            return False
+
         now = datetime.now()
-        has_token = self.refresh_token is not None
-        access_token_valid = self.access_expiration is not None and self.access_expiration > now
-        access_token_refreshable = self.refresh_expiration is not None and self.refresh_expiration > now
-        return has_token and (access_token_valid or access_token_refreshable)
+        access_token_valid = self.jwt.access_expiration > now
+        access_token_refreshable = self.jwt.refresh_expiration > now
+        return access_token_valid or access_token_refreshable
 
     def get_auth_headers(self) -> dict[str, str]:
         """Return header data for API requests
@@ -72,12 +75,12 @@ class AuthenticationManager:
             A dictionary with header data
         """
 
-        if not self.access_token:
+        if not self.jwt:
             return dict()
 
         self.refresh()
         return {
-            "Authorization": f"Bearer {self.access_token}",
+            "Authorization": f"Bearer {self.jwt.access}",
             "Content-Type": "application/json"
         }
 
@@ -100,10 +103,8 @@ class AuthenticationManager:
         )
 
         response.raise_for_status()
-
-        json = response.json()
-        self._refresh_token = json.get("refresh")
-        self._access_token = json.get("access")
+        response_data = response.json()
+        self.jwt = JWT(response_data.get("access"), response_data.get("refresh"))
 
     def logout(self, timeout: int = default_timeout) -> None:
         """Log out and blacklist any active JWTs
@@ -113,18 +114,16 @@ class AuthenticationManager:
         """
 
         # Tell the API to blacklist the current token
-        if self._refresh_token is not None:
+        if self.jwt is not None:
             response = requests.post(
                 self.blacklist_url,
-                data={"refresh": self._refresh_token},
+                data={"refresh": self.jwt.refresh},
                 timeout=timeout
             )
 
             response.raise_for_status()
 
-        # Clear invalidated token data
-        self._refresh_token = None
-        self._access_token = None
+        self.jwt = None
 
     def refresh(self, force: bool = False, timeout: int = default_timeout) -> None:
         """Refresh the JWT access token
@@ -139,18 +138,18 @@ class AuthenticationManager:
 
         # Don't refresh the token if it's not necessary
         now = datetime.now()
-        if self.access_expiration > now and not force:
+        if self.jwt.access_expiration > now and not force:
             return
 
         # Alert the user when a refresh is not possible
-        if self.refresh_expiration > now:
+        if self.jwt.refresh_expiration > now:
             raise RuntimeError("Refresh token has expired. Login again to continue.")
 
         response = requests.post(
             self.refresh_url,
-            data={"refresh": self._refresh_token},
+            data={"refresh": self.jwt.refresh},
             timeout=timeout
         )
 
         response.raise_for_status()
-        self._refresh_token = response.json().get("refresh")
+        self.jwt.refresh = response.json().get("refresh")

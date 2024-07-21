@@ -6,7 +6,7 @@ from typing import Literal
 import requests
 
 from keystone_client.authentication import AuthenticationManager
-from keystone_client.schema import Schema
+from keystone_client.schema import EndpointSchema
 
 HTTPMethod = Literal["get", "post", "put", "patch", "delete"]
 
@@ -14,7 +14,7 @@ HTTPMethod = Literal["get", "post", "put", "patch", "delete"]
 class HTTPClient:
     """Low level API client for sending standard HTTP operations"""
 
-    schema = Schema()
+    schema = EndpointSchema()
     default_timeout = 15
 
     def __init__(self, url: str) -> None:
