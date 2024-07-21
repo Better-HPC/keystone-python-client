@@ -7,7 +7,7 @@ from datetime import datetime
 import jwt
 import requests
 
-from keystone_client.schema import AuthSchema
+from keystone_client.schema import Schema
 
 
 class JWT:
@@ -75,7 +75,7 @@ class AuthenticationManager:
 
     default_timeout = 15
 
-    def __init__(self, url: str, schema: AuthSchema = AuthSchema()) -> None:
+    def __init__(self, url: str, schema: Schema = Schema()) -> None:
         """Initialize the class
 
         Args:
@@ -83,9 +83,9 @@ class AuthenticationManager:
             schema: Schema defining API endpoints for fetching/managing JWTs
         """
 
-        self.auth_url = schema.new.resolve(url)
-        self.refresh_url = schema.refresh.resolve(url)
-        self.blacklist_url = schema.blacklist.resolve(url)
+        self.auth_url = schema.auth.new.resolve(url)
+        self.refresh_url = schema.auth.refresh.resolve(url)
+        self.blacklist_url = schema.auth.blacklist.resolve(url)
         self.jwt: JWT | None = None
 
     def is_authenticated(self) -> bool:

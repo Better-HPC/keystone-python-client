@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from unittest import TestCase
 
 import jwt
+from requests.exceptions import HTTPError
 
 from keystone_client.authentication import AuthenticationManager, JWT
 from tests import API_HOST, API_PASSWORD, API_USER
@@ -100,7 +101,7 @@ class LoginLogout(TestCase):
     def test_correct_credentials(self) -> None:
         """Test users are successfully logged in/out when providing correct credentials"""
 
-        manager = AuthenticationManager(API_HOST)  # Todo: Add necessary init args for test server
+        manager = AuthenticationManager(API_HOST)
         self.assertFalse(manager.is_authenticated())
 
         manager.login(API_USER, API_PASSWORD)
@@ -112,4 +113,7 @@ class LoginLogout(TestCase):
     def test_incorrect_credentials(self) -> None:
         """Test an error is raised when authenticating with invalid credentials"""
 
-        self.fail()  # Todo: Implement test
+        manager = AuthenticationManager(API_HOST)
+        with self.assertRaises(HTTPError) as error:
+            manager.login('foo', 'bar')
+            self.assertEqual(401, error.response.status_code)

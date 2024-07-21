@@ -4,7 +4,7 @@ from pydantic import BaseModel, GetCoreSchemaHandler
 from pydantic_core import core_schema, CoreSchema
 
 
-class Endpoint(str):
+class Endpoint:
     """API endpoint"""
 
     def __init__(self, endpoint: str) -> None:
@@ -15,10 +15,9 @@ class Endpoint(str):
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source_type: any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        return core_schema.no_info_after_validator_function(cls, handler(str))
+        """Required by pydantic to facilitate model validation"""
 
-    def __str__(self) -> str:
-        return self._endpoint
+        return core_schema.no_info_after_validator_function(cls, handler(str))
 
 
 class AuthSchema(BaseModel):

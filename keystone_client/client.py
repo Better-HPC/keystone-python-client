@@ -36,7 +36,7 @@ class HTTPClient:
         """
 
         self._url = url.rstrip('/') + '/'
-        self._auth = AuthenticationManager(url, self.schema.auth)
+        self._auth = AuthenticationManager(url, self.schema)
         self._api_version: str | None = None
 
     @property
