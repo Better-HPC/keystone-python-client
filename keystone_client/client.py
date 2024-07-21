@@ -15,6 +15,8 @@ import requests
 from keystone_client.authentication import AuthenticationManager
 from keystone_client.schema import Endpoint, Schema
 
+DEFAULT_TIMEOUT = 15
+
 # Custom types
 ContentType = Literal["json", "text", "content"]
 ResponseContent = Union[dict[str, any], str, bytes]
@@ -26,7 +28,6 @@ class HTTPClient:
     """Low level API client for sending standard HTTP operations"""
 
     schema = Schema()
-    default_timeout = 15
 
     def __init__(self, url: str) -> None:
         """Initialize the class
@@ -45,11 +46,28 @@ class HTTPClient:
 
         return self._url
 
-    def login(self, username: str, password: str) -> None:
-        self._auth.login(username, password)
+    def login(self, username: str, password: str, timeout: int = DEFAULT_TIMEOUT) -> None:
+        """Authenticate a new user session
 
-    def logout(self) -> None:
-        self._auth.logout()
+        Args:
+            username: The authentication username
+            password: The authentication password
+            timeout: Seconds before the request times out
+
+        Raises:
+            requests.HTTPError: If the login request fails
+        """
+
+        self._auth.login(username, password, timeout)
+
+    def logout(self, timeout: int = DEFAULT_TIMEOUT) -> None:
+        """Log out and blacklist any active credentials
+
+        Args:
+            timeout: Seconds before the blacklist request times out
+        """
+
+        self._auth.logout(timeout)
 
     def _send_request(self, method: HTTPMethod, endpoint: str, **kwargs) -> requests.Response:
         """Send an HTTP request
@@ -72,7 +90,7 @@ class HTTPClient:
         self,
         endpoint: str,
         params: dict[str, any] | None = None,
-        timeout: int = default_timeout
+        timeout: int = DEFAULT_TIMEOUT
     ) -> requests.Response:
         """Send a GET request to an API endpoint
 
@@ -100,7 +118,7 @@ class HTTPClient:
         self,
         endpoint: str,
         data: dict[str, any] | None = None,
-        timeout: int = default_timeout
+        timeout: int = DEFAULT_TIMEOUT
     ) -> requests.Response:
         """Send a POST request to an API endpoint
 
@@ -116,13 +134,19 @@ class HTTPClient:
             requests.HTTPError: If the request returns an error code
         """
 
-        return self._send_request("post", endpoint, data=data, headers=self._auth.get_auth_headers(), timeout=timeout)
+        return self._send_request(
+            "post",
+            endpoint,
+            data=data,
+            headers=self._auth.get_auth_headers(),
+            timeout=timeout
+        )
 
     def http_patch(
         self,
         endpoint: str,
         data: dict[str, any] | None = None,
-        timeout: int = default_timeout
+        timeout: int = DEFAULT_TIMEOUT
     ) -> requests.Response:
         """Send a PATCH request to an API endpoint
 
@@ -150,7 +174,7 @@ class HTTPClient:
         self,
         endpoint: str,
         data: dict[str, any] | None = None,
-        timeout: int = default_timeout
+        timeout: int = DEFAULT_TIMEOUT
     ) -> requests.Response:
         """Send a PUT request to an endpoint
 
@@ -166,12 +190,18 @@ class HTTPClient:
             requests.HTTPError: If the request returns an error code
         """
 
-        return self._send_request("put", endpoint, data=data, headers=self._auth.get_auth_headers(), timeout=timeout)
+        return self._send_request(
+            "put",
+            endpoint,
+            data=data,
+            headers=self._auth.get_auth_headers(),
+            timeout=timeout
+        )
 
     def http_delete(
         self,
         endpoint: str,
-        timeout: int = default_timeout
+        timeout: int = DEFAULT_TIMEOUT
     ) -> requests.Response:
         """Send a DELETE request to an endpoint
 
@@ -186,13 +216,16 @@ class HTTPClient:
             requests.HTTPError: If the request returns an error code
         """
 
-        return self._send_request("delete", endpoint, headers=self._auth.get_auth_headers(), timeout=timeout)
+        return self._send_request(
+            "delete",
+            endpoint,
+            headers=self._auth.get_auth_headers(),
+            timeout=timeout
+        )
 
 
 class KeystoneClient(HTTPClient):
     """Client class for submitting requests to the Keystone API"""
-
-    default_timeout = 15
 
     @property
     def api_version(self) -> str:
@@ -228,7 +261,7 @@ class KeystoneClient(HTTPClient):
         _endpoint: Endpoint,
         pk: int | None = None,
         filters: dict | None = None,
-        timeout=default_timeout
+        timeout=DEFAULT_TIMEOUT
     ) -> QueryResult:
         """Retrieve data from the specified endpoint with optional primary key and filters
 

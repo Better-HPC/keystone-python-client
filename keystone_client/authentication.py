@@ -27,54 +27,28 @@ class JWT:
         self.access = access
         self.refresh = refresh
 
-    def _decode_token(self, token: str) -> tuple[str, datetime]:
-        """Decode a JWT token and return the token and its expiration datetime"""
+    def _date_from_token(self, token: str) -> datetime:
+        """Return a token's expiration datetime"""
 
         token_data = jwt.decode(token, options={"verify_signature": False}, algorithms=self.algorithm)
         exp = datetime.fromtimestamp(token_data["exp"])
-        return token, exp
-
-    @property
-    def access(self) -> str:
-        """Return the JWT access token"""
-
-        return self._access_token
-
-    @access.setter
-    def access(self, value: str) -> None:
-        """Set the JWT access token"""
-
-        self._access_token, self._access_exp = self._decode_token(value)
+        return exp
 
     @property
     def access_expiration(self) -> datetime:
         """Return the expiration datetime of the JWT access token"""
 
-        return self._access_exp
-
-    @property
-    def refresh(self) -> str:
-        """Return the JWT refresh token"""
-
-        return self._refresh_token
-
-    @refresh.setter
-    def refresh(self, value: str) -> None:
-        """Set the JWT refresh token"""
-
-        self._refresh_token, self._refresh_exp = self._decode_token(value)
+        return self._date_from_token(self.access)
 
     @property
     def refresh_expiration(self) -> datetime:
         """Return the expiration datetime of the JWT refresh token"""
 
-        return self._refresh_exp
+        return self._date_from_token(self.refresh)
 
 
 class AuthenticationManager:
     """User authentication and JWT token manager"""
-
-    default_timeout = 15
 
     def __init__(self, url: str, schema: Schema = Schema()) -> None:
         """Initialize the class
@@ -100,8 +74,12 @@ class AuthenticationManager:
         access_token_refreshable = self.jwt.refresh_expiration > now
         return access_token_valid or access_token_refreshable
 
-    def get_auth_headers(self) -> dict[str, str]:
+    def get_auth_headers(self, refresh: bool = True, timeout: int = None) -> dict[str, str]:
         """Return header data for API requests
+
+        Args:
+            refresh: Automatically refresh the JWT credentials if necessary
+            timeout: Seconds before the token refresh request times out
 
         Returns:
             A dictionary with header data
@@ -110,13 +88,15 @@ class AuthenticationManager:
         if not self.is_authenticated():
             raise ValueError('User session is not authenticated')
 
-        self.refresh()
+        if refresh:
+            self.refresh(timeout=timeout)
+
         return {
             "Authorization": f"Bearer {self.jwt.access}",
             "Content-Type": "application/json"
         }
 
-    def login(self, username: str, password: str, timeout: int = default_timeout) -> None:
+    def login(self, username: str, password: str, timeout: int = None) -> None:
         """Log in to the Keystone API and cache the returned JWT
 
         Args:
@@ -138,7 +118,7 @@ class AuthenticationManager:
         response_data = response.json()
         self.jwt = JWT(response_data.get("access"), response_data.get("refresh"))
 
-    def logout(self, timeout: int = default_timeout) -> None:
+    def logout(self, timeout: int = None) -> None:
         """Log out and blacklist any active JWTs
 
         Args:
@@ -161,7 +141,7 @@ class AuthenticationManager:
 
         self.jwt = None
 
-    def refresh(self, force: bool = False, timeout: int = default_timeout) -> None:
+    def refresh(self, force: bool = False, timeout: int = None) -> None:
         """Refresh the JWT access token
 
         Args:
