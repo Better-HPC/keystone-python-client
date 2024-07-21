@@ -7,14 +7,13 @@ authentication, data retrieval, and data manipulation.
 
 from __future__ import annotations, annotations
 
-import urllib.parse
 from functools import partial
 from typing import Literal, Union
 
 import requests
 
 from keystone_client.authentication import AuthenticationManager
-from keystone_client.schema import Schema
+from keystone_client.schema import Endpoint, Schema
 
 # Custom types
 ContentType = Literal["json", "text", "content"]
@@ -37,11 +36,7 @@ class HTTPClient:
         """
 
         self._url = url.rstrip('/') + '/'
-        self._auth = AuthenticationManager(
-            self.resolve_endpoint(self.schema.auth.new),
-            self.resolve_endpoint(self.schema.auth.refresh),
-            self.resolve_endpoint(self.schema.auth.blacklist)
-        )
+        self._auth = AuthenticationManager(url, self.schema.auth)
         self._api_version: str | None = None
 
     @property
@@ -49,18 +44,6 @@ class HTTPClient:
         """Return the server URL"""
 
         return self._url
-
-    def resolve_endpoint(self, endpoint: str) -> str:
-        """Resolve a partial endpoint into a fully qualified URL
-
-        Args:
-            endpoint: The API endpoint
-
-        Returns:
-            The fully qualified endpoint URL
-        """
-
-        return urllib.parse.urljoin(self.url, endpoint.strip('/')) + '/'
 
     def _send_request(self, method: HTTPMethod, endpoint: str, **kwargs) -> requests.Response:
         """Send an HTTP request
@@ -74,7 +57,7 @@ class HTTPClient:
             An HTTP response
         """
 
-        url = self.resolve_endpoint(endpoint)
+        url = Endpoint(endpoint).resolve(self.url)
         response = requests.request(method, url, **kwargs)
         response.raise_for_status()
         return response
@@ -212,7 +195,7 @@ class KeystoneClient(HTTPClient):
         """
 
         instance: KeystoneClient = super().__new__(cls)
-        for key, endpoint in cls.schema.endpoints.dict().items():
+        for key, endpoint in cls.schema.data.dict().items():
 
             # Create a retrieve method
             retrieve_name = f"retrieve_{key}"

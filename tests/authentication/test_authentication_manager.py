@@ -6,7 +6,7 @@ from unittest import TestCase
 import jwt
 
 from keystone_client.authentication import AuthenticationManager, JWT
-from tests import API_PASSWORD, API_USER
+from tests import API_HOST, API_PASSWORD, API_USER
 
 
 def create_token(access_expires: datetime, refresh_expires: datetime) -> JWT:
@@ -32,14 +32,14 @@ class IsAuthenticated(TestCase):
     def test_not_authenticated(self) -> None:
         """Test the return value is `false` when the manager has no JWT data"""
 
-        manager = AuthenticationManager('auth', 'refresh', 'blacklist')
+        manager = AuthenticationManager(API_HOST)
         self.assertIsNone(manager.jwt)
         self.assertFalse(manager.is_authenticated())
 
     def test_valid_jwt(self) -> None:
         """Test the return value is `True` when the JWT token is not expired"""
 
-        manager = AuthenticationManager('auth', 'refresh', 'blacklist')
+        manager = AuthenticationManager(API_HOST)
         manager.jwt = create_token(
             access_expires=datetime.now() + timedelta(hours=1),
             refresh_expires=datetime.now() + timedelta(days=1)
@@ -50,7 +50,7 @@ class IsAuthenticated(TestCase):
     def test_refreshable_jwt(self) -> None:
         """Test the return value is `True` when the JWT token expired but refreshable"""
 
-        manager = AuthenticationManager('auth', 'refresh', 'blacklist')
+        manager = AuthenticationManager(API_HOST)
         manager.jwt = create_token(
             access_expires=datetime.now() - timedelta(hours=1),
             refresh_expires=datetime.now() + timedelta(days=1)
@@ -61,7 +61,7 @@ class IsAuthenticated(TestCase):
     def test_expired_jwt(self) -> None:
         """Test the return value is `False` when the JWT token expired"""
 
-        manager = AuthenticationManager('auth', 'refresh', 'blacklist')
+        manager = AuthenticationManager(API_HOST)
         manager.jwt = create_token(
             access_expires=datetime.now() - timedelta(days=1),
             refresh_expires=datetime.now() - timedelta(hours=1)
@@ -76,14 +76,14 @@ class GetAuthHeaders(TestCase):
     def test_not_authenticated(self):
         """Test an error is raised when not authenticated"""
 
-        manager = AuthenticationManager('auth', 'refresh', 'blacklist')
+        manager = AuthenticationManager(API_HOST)
         with self.assertRaisesRegex(ValueError, 'User session is not authenticated'):
             manager.get_auth_headers()
 
     def test_headers_match_jwt(self) -> None:
         """Test the return value is `True` when the JWT token is not expired"""
 
-        manager = AuthenticationManager('auth', 'refresh', 'blacklist')
+        manager = AuthenticationManager(API_HOST)
         manager.jwt = create_token(
             access_expires=datetime.now() + timedelta(hours=1),
             refresh_expires=datetime.now() + timedelta(days=1)
@@ -100,7 +100,7 @@ class LoginLogout(TestCase):
     def test_correct_credentials(self) -> None:
         """Test users are successfully logged in/out when providing correct credentials"""
 
-        manager = AuthenticationManager()  # Todo: Add necessary init args for test server
+        manager = AuthenticationManager(API_HOST)  # Todo: Add necessary init args for test server
         self.assertFalse(manager.is_authenticated())
 
         manager.login(API_USER, API_PASSWORD)

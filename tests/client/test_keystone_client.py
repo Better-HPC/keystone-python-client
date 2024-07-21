@@ -37,6 +37,6 @@ class RetrieveMethods(TestCase):
         """Test a method exists for each endpoint in the class schema"""
 
         client = KeystoneClient('http://test.domain.com')
-        for endpoint in Schema().endpoints.dict():
+        for endpoint in Schema().data.dict():
             method_name = f'retrieve_{endpoint}'
             self.assertTrue(hasattr(client, method_name), f'Method does not exist {method_name}')
