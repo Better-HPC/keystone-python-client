@@ -75,8 +75,8 @@ class AuthenticationManager:
             A dictionary with header data
         """
 
-        if not self.jwt:
-            return dict()
+        if not self.is_authenticated():
+            raise ValueError('User session is not authenticated')
 
         self.refresh()
         return {
