@@ -1,42 +1,39 @@
 """Tests for the `JWT` class."""
 
-import unittest
 from datetime import datetime, timedelta
+from unittest import TestCase
 
 import jwt
 
 from keystone_client.authentication import JWT
 
 
-class TokenParsing(unittest.TestCase):
-    """Test JWT token parsing"""
+class BaseTests:
+    """Base class containing reusable tests"""
 
-    def setUp(self) -> None:
-        """Create a JWT token for testing"""
+    algorithm: str
 
-        self.access_expiration = datetime.now() + timedelta(hours=1)
-        self.access_token = jwt.encode({'exp': self.access_expiration.timestamp()}, 'secret', algorithm='HS256')
+    def test_parsing(self) -> None:
+        """Test the parsing of JWT data"""
 
-        self.refresh_expiration = datetime.now() + timedelta(days=1)
-        self.refresh_token = jwt.encode({'exp': self.refresh_expiration.timestamp()}, 'secret', algorithm='HS256')
-        self.jwt = JWT(self.access_token, self.refresh_token)
+        # Build a JWT
+        access_expiration = datetime.now() + timedelta(hours=1)
+        access_token = jwt.encode({'exp': access_expiration.timestamp()}, 'secret', algorithm=self.algorithm)
 
-    def test_access_token(self) -> None:
-        """Test the access token is returned"""
+        refresh_expiration = datetime.now() + timedelta(days=1)
+        refresh_token = jwt.encode({'exp': refresh_expiration.timestamp()}, 'secret', algorithm=self.algorithm)
 
-        self.assertEqual(self.jwt.access, self.access_token)
+        token = JWT(access_token, refresh_token, self.algorithm)
 
-    def test_access_expiration(self) -> None:
-        """Test the access token expiration date is returned"""
+        # Check parsed values against original inputs
+        self.assertEqual(access_token, token.access)
+        self.assertEqual(access_expiration, token.access_expiration)
 
-        self.assertEqual(self.access_expiration, self.jwt.access_expiration)
+        self.assertEqual(refresh_token, token.refresh)
+        self.assertEqual(refresh_expiration, token.refresh_expiration)
 
-    def test_refresh_token(self) -> None:
-        """Test the refresh token is returned"""
 
-        self.assertEqual(self.jwt.refresh, self.refresh_token)
+class HS256Parsing(BaseTests, TestCase):
+    """Test JWT token parsing using the HS256 algorithm."""
 
-    def test_refresh_expiration(self) -> None:
-        """Test the refresh token expiration date is returned"""
-
-        self.assertEqual(self.refresh_expiration, self.jwt.refresh_expiration)
+    algorithm = 'HS256'

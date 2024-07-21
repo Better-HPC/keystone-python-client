@@ -21,9 +21,9 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.9"
-requests = "^2.32.3"
-pyjwt = "^2.8.0"
 pydantic = "^2.8.2"
+pyjwt = "^2.8.0"
+requests = "^2.32.3"
 
 [tool.poetry.group.tests]
 optional = true

@@ -24,14 +24,14 @@ class JWT:
         self.algorithm = algorithm
 
     @property
-    def access_expiration(self) -> datetime | None:
+    def access_expiration(self) -> datetime:
         """Return the expiration datetime of the JWT access token"""
 
         token_data = jwt.decode(self.access, options={"verify_signature": False}, algorithms=self.algorithm)
         return datetime.fromtimestamp(token_data["exp"])
 
     @property
-    def refresh_expiration(self) -> datetime | None:
+    def refresh_expiration(self) -> datetime:
         """Return the expiration datetime of the JWT refresh token"""
 
         token_data = jwt.decode(self.refresh, options={"verify_signature": False}, algorithms=self.algorithm)
