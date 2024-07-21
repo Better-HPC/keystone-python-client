@@ -17,25 +17,55 @@ class JWT:
         Args:
             access: The access token
             refresh: The refresh token
+            algorithm: The algorithm used for encoding the JWT
         """
 
-        self.access = access
-        self.refresh = refresh
         self.algorithm = algorithm
+        self._access_token, self._access_exp = self._decode_token(access)
+        self._refresh_token, self._refresh_exp = self._decode_token(refresh)
+
+    def _decode_token(self, token: str) -> tuple[str, datetime]:
+        """Decode a JWT token and return the token and its expiration datetime"""
+
+        token_data = jwt.decode(token, options={"verify_signature": False}, algorithms=self.algorithm)
+        exp = datetime.fromtimestamp(token_data["exp"])
+        return token, exp
+
+    @property
+    def access(self) -> str:
+        """Return the JWT access token"""
+
+        return self._access_token
+
+    @access.setter
+    def access(self, value: str) -> None:
+        """Set the JWT access token"""
+
+        self._access_token, self._access_exp = self._decode_token(value)
 
     @property
     def access_expiration(self) -> datetime:
         """Return the expiration datetime of the JWT access token"""
 
-        token_data = jwt.decode(self.access, options={"verify_signature": False}, algorithms=self.algorithm)
-        return datetime.fromtimestamp(token_data["exp"])
+        return self._access_exp
+
+    @property
+    def refresh(self) -> str:
+        """Return the JWT refresh token"""
+
+        return self._refresh_token
+
+    @refresh.setter
+    def refresh(self, value: str) -> None:
+        """Set the JWT refresh token"""
+
+        self._refresh_token, self._refresh_exp = self._decode_token(value)
 
     @property
     def refresh_expiration(self) -> datetime:
         """Return the expiration datetime of the JWT refresh token"""
 
-        token_data = jwt.decode(self.refresh, options={"verify_signature": False}, algorithms=self.algorithm)
-        return datetime.fromtimestamp(token_data["exp"])
+        return self._refresh_exp
 
 
 class AuthenticationManager:
