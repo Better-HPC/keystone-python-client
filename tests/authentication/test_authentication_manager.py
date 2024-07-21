@@ -6,6 +6,7 @@ from unittest import TestCase
 import jwt
 
 from keystone_client.authentication import AuthenticationManager, JWT
+from tests import API_PASSWORD, API_USER
 
 
 def create_token(access_expires: datetime, refresh_expires: datetime) -> JWT:
@@ -91,3 +92,24 @@ class GetAuthHeaders(TestCase):
         headers = manager.get_auth_headers()
         self.assertEqual("application/json", headers["Content-Type"])
         self.assertEqual(f"Bearer {manager.jwt.access}", headers["Authorization"])
+
+
+class LoginLogout(TestCase):
+    """Test the logging in/out of users"""
+
+    def test_correct_credentials(self) -> None:
+        """Test users are successfully logged in/out when providing correct credentials"""
+
+        manager = AuthenticationManager()  # Todo: Add necessary init args for test server
+        self.assertFalse(manager.is_authenticated())
+
+        manager.login(API_USER, API_PASSWORD)
+        self.assertTrue(manager.is_authenticated())
+
+        manager.logout()
+        self.assertFalse(manager.is_authenticated())
+
+    def test_incorrect_credentials(self) -> None:
+        """Test an error is raised when authenticating with invalid credentials"""
+
+        self.fail()  # Todo: Implement test

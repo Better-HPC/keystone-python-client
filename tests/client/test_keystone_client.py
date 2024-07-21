@@ -4,8 +4,8 @@ import re
 from unittest import TestCase
 
 from keystone_client import KeystoneClient
-from keystone_client.schema import EndpointSchema, Schema
-from .. import API_HOST
+from keystone_client.schema import Schema
+from tests import API_HOST
 
 
 class APIVersion(TestCase):
