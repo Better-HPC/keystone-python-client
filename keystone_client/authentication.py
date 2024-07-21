@@ -21,8 +21,8 @@ class JWT:
         """
 
         self.algorithm = algorithm
-        self._access_token, self._access_exp = self._decode_token(access)
-        self._refresh_token, self._refresh_exp = self._decode_token(refresh)
+        self.access = access
+        self.refresh = refresh
 
     def _decode_token(self, token: str) -> tuple[str, datetime]:
         """Decode a JWT token and return the token and its expiration datetime"""
