@@ -12,3 +12,8 @@ class EndpointSchema(BaseModel):
     requests: str = "allocations/requests/"
     research_groups: str = "users/researchgroups/"
     users: str = "users/users/"
+
+
+class Schema(BaseModel):
+    auth: AuthSchema = AuthSchema()
+    endpoint: EndpointSchema = EndpointSchema()

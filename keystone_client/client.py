@@ -14,7 +14,7 @@ from typing import Literal, Union
 import requests
 
 from keystone_client.authentication import AuthenticationManager
-from keystone_client.schema import EndpointSchema
+from keystone_client.schema import Schema
 
 # Custom types
 ContentType = Literal["json", "text", "content"]
@@ -26,7 +26,7 @@ HTTPMethod = Literal["get", "post", "put", "patch", "delete"]
 class HTTPClient:
     """Low level API client for sending standard HTTP operations"""
 
-    schema = EndpointSchema()
+    schema = Schema()
     default_timeout = 15
 
     def __init__(self, url: str) -> None:
@@ -74,7 +74,7 @@ class HTTPClient:
             An HTTP response
         """
 
-        url = self._resolve_endpoint(endpoint)
+        url = self.resolve_endpoint(endpoint)
         response = requests.request(method, url, **kwargs)
         response.raise_for_status()
         return response
@@ -212,7 +212,7 @@ class KeystoneClient(HTTPClient):
         """
 
         instance: KeystoneClient = super().__new__(cls)
-        for key, endpoint in zip(cls.schema._fields, cls.schema):
+        for key, endpoint in cls.schema.dict().items():
 
             # Create a retrieve method
             retrieve_name = f"retrieve_{key}"
