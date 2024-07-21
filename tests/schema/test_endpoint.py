@@ -1,26 +1,29 @@
 from unittest import TestCase
 
+from keystone_client.schema import Endpoint
 
-class ResolveEndpoint(TestCase):
-    """Tests for the `resolve_endpoint` method"""
+
+class Resolve(TestCase):
+    """Tests for the `resolve` method"""
 
     def test_trailing_slash(self) -> None:
-        """Test rendered endpoints are always resolved with a single trailing slash"""
+        """Test endpoints are always resolved with a single trailing slash"""
 
-        client = HTTPClient(url='https://example.com')
+        url = 'https://example.com/'
         expected_url = 'https://example.com/api/endpoint/'
 
-        self.assertEqual(expected_url, client.resolve_endpoint('api/endpoint'))
-        self.assertEqual(expected_url, client.resolve_endpoint('api/endpoint/'))
-        self.assertEqual(expected_url, client.resolve_endpoint('api/endpoint//'))
-        self.assertEqual(expected_url, client.resolve_endpoint('api/endpoint//'))
+        self.assertEqual(expected_url, Endpoint('api/endpoint').resolve(url))
+        self.assertEqual(expected_url, Endpoint('api/endpoint/').resolve(url))
+        self.assertEqual(expected_url, Endpoint('api/endpoint//').resolve(url))
+        self.assertEqual(expected_url, Endpoint('api/endpoint///').resolve(url))
 
     def test_leading_slash(self) -> None:
-        """Test rendered endpoints resolved correctly regardless of leading slashes"""
+        """Test endpoints resolve correctly regardless of leading slashes"""
 
-        client = HTTPClient(url='https://example.com')
+        url = 'https://example.com/'
         expected_url = 'https://example.com/api/endpoint/'
-        self.assertEqual(expected_url, client.resolve_endpoint('api/endpoint/'))
-        self.assertEqual(expected_url, client.resolve_endpoint('/api/endpoint/'))
-        self.assertEqual(expected_url, client.resolve_endpoint('//api/endpoint/'))
-        self.assertEqual(expected_url, client.resolve_endpoint('///api/endpoint/'))
+
+        self.assertEqual(expected_url, Endpoint('api/endpoint').resolve(url))
+        self.assertEqual(expected_url, Endpoint('/api/endpoint').resolve(url))
+        self.assertEqual(expected_url, Endpoint('//api/endpoint').resolve(url))
+        self.assertEqual(expected_url, Endpoint('///api/endpoint').resolve(url))
