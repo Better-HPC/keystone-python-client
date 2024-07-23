@@ -9,11 +9,12 @@ from __future__ import annotations
 
 from functools import partial
 from typing import Literal, Union
+from urllib.parse import urljoin
 
 import requests
 
 from keystone_client.authentication import AuthenticationManager
-from keystone_client.schema import Endpoint, Schema
+from keystone_client.schema import Schema
 
 DEFAULT_TIMEOUT = 15
 
@@ -81,7 +82,7 @@ class HTTPClient:
             An HTTP response
         """
 
-        url = Endpoint(endpoint).resolve(self.url)
+        url = urljoin(self.url, endpoint)
         response = requests.request(method, url, **kwargs)
         response.raise_for_status()
         return response
@@ -258,7 +259,7 @@ class KeystoneClient(HTTPClient):
 
     def _retrieve_records(
         self,
-        _endpoint: Endpoint,
+        _endpoint: str,
         pk: int | None = None,
         filters: dict | None = None,
         timeout=DEFAULT_TIMEOUT
@@ -279,10 +280,10 @@ class KeystoneClient(HTTPClient):
         """
 
         if pk is not None:
-            _endpoint = f"{_endpoint._endpoint}/{pk}/"
+            _endpoint = urljoin(_endpoint, str(pk))
 
         try:
-            response = self.http_get(_endpoint.resolve(self.url), params=filters, timeout=timeout)
+            response = self.http_get(urljoin(self.url, _endpoint), params=filters, timeout=timeout)
             response.raise_for_status()
             return response.json()
 

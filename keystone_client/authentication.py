@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from urllib.parse import urljoin
 from warnings import warn
 
 import jwt
@@ -58,9 +59,9 @@ class AuthenticationManager:
             schema: Schema defining API endpoints for fetching/managing JWTs
         """
 
-        self.auth_url = schema.auth.new.resolve(url)
-        self.refresh_url = schema.auth.refresh.resolve(url)
-        self.blacklist_url = schema.auth.blacklist.resolve(url)
+        self.auth_url = urljoin(url, schema.auth.new)
+        self.refresh_url = urljoin(url, schema.auth.refresh)
+        self.blacklist_url = urljoin(url, schema.auth.blacklist)
         self.jwt: JWT | None = None
 
     def is_authenticated(self) -> bool:
@@ -93,7 +94,7 @@ class AuthenticationManager:
         if not self.is_authenticated():
             return dict()
 
-        return {"Authorization" : f"Bearer {self.jwt.access}"}
+        return {"Authorization": f"Bearer {self.jwt.access}"}
 
     def login(self, username: str, password: str, timeout: int = None) -> None:
         """Log in to the Keystone API and cache the returned credentials
