@@ -5,7 +5,7 @@ Keystone API. It streamlines communication with the API, providing methods for
 authentication, data retrieval, and data manipulation.
 """
 
-from __future__ import annotations, annotations
+from __future__ import annotations
 
 from functools import partial
 from typing import Literal, Union

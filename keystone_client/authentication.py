@@ -143,14 +143,15 @@ class AuthenticationManager:
     def refresh(self, force: bool = False, timeout: int = None) -> None:
         """Refresh the current session credetials if necessary
 
-        This method will do nothing and exit silently if the current session is not authenticated.
+        This method will do nothing and exit silently if the current session
+        has not been authenticated.
 
         Args:
             timeout: Seconds before the request times out
             force: Refresh the access token even if it has not expired yet
         """
 
-        if not self.is_authenticated():
+        if self.jwt is None:
             return
 
         # Don't refresh the token if it's not necessary
