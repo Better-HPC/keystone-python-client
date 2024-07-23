@@ -154,7 +154,7 @@ class KeystoneClient:
         self._refresh_tokens(force=False, timeout=timeout)
 
         url = urllib.parse.urljoin(self.url, endpoint)
-        response = requests.request(method, url, **kwargs)
+        response = requests.request(method, url, headers=self._get_headers(), **kwargs)
         response.raise_for_status()
         return response
 
