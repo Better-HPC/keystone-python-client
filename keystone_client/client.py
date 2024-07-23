@@ -315,13 +315,13 @@ class KeystoneClient:
         response.raise_for_status()
 
         # Parse data from the refresh token
-        refresh_payload = jwt.decode(self._refresh_token)
         self._refresh_token = response.json().get("refresh")
+        refresh_payload = jwt.decode(self._refresh_token, options={"verify_signature": False}, algorithms='HS256')
         self._refresh_expiration = datetime.fromtimestamp(refresh_payload["exp"])
 
         # Parse data from the access token
-        access_payload = jwt.decode(self._access_token)
         self._access_token = response.json().get("access")
+        access_payload = jwt.decode(self._access_token, options={"verify_signature": False}, algorithms='HS256')
         self._access_expiration = datetime.fromtimestamp(access_payload["exp"])
 
     def logout(self, timeout: int = default_timeout) -> None:
@@ -376,6 +376,7 @@ class KeystoneClient:
         )
 
         response.raise_for_status()
-        refresh_payload = jwt.decode(self._refresh_token)
         self._refresh_token = response.json().get("refresh")
+        refresh_payload = jwt.decode(self._refresh_token, options={"verify_signature": False}, algorithms='HS256')
         self._refresh_expiration = datetime.fromtimestamp(refresh_payload["exp"])
+
