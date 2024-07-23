@@ -64,7 +64,7 @@ class AuthenticationManager:
         self.jwt: JWT | None = None
 
     def is_authenticated(self) -> bool:
-        """Return whether the client instance has been authenticated"""
+        """Return whether the client instance has active credentials"""
 
         if self.jwt is None:
             return False
@@ -75,29 +75,28 @@ class AuthenticationManager:
         return access_token_valid or access_token_refreshable
 
     def get_auth_headers(self, refresh: bool = True, timeout: int = None) -> dict[str, str]:
-        """Return header data for API requests
+        """Return headers data for authenticating API requests
+
+        The returned dictionary is empty when not authenticated.
 
         Args:
             refresh: Automatically refresh the JWT credentials if necessary
             timeout: Seconds before the token refresh request times out
 
         Returns:
-            A dictionary with header data
+            A dictionary with header ata for JWT authentication
         """
-
-        if not self.is_authenticated():
-            raise ValueError('User session is not authenticated')
 
         if refresh:
             self.refresh(timeout=timeout)
 
-        return {
-            "Authorization": f"Bearer {self.jwt.access}",
-            "Content-Type": "application/json"
-        }
+        if not self.is_authenticated():
+            return dict()
+
+        return {"Authorization" : f"Bearer {self.jwt.access}"}
 
     def login(self, username: str, password: str, timeout: int = None) -> None:
-        """Log in to the Keystone API and cache the returned JWT
+        """Log in to the Keystone API and cache the returned credentials
 
         Args:
             username: The authentication username
@@ -119,7 +118,7 @@ class AuthenticationManager:
         self.jwt = JWT(response_data.get("access"), response_data.get("refresh"))
 
     def logout(self, timeout: int = None) -> None:
-        """Log out and blacklist any active JWTs
+        """Log out of the current session and blacklist any current credentials
 
         Args:
             timeout: Seconds before the request times out
@@ -142,14 +141,16 @@ class AuthenticationManager:
         self.jwt = None
 
     def refresh(self, force: bool = False, timeout: int = None) -> None:
-        """Refresh the JWT access token
+        """Refresh the current session credetials if necessary
+
+        This method will do nothing and exit silently if the current session is not authenticated.
 
         Args:
             timeout: Seconds before the request times out
             force: Refresh the access token even if it has not expired yet
         """
 
-        if not self.is_authenticated:
+        if not self.is_authenticated():
             return
 
         # Don't refresh the token if it's not necessary

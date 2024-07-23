@@ -75,11 +75,11 @@ class GetAuthHeaders(TestCase):
     """Tests for the `get_auth_headers` method"""
 
     def test_not_authenticated(self) -> None:
-        """Test an error is raised when not authenticated"""
+        """Test the returned headers are empty when not authenticated"""
 
         manager = AuthenticationManager(API_HOST)
-        with self.assertRaisesRegex(ValueError, 'User session is not authenticated'):
-            manager.get_auth_headers()
+        headers = manager.get_auth_headers()
+        self.assertEqual(dict(), headers)
 
     def test_headers_match_jwt(self) -> None:
         """Test the returned data matches the JWT token"""
@@ -91,7 +91,6 @@ class GetAuthHeaders(TestCase):
         )
 
         headers = manager.get_auth_headers()
-        self.assertEqual("application/json", headers["Content-Type"])
         self.assertEqual(f"Bearer {manager.jwt.access}", headers["Authorization"])
 
 
