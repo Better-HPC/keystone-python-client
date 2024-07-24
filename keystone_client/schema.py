@@ -26,24 +26,24 @@ class Endpoint(str):
 class AuthSchema:
     """Schema defining API endpoints used for JWT authentication"""
 
-    new = Endpoint("authentication/new")
-    refresh = Endpoint("authentication/refresh")
-    blacklist = Endpoint("authentication/blacklist")
+    new: Endpoint = Endpoint("authentication/new")
+    refresh: Endpoint = Endpoint("authentication/refresh")
+    blacklist: Endpoint = Endpoint("authentication/blacklist")
 
 
 @dataclass
 class DataSchema:
     """Schema defining API endpoints for data access"""
 
-    allocations = Endpoint("allocations/allocations")
-    requests = Endpoint("allocations/requests")
-    research_groups = Endpoint("users/researchgroups")
-    users = Endpoint("users/users")
+    allocations: Endpoint = Endpoint("allocations/allocations")
+    requests: Endpoint = Endpoint("allocations/requests")
+    research_groups: Endpoint = Endpoint("users/researchgroups")
+    users: Endpoint = Endpoint("users/users")
 
 
 @dataclass
 class Schema:
     """Schema defining the complete set of API endpoints"""
 
-    auth = AuthSchema()
-    data = DataSchema()
+    auth: AuthSchema = AuthSchema()
+    data: DataSchema = DataSchema()

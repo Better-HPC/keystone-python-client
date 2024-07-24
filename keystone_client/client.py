@@ -8,14 +8,14 @@ authentication, data retrieval, and data manipulation.
 from __future__ import annotations
 
 from dataclasses import asdict
-from functools import partial
+from functools import cached_property, partial
 from typing import Literal, Union
 from urllib.parse import urljoin
 
 import requests
 
 from keystone_client.authentication import AuthenticationManager
-from keystone_client.schema import Schema
+from keystone_client.schema import Endpoint, Schema
 
 DEFAULT_TIMEOUT = 15
 
@@ -233,26 +233,13 @@ class HTTPClient:
 class KeystoneClient(HTTPClient):
     """Client class for submitting requests to the Keystone API"""
 
-    def __init__(self, url: str) -> None:
-        """Initialize the class
-
-        Args:
-            url: The base URL for a running Keystone API server
-        """
-
-        super().__init__(url)
-        self._api_version: str | None = None
-
-    @property
+    @cached_property
     def api_version(self) -> str:
         """Return the version number of the API server"""
 
-        if self._api_version is None:
-            response = self.http_get("version")
-            response.raise_for_status()
-            self._api_version = response.text
-
-        return self._api_version
+        response = self.http_get("version")
+        response.raise_for_status()
+        return response.text
 
     def __new__(cls, *args, **kwargs) -> KeystoneClient:
         """Dynamically create CRUD methods for each endpoint in the API schema
@@ -267,14 +254,14 @@ class KeystoneClient(HTTPClient):
             # Create a retrieve method
             retrieve_name = f"retrieve_{key}"
             if not hasattr(instance, retrieve_name):
-                retrieve_method = partial(instance._retrieve_records, _endpoint=endpoint)
+                retrieve_method = partial(instance._retrieve_records, endpoint)
                 setattr(instance, f"retrieve_{key}", retrieve_method)
 
         return instance
 
     def _retrieve_records(
         self,
-        _endpoint: str,
+        _endpoint: Endpoint,
         pk: int | None = None,
         filters: dict | None = None,
         timeout=DEFAULT_TIMEOUT
@@ -294,11 +281,12 @@ class KeystoneClient(HTTPClient):
             The response from the API in JSON format
         """
 
+        url = _endpoint.join_url(self.url)
         if pk is not None:
-            _endpoint = urljoin(_endpoint, str(pk))
+            url = urljoin(url, str(pk))
 
         try:
-            response = self.http_get(urljoin(self.url, _endpoint), params=filters, timeout=timeout)
+            response = self.http_get(url, params=filters, timeout=timeout)
             response.raise_for_status()
             return response.json()
 
