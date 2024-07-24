@@ -7,7 +7,6 @@ authentication, data retrieval, and data manipulation.
 
 from __future__ import annotations
 
-from dataclasses import asdict
 from functools import cached_property, partial
 from typing import Literal, Union
 from urllib.parse import urljoin
@@ -242,22 +241,16 @@ class KeystoneClient(HTTPClient):
         return response.text
 
     def __new__(cls, *args, **kwargs) -> KeystoneClient:
-        """Dynamically create CRUD methods for each endpoint in the API schema
+        """Dynamically create CRUD methods for each data endpoint in the API schema"""
 
-        Dynamic method are only generated of they do not already implemented
-        in the class definition.
-        """
+        new: KeystoneClient = super().__new__(cls)
 
-        instance: KeystoneClient = super().__new__(cls)
-        for key, endpoint in asdict(cls.schema.data).items():
+        new.retrieve_allocations = partial(new._retrieve_records, cls.schema.data.allocations)
+        new.retrieve_requests = partial(new._retrieve_records, cls.schema.data.requests)
+        new.retrieve_research_groups = partial(new._retrieve_records, cls.schema.data.research_groups)
+        new.retrieve_users = partial(new._retrieve_records, cls.schema.data.users)
 
-            # Create a retrieve method
-            retrieve_name = f"retrieve_{key}"
-            if not hasattr(instance, retrieve_name):
-                retrieve_method = partial(instance._retrieve_records, endpoint)
-                setattr(instance, f"retrieve_{key}", retrieve_method)
-
-        return instance
+        return new
 
     def _retrieve_records(
         self,
