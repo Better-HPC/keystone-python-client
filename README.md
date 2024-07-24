@@ -2,7 +2,7 @@
 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/e627ebe242104565bd932665703357ca)](https://app.codacy.com/gh/pitt-crc/keystone-python-client/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
-A light-weight Python client for wrapping the Keystone API. 
+Official Python client for ineracting with the Keystone API. 
 
 ## Resources
 
