@@ -7,6 +7,7 @@ authentication, data retrieval, and data manipulation.
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from functools import partial
 from typing import Literal, Union
 from urllib.parse import urljoin
@@ -39,7 +40,6 @@ class HTTPClient:
 
         self._url = url.rstrip('/') + '/'
         self._auth = AuthenticationManager(url, self.schema)
-        self._api_version: str | None = None
 
     @property
     def url(self) -> str:
@@ -59,7 +59,7 @@ class HTTPClient:
             requests.HTTPError: If the login request fails
         """
 
-        self._auth.login(username, password, timeout)
+        self._auth.login(username, password, timeout)  # pragma: nocover
 
     def logout(self, timeout: int = DEFAULT_TIMEOUT) -> None:
         """Log out and blacklist any active credentials
@@ -68,7 +68,12 @@ class HTTPClient:
             timeout: Seconds before the blacklist request times out
         """
 
-        self._auth.logout(timeout)
+        self._auth.logout(timeout)  # pragma: nocover
+
+    def is_authenticated(self) -> bool:
+        """Return whether the client instance has active credentials"""
+
+        return self._auth.is_authenticated()  # pragma: nocover
 
     def _send_request(self, method: HTTPMethod, endpoint: str, **kwargs) -> requests.Response:
         """Send an HTTP request
@@ -228,6 +233,16 @@ class HTTPClient:
 class KeystoneClient(HTTPClient):
     """Client class for submitting requests to the Keystone API"""
 
+    def __init__(self, url: str) -> None:
+        """Initialize the class
+
+        Args:
+            url: The base URL for a running Keystone API server
+        """
+
+        super().__init__(url)
+        self._api_version: str | None = None
+
     @property
     def api_version(self) -> str:
         """Return the version number of the API server"""
@@ -247,7 +262,7 @@ class KeystoneClient(HTTPClient):
         """
 
         instance: KeystoneClient = super().__new__(cls)
-        for key, endpoint in cls.schema.data.dict().items():
+        for key, endpoint in asdict(cls.schema.data).items():
 
             # Create a retrieve method
             retrieve_name = f"retrieve_{key}"

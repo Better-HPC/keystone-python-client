@@ -1,6 +1,7 @@
 """Tests for CRUD operations."""
 
 import re
+from dataclasses import asdict
 from unittest import TestCase
 
 from keystone_client import KeystoneClient
@@ -37,6 +38,6 @@ class RetrieveMethods(TestCase):
         """Test a method exists for each endpoint in the class schema"""
 
         client = KeystoneClient('http://test.domain.com')
-        for endpoint in Schema().data.dict():
+        for endpoint in asdict(Schema().data):
             method_name = f'retrieve_{endpoint}'
             self.assertTrue(hasattr(client, method_name), f'Method does not exist {method_name}')
