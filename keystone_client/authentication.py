@@ -59,9 +59,9 @@ class AuthenticationManager:
         """
 
         self.jwt: JWT | None = None
-        self.auth_url = schema.join(url, schema.auth.new)
-        self.refresh_url = schema.join(url, schema.auth.refresh)
-        self.blacklist_url = schema.join(url, schema.auth.blacklist)
+        self.auth_url = schema.auth.new.join_url(url)
+        self.refresh_url = schema.auth.refresh.join_url(url)
+        self.blacklist_url = schema.auth.blacklist.join_url(url)
 
     def is_authenticated(self) -> bool:
         """Return whether the client instance has active credentials"""
