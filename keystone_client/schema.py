@@ -1,6 +1,6 @@
 """Schema objects used to define available API endpoints."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from urllib.parse import urljoin
 
 
@@ -45,5 +45,5 @@ class DataSchema:
 class Schema:
     """Schema defining the complete set of API endpoints"""
 
-    auth: AuthSchema = AuthSchema()
-    data: DataSchema = DataSchema()
+    auth: AuthSchema = field(default_factory=AuthSchema)
+    data: DataSchema = field(default_factory=DataSchema)
