@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from urllib.parse import urljoin
 from warnings import warn
 
 import jwt
@@ -59,10 +58,10 @@ class AuthenticationManager:
             schema: Schema defining API endpoints for fetching/managing JWTs
         """
 
-        self.auth_url = urljoin(url, schema.auth.new)
-        self.refresh_url = urljoin(url, schema.auth.refresh)
-        self.blacklist_url = urljoin(url, schema.auth.blacklist)
         self.jwt: JWT | None = None
+        self.auth_url = schema.join(url, schema.auth.new)
+        self.refresh_url = schema.join(url, schema.auth.refresh)
+        self.blacklist_url = schema.join(url, schema.auth.blacklist)
 
     def is_authenticated(self) -> bool:
         """Return whether the client instance has active credentials"""
