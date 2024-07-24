@@ -1,8 +1,8 @@
-"""Tests for the handling to the base API url."""
+"""Tests for the `HTTPClient` class."""
 
 from unittest import TestCase
 
-from keystone_client import KeystoneClient
+from keystone_client.client import HTTPClient
 
 
 class TestUrl(TestCase):
@@ -15,6 +15,6 @@ class TestUrl(TestCase):
         expected_url = base_url + '/'
 
         # Test for various numbers of trailing slashes provided at init
-        self.assertEqual(expected_url, KeystoneClient(base_url).url)
-        self.assertEqual(expected_url, KeystoneClient(base_url + '/').url)
-        self.assertEqual(expected_url, KeystoneClient(base_url + '////').url)
+        self.assertEqual(expected_url, HTTPClient(base_url).url)
+        self.assertEqual(expected_url, HTTPClient(base_url + '/').url)
+        self.assertEqual(expected_url, HTTPClient(base_url + '////').url)
