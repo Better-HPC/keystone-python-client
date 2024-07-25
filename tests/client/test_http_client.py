@@ -5,7 +5,7 @@ from unittest import TestCase
 from keystone_client.client import HTTPClient
 
 
-class TestUrl(TestCase):
+class Url(TestCase):
     """Tests for the `url` property"""
 
     def test_trailing_slash_removed(self):
