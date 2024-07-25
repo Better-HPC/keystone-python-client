@@ -7,7 +7,7 @@ authentication, data retrieval, and data manipulation.
 
 from __future__ import annotations
 
-from functools import cached_property, partial
+from functools import cached_property
 from typing import Literal, Union
 from urllib.parse import urljoin
 
@@ -245,46 +245,49 @@ class KeystoneClient(HTTPClient):
 
         new: KeystoneClient = super().__new__(cls)
 
-        new.retrieve_allocations = partial(new._retrieve_records, cls.schema.data.allocations)
-        new.retrieve_requests = partial(new._retrieve_records, cls.schema.data.requests)
-        new.retrieve_research_groups = partial(new._retrieve_records, cls.schema.data.research_groups)
-        new.retrieve_users = partial(new._retrieve_records, cls.schema.data.users)
+        new.retrieve_allocations = new._create_retrieve_method(cls.schema.data.allocations)
+        new.retrieve_requests = new._create_retrieve_method(cls.schema.data.requests)
+        new.retrieve_research_groups = new._create_retrieve_method(cls.schema.data.research_groups)
+        new.retrieve_users = new._create_retrieve_method(cls.schema.data.users)
 
         return new
 
-    def _retrieve_records(
-        self,
-        _endpoint: Endpoint,
-        pk: int | None = None,
-        filters: dict | None = None,
-        timeout=DEFAULT_TIMEOUT
-    ) -> QueryResult:
-        """Retrieve data from the specified endpoint with optional primary key and filters
+    def _create_retrieve_method(self, endpoint: Endpoint) -> callable:
+        """Factory function for creating retrieve methods"""
 
-        A single record is returned when specifying a primary key, otherwise the returned
-        object is a list of records. In either case, the return value is `None` when no data
-        is available for the query.
+        def retrieve_records(
+            pk: int | None = None,
+            filters: dict | None = None,
+            timeout=DEFAULT_TIMEOUT
+        ) -> QueryResult:
+            """Retrieve data from the API endpoint with optional primary key and filters
 
-        Args:
-            pk: Optional primary key to fetch a specific record
-            filters: Optional query parameters to include in the request
-            timeout: Seconds before the request times out
+            A single record is returned when specifying a primary key, otherwise the returned
+            object is a list of records. In either case, the return value is `None` when no data
+            is available for the query.
 
-        Returns:
-            The response from the API in JSON format
-        """
+            Args:
+                pk: Optional primary key to fetch a specific record
+                filters: Optional query parameters to include in the request
+                timeout: Seconds before the request times out
 
-        url = _endpoint.join_url(self.url)
-        if pk is not None:
-            url = urljoin(url, str(pk))
+            Returns:
+                The response from the API in JSON format
+            """
 
-        try:
-            response = self.http_get(url, params=filters, timeout=timeout)
-            response.raise_for_status()
-            return response.json()
+            url = endpoint.join_url(self.url)
+            if pk is not None:
+                url = urljoin(url, str(pk))
 
-        except requests.HTTPError as exception:
-            if exception.response.status_code == 404:
-                return None
+            try:
+                response = self.http_get(url, params=filters, timeout=timeout)
+                response.raise_for_status()
+                return response.json()
 
-            raise
+            except requests.HTTPError as exception:
+                if exception.response.status_code == 404:
+                    return None
+
+                raise
+
+        return retrieve_records
