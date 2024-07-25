@@ -245,14 +245,26 @@ class KeystoneClient(HTTPClient):
 
         new: KeystoneClient = super().__new__(cls)
 
-        new.retrieve_allocations = new._create_retrieve_method(cls.schema.data.allocations)
-        new.retrieve_requests = new._create_retrieve_method(cls.schema.data.requests)
-        new.retrieve_research_groups = new._create_retrieve_method(cls.schema.data.research_groups)
-        new.retrieve_users = new._create_retrieve_method(cls.schema.data.users)
+        new.retrieve_allocations = new._retrieve_factory(cls.schema.data.allocations)
+        new.retrieve_requests = new._retrieve_factory(cls.schema.data.requests)
+        new.retrieve_research_groups = new._retrieve_factory(cls.schema.data.research_groups)
+        new.retrieve_users = new._retrieve_factory(cls.schema.data.users)
 
         return new
 
-    def _create_retrieve_method(self, endpoint: Endpoint) -> callable:
+    def _create_factory(self, endpoint: Endpoint) -> callable:
+
+        # Todo: How should this method behave
+        # Todo: Check return signature
+        def create_records(**kwargs) -> None:
+            url = endpoint.join_url(self.url)
+            response = self.http_post(url, data=kwargs)
+            response.raise_for_status()
+            return response.json()
+
+        return create_records
+
+    def _retrieve_factory(self, endpoint: Endpoint) -> callable:
         """Factory function for creating retrieve methods"""
 
         def retrieve_records(
@@ -291,3 +303,27 @@ class KeystoneClient(HTTPClient):
                 raise
 
         return retrieve_records
+
+    def _update_factory(self, endpoint: Endpoint) -> callable:
+
+        # Todo: How should this method behave
+        def update_records(**kwargs) -> dict:
+            url = endpoint.join_url(self.url)
+            response = self.http_patch(url, data=kwargs)
+            response.raise_for_status()
+            return response.json()
+
+        return update_records
+
+    def _delete_factory(self, endpoint: Endpoint) -> callable:
+
+        def update_records(*args) -> None:
+
+            for pk in args:
+                url = urljoin(endpoint.join_url(self.url), str(pk))
+                response = self.http_delete(url)
+
+                # Todo: what about the remaining records
+                response.raise_for_status()
+
+        return update_records
