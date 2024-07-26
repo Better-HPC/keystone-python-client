@@ -17,11 +17,6 @@ from keystone_client.authentication import AuthenticationManager
 from keystone_client.schema import Endpoint, Schema
 
 DEFAULT_TIMEOUT = 15
-
-# Custom types
-ContentType = Literal["json", "text", "content"]
-ResponseContent = Union[dict[str, any], str, bytes]
-QueryResult = Union[None, dict, list[dict]]
 HTTPMethod = Literal["get", "post", "put", "patch", "delete"]
 
 
@@ -255,9 +250,18 @@ class KeystoneClient(HTTPClient):
     def _create_factory(self, endpoint: Endpoint) -> callable:
         """Factory function for data creation methods"""
 
-        def create_record(**kwargs) -> None:
+        def create_record(**data) -> None:
+            """Create an API record
+
+            Args:
+                **data: New record values
+
+            Returns:
+                A copy of the updated record
+            """
+
             url = endpoint.join_url(self.url)
-            response = self.http_post(url, data=kwargs)
+            response = self.http_post(url, data=data)
             response.raise_for_status()
             return response.json()
 
@@ -270,8 +274,8 @@ class KeystoneClient(HTTPClient):
             pk: int | None = None,
             filters: dict | None = None,
             timeout=DEFAULT_TIMEOUT
-        ) -> QueryResult:
-            """Retrieve data from the API endpoint with optional primary key and filters
+        ) -> Union[None, dict, list[dict]]:
+            """Retrieve one or more API records
 
             A single record is returned when specifying a primary key, otherwise the returned
             object is a list of records. In either case, the return value is `None` when no data
@@ -283,7 +287,7 @@ class KeystoneClient(HTTPClient):
                 timeout: Seconds before the request times out
 
             Returns:
-                The response from the API in JSON format
+                The data record(s) or None
             """
 
             url = endpoint.join_url(self.url, pk)
@@ -304,9 +308,19 @@ class KeystoneClient(HTTPClient):
     def _update_factory(self, endpoint: Endpoint) -> callable:
         """Factory function for data update methods"""
 
-        def update_record(pk: int, **kwargs) -> dict:
+        def update_record(pk: int, data) -> dict:
+            """Update an API record
+
+            Args:
+                pk: Primary key of the record to update
+                data: New record values
+
+            Returns:
+                A copy of the updated record
+            """
+
             url = endpoint.join_url(self.url, pk)
-            response = self.http_patch(url, data=kwargs)
+            response = self.http_patch(url, data=data)
             response.raise_for_status()
             return response.json()
 
@@ -316,6 +330,12 @@ class KeystoneClient(HTTPClient):
         """Factory function for data deletion methods"""
 
         def delete_record(pk: int) -> None:
+            """Delete an API record
+
+            Args:
+                pk: Primary key of the record to delete
+            """
+
             url = endpoint.join_url(self.url, pk)
             response = self.http_delete(url)
             response.raise_for_status()
