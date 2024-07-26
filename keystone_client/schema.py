@@ -6,20 +6,25 @@ from urllib.parse import urljoin
 
 class Endpoint(str):
 
-    def join_url(self, url: str) -> str:
+    def join_url(self, base: str, *append) -> str:
         """Join the endpoint with a base URL
 
         This method returns URLs in a format that avoids trailing slash
         redirects from the Keystone API.
 
         Args:
-            url: The base URL
+            base: The base URL
+            *append: Partial paths to append onto the url
 
         Returns:
             The base URL join with the endpoint
         """
 
-        return urljoin(url, self).rstrip('/') + '/'
+        base = urljoin(base, self)
+        for partial_path in append:
+            base = urljoin(base, partial_path)
+
+        return base.rstrip('/') + '/'
 
 
 @dataclass

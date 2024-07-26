@@ -245,29 +245,28 @@ class KeystoneClient(HTTPClient):
 
         new: KeystoneClient = super().__new__(cls)
 
-        new.retrieve_allocations = new._retrieve_factory(cls.schema.data.allocations)
-        new.retrieve_requests = new._retrieve_factory(cls.schema.data.requests)
-        new.retrieve_research_groups = new._retrieve_factory(cls.schema.data.research_groups)
-        new.retrieve_users = new._retrieve_factory(cls.schema.data.users)
+        new.retrieve_allocation = new._retrieve_factory(cls.schema.data.allocations)
+        new.retrieve_request = new._retrieve_factory(cls.schema.data.requests)
+        new.retrieve_research_group = new._retrieve_factory(cls.schema.data.research_groups)
+        new.retrieve_user = new._retrieve_factory(cls.schema.data.users)
 
         return new
 
     def _create_factory(self, endpoint: Endpoint) -> callable:
+        """Factory function for data creation methods"""
 
-        # Todo: How should this method behave
-        # Todo: Check return signature
-        def create_records(**kwargs) -> None:
+        def create_record(**kwargs) -> None:
             url = endpoint.join_url(self.url)
             response = self.http_post(url, data=kwargs)
             response.raise_for_status()
             return response.json()
 
-        return create_records
+        return create_record
 
     def _retrieve_factory(self, endpoint: Endpoint) -> callable:
-        """Factory function for creating retrieve methods"""
+        """Factory function for data retrieval methods"""
 
-        def retrieve_records(
+        def retrieve_record(
             pk: int | None = None,
             filters: dict | None = None,
             timeout=DEFAULT_TIMEOUT
@@ -287,9 +286,7 @@ class KeystoneClient(HTTPClient):
                 The response from the API in JSON format
             """
 
-            url = endpoint.join_url(self.url)
-            if pk is not None:
-                url = urljoin(url, str(pk))
+            url = endpoint.join_url(self.url, pk)
 
             try:
                 response = self.http_get(url, params=filters, timeout=timeout)
@@ -302,28 +299,25 @@ class KeystoneClient(HTTPClient):
 
                 raise
 
-        return retrieve_records
+        return retrieve_record
 
     def _update_factory(self, endpoint: Endpoint) -> callable:
+        """Factory function for data update methods"""
 
-        # Todo: How should this method behave
-        def update_records(**kwargs) -> dict:
-            url = endpoint.join_url(self.url)
+        def update_record(pk: int, **kwargs) -> dict:
+            url = endpoint.join_url(self.url, pk)
             response = self.http_patch(url, data=kwargs)
             response.raise_for_status()
             return response.json()
 
-        return update_records
+        return update_record
 
     def _delete_factory(self, endpoint: Endpoint) -> callable:
+        """Factory function for data deletion methods"""
 
-        def update_records(*args) -> None:
+        def delete_record(pk: int) -> None:
+            url = endpoint.join_url(self.url, pk)
+            response = self.http_delete(url)
+            response.raise_for_status()
 
-            for pk in args:
-                url = urljoin(endpoint.join_url(self.url), str(pk))
-                response = self.http_delete(url)
-
-                # Todo: what about the remaining records
-                response.raise_for_status()
-
-        return update_records
+        return delete_record
