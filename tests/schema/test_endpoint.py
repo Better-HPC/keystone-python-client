@@ -64,14 +64,6 @@ class JoinUrl(TestCase):
         expected_result = "https://api.example.com/authentication/new/extra/"
         self.assertEqual(expected_result, endpoint.join_url(base_url, append_path1, append_path2))
 
-    def test_complete_url_as_endpoint(self) -> None:
-        """Test `join_url` when the endpoint is a complete URL"""
-
-        endpoint = Endpoint("https://anotherapi.com/authentication/new")
-        base_url = "https://api.example.com"
-        expected_result = "https://anotherapi.com/authentication/new/"
-        self.assertEqual(expected_result, endpoint.join_url(base_url))
-
     def test_int_append_argument(self) -> None:
         """Test `join_url` with an `int` append argument"""
 

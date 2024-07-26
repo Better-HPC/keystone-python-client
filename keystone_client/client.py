@@ -17,11 +17,6 @@ from keystone_client.authentication import AuthenticationManager
 from keystone_client.schema import Endpoint, Schema
 
 DEFAULT_TIMEOUT = 15
-
-# Custom types
-ContentType = Literal["json", "text", "content"]
-ResponseContent = Union[dict[str, any], str, bytes]
-QueryResult = Union[None, dict, list[dict]]
 HTTPMethod = Literal["get", "post", "put", "patch", "delete"]
 
 
@@ -245,22 +240,57 @@ class KeystoneClient(HTTPClient):
 
         new: KeystoneClient = super().__new__(cls)
 
-        new.retrieve_allocations = new._create_retrieve_method(cls.schema.data.allocations)
-        new.retrieve_requests = new._create_retrieve_method(cls.schema.data.requests)
-        new.retrieve_research_groups = new._create_retrieve_method(cls.schema.data.research_groups)
-        new.retrieve_users = new._create_retrieve_method(cls.schema.data.users)
+        new.create_allocation = new._create_factory(cls.schema.data.allocations)
+        new.retrieve_allocation = new._retrieve_factory(cls.schema.data.allocations)
+        new.update_allocation = new._update_factory(cls.schema.data.allocations)
+        new.delete_allocation = new._delete_factory(cls.schema.data.allocations)
+
+        new.create_request = new._create_factory(cls.schema.data.requests)
+        new.retrieve_request = new._retrieve_factory(cls.schema.data.requests)
+        new.update_request = new._update_factory(cls.schema.data.requests)
+        new.delete_request = new._delete_factory(cls.schema.data.requests)
+
+        new.create_research_group = new._create_factory(cls.schema.data.research_groups)
+        new.retrieve_research_group = new._retrieve_factory(cls.schema.data.research_groups)
+        new.update_research_group = new._update_factory(cls.schema.data.research_groups)
+        new.delete_research_group = new._delete_factory(cls.schema.data.research_groups)
+
+        new.create_user = new._create_factory(cls.schema.data.users)
+        new.retrieve_user = new._retrieve_factory(cls.schema.data.users)
+        new.update_user = new._update_factory(cls.schema.data.users)
+        new.delete_user = new._delete_factory(cls.schema.data.users)
 
         return new
 
-    def _create_retrieve_method(self, endpoint: Endpoint) -> callable:
-        """Factory function for creating retrieve methods"""
+    def _create_factory(self, endpoint: Endpoint) -> callable:
+        """Factory function for data creation methods"""
 
-        def retrieve_records(
+        def create_record(**data) -> None:
+            """Create an API record
+
+            Args:
+                **data: New record values
+
+            Returns:
+                A copy of the updated record
+            """
+
+            url = endpoint.join_url(self.url)
+            response = self.http_post(url, data=data)
+            response.raise_for_status()
+            return response.json()
+
+        return create_record
+
+    def _retrieve_factory(self, endpoint: Endpoint) -> callable:
+        """Factory function for data retrieval methods"""
+
+        def retrieve_record(
             pk: int | None = None,
             filters: dict | None = None,
             timeout=DEFAULT_TIMEOUT
-        ) -> QueryResult:
-            """Retrieve data from the API endpoint with optional primary key and filters
+        ) -> Union[None, dict, list[dict]]:
+            """Retrieve one or more API records
 
             A single record is returned when specifying a primary key, otherwise the returned
             object is a list of records. In either case, the return value is `None` when no data
@@ -272,7 +302,7 @@ class KeystoneClient(HTTPClient):
                 timeout: Seconds before the request times out
 
             Returns:
-                The response from the API in JSON format
+                The data record(s) or None
             """
 
             url = endpoint.join_url(self.url, pk)
@@ -288,4 +318,50 @@ class KeystoneClient(HTTPClient):
 
                 raise
 
-        return retrieve_records
+        return retrieve_record
+
+    def _update_factory(self, endpoint: Endpoint) -> callable:
+        """Factory function for data update methods"""
+
+        def update_record(pk: int, data) -> dict:
+            """Update an API record
+
+            Args:
+                pk: Primary key of the record to update
+                data: New record values
+
+            Returns:
+                A copy of the updated record
+            """
+
+            url = endpoint.join_url(self.url, pk)
+            response = self.http_patch(url, data=data)
+            response.raise_for_status()
+            return response.json()
+
+        return update_record
+
+    def _delete_factory(self, endpoint: Endpoint) -> callable:
+        """Factory function for data deletion methods"""
+
+        def delete_record(pk: int, raise_not_exists: bool = False) -> None:
+            """Delete an API record
+
+            Args:
+                pk: Primary key of the record to delete
+                raise_not_exists: Raise an error if the record does not exist
+            """
+
+            url = endpoint.join_url(self.url, pk)
+
+            try:
+                response = self.http_delete(url)
+                response.raise_for_status()
+
+            except requests.HTTPError as exception:
+                if exception.response.status_code == 404 and not raise_not_exists:
+                    return
+
+                raise
+
+        return delete_record
