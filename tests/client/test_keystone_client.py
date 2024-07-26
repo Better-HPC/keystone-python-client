@@ -1,11 +1,9 @@
 """Tests for CRUD operations."""
 
 import re
-from dataclasses import asdict
 from unittest import TestCase
 
 from keystone_client import KeystoneClient
-from keystone_client.schema import Schema
 from tests import API_HOST
 
 

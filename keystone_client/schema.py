@@ -1,8 +1,8 @@
 """Schema objects used to define available API endpoints."""
 
 from dataclasses import dataclass, field
-from urllib.parse import urljoin
 from os import path
+from urllib.parse import urljoin
 
 
 class Endpoint(str):
