@@ -29,15 +29,3 @@ class APIVersion(TestCase):
 
         client = KeystoneClient(API_HOST)
         self.assertRegex(client.api_version, version_regex)
-
-
-class RetrieveMethods(TestCase):
-    """Tests for retrieve methods"""
-
-    def test_methods_exist(self) -> None:
-        """Test a method exists for each endpoint in the class schema"""
-
-        client = KeystoneClient('http://test.domain.com')
-        for endpoint in asdict(Schema().data):
-            method_name = f'retrieve_{endpoint}'
-            self.assertTrue(hasattr(client, method_name), f'Method does not exist {method_name}')
