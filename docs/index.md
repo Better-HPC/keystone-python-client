@@ -51,12 +51,43 @@ The API client provides two groups of methods for submitting requests.
 
 ### CRUD Methods
 
-Dedicate methods are provided for create, retrieve, update, and delete (CRUD) operations against each API endpoint.
+The KeystoneClient class includes dedicated methods for create, retrieve, update, and delete (CRUD) operations for each API endpoint. 
+These methods simplify data manipulation by handling the request and response logic internally.
 
-!!! warning "Work in Progress"
+The following CRUD methods are available for interacting with the API endpoints:
 
-    Methods for performing CRUD operations are till under development.
-    Formal documentation is unavailable at this time.
+| Method Name           | Description                                              |
+|-----------------------|----------------------------------------------------------|
+| `create_{resource}`   | Create a new record for the specified resource.          |
+| `retrieve_{resource}` | Retrieve one or more records for the specified resource. |
+| `update_{resource}`   | Update an existing record for the specified resource.    |
+| `delete_{resource}`   | Delete an existing record for the specified resource.    |
+
+Below are examples demonstrating how to use the CRUD methods:
+
+```python
+# Create a new allocation record
+new_allocation = client.create_allocation(
+    name="New Allocation",
+    description="Description for new allocation"
+)
+
+# Retrieve an allocation record by primary key
+allocation = client.retrieve_allocation(pk=1)
+
+# Retrieve multiple allocation records with filters
+allocations = client.retrieve_allocation(filters={"status": "active"})
+
+# Update an existing allocation record
+updated_allocation = client.update_allocation(
+    pk=1,
+    name="Updated Allocation",
+    description="Updated description"
+)
+
+# Delete an allocation record
+client.delete_allocation(pk=1)
+```
 
 ### Generic HTTP Requests
 
