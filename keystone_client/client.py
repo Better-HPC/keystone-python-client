@@ -240,10 +240,25 @@ class KeystoneClient(HTTPClient):
 
         new: KeystoneClient = super().__new__(cls)
 
+        new.create_allocation = new._create_factory(cls.schema.data.allocations)
         new.retrieve_allocation = new._retrieve_factory(cls.schema.data.allocations)
+        new.update_allocation = new._update_factory(cls.schema.data.allocations)
+        new.delete_allocation = new._delete_factory(cls.schema.data.allocations)
+
+        new.create_request = new._create_factory(cls.schema.data.requests)
         new.retrieve_request = new._retrieve_factory(cls.schema.data.requests)
+        new.update_request = new._update_factory(cls.schema.data.requests)
+        new.delete_request = new._delete_factory(cls.schema.data.requests)
+
+        new.create_research_group = new._create_factory(cls.schema.data.research_groups)
         new.retrieve_research_group = new._retrieve_factory(cls.schema.data.research_groups)
+        new.update_research_group = new._update_factory(cls.schema.data.research_groups)
+        new.delete_research_group = new._delete_factory(cls.schema.data.research_groups)
+
+        new.create_user = new._create_factory(cls.schema.data.users)
         new.retrieve_user = new._retrieve_factory(cls.schema.data.users)
+        new.update_user = new._update_factory(cls.schema.data.users)
+        new.delete_user = new._delete_factory(cls.schema.data.users)
 
         return new
 
