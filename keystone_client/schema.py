@@ -2,24 +2,31 @@
 
 from dataclasses import dataclass, field
 from urllib.parse import urljoin
+from os import path
 
 
 class Endpoint(str):
+    """API endpoint agnostic th to baseAPI URL"""
 
-    def join_url(self, url: str) -> str:
+    def join_url(self, base: str, *append) -> str:
         """Join the endpoint with a base URL
 
         This method returns URLs in a format that avoids trailing slash
         redirects from the Keystone API.
 
         Args:
-            url: The base URL
+            base: The base URL
+            *append: Partial paths to append onto the url
 
         Returns:
             The base URL join with the endpoint
         """
 
-        return urljoin(url, self).rstrip('/') + '/'
+        url = urljoin(base, self)
+        for partial_path in filter(lambda x: x is not None, append):
+            url = path.join(url, str(partial_path))
+
+        return url.rstrip('/') + '/'
 
 
 @dataclass

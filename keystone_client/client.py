@@ -275,9 +275,7 @@ class KeystoneClient(HTTPClient):
                 The response from the API in JSON format
             """
 
-            url = endpoint.join_url(self.url)
-            if pk is not None:
-                url = urljoin(url, str(pk))
+            url = endpoint.join_url(self.url, pk)
 
             try:
                 response = self.http_get(url, params=filters, timeout=timeout)
