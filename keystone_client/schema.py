@@ -1,8 +1,8 @@
 """Schema objects used to define available API endpoints."""
 
+import os.path
 from dataclasses import dataclass, field
 from os import path
-from urllib.parse import urljoin
 
 
 class Endpoint(str):
@@ -22,7 +22,7 @@ class Endpoint(str):
             The base URL join with the endpoint
         """
 
-        url = urljoin(base, self)
+        url = os.path.join(base, self)
         for partial_path in filter(lambda x: x is not None, append):
             url = path.join(url, str(partial_path))
 

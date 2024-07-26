@@ -344,15 +344,24 @@ class KeystoneClient(HTTPClient):
     def _delete_factory(self, endpoint: Endpoint) -> callable:
         """Factory function for data deletion methods"""
 
-        def delete_record(pk: int) -> None:
+        def delete_record(pk: int, raise_not_exists: bool = False) -> None:
             """Delete an API record
 
             Args:
                 pk: Primary key of the record to delete
+                raise_not_exists: Raise an error if the record does not exist
             """
 
             url = endpoint.join_url(self.url, pk)
-            response = self.http_delete(url)
-            response.raise_for_status()
+
+            try:
+                response = self.http_delete(url)
+                response.raise_for_status()
+
+            except requests.HTTPError as exception:
+                if exception.response.status_code == 404 and not raise_not_exists:
+                    return
+
+                raise
 
         return delete_record
