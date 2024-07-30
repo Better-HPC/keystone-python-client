@@ -33,5 +33,4 @@ For more information, see the resources below.
 
     [:octicons-arrow-right-24: See the Docs](client_reference.md)
 
-
 </div>
