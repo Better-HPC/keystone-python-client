@@ -1,8 +1,5 @@
 # User Guide
 
-
-## Client Authentication
-
 The `KeystoneClient` class is used to encapsulate user authentication and API requests.
 New instances are created by specifying the API URL.
 In the following example, a client instance is defined for a locally running server on port `8000`.
@@ -10,18 +7,19 @@ In the following example, a client instance is defined for a locally running ser
 ```python
 from keystone_client import KeystoneClient
 
-client = KeystoneClient(url="http://localhost:8000") # (1)!
+client = KeystoneClient(url="http://localhost:8000")  # (1)!
 ```
 
 1. Specifying a network protocol is required when instantiating new instances (e.g., `http://` or `https://`).
 
 The `login` and `logout` methods are used to handle user authentication.
-Once authenticated, the client will automatically manage the resulting user credentials, including refreshing JWT tokens.
+Once authenticated, the client will automatically manage the resulting user credentials, including refreshing JWT
+tokens.
 
 ```python
-client.login(username="username", password="password") # (1)!
-assert client.is_authenticated # (2)!
-client.logout() # (3)!
+client.login(username="username", password="password")  # (1)!
+assert client.is_authenticated  # (2)!
+client.logout()  # (3)!
 ```
 
 1. Authenticate a new user session.
@@ -31,19 +29,19 @@ client.logout() # (3)!
 ## Generic HTTP Requests
 
 The client provides dedicated methods for each HTTP request type supported by the API.
-When authenticated, the client will automatically include the appropriate authentication headers when submitting requests.
+When authenticated, the client will automatically include the appropriate authentication headers when submitting
+requests.
 
-| HTTP Method | Function Name |
-|-------------|---------------|
-| `GET`       | `http_get`    | 
-| `POST`      | `http_post`   |
-| `PUT`       | `http_put`    |
-| `DELETE`    | `http_delete` |
-| `PATCH`     | `http_patch`  |
-
+| HTTP Method | Function Name | Description                                              |
+|-------------|---------------|----------------------------------------------------------|
+| `GET`       | `http_get`    | Retrieve data from the server at the specified resource. |
+| `POST`      | `http_post`   | Submit a new record to be processed by the server.       |
+| `PUT`       | `http_put`    | Replace an existing record with a new one.               |
+| `PATCH`     | `http_patch`  | Partially update an existing record.                     |
+| `DELETE`    | `http_delete` | Remove the specified record from the server.             |
 
 Request/response logic is handled using the popular `requests` library.
-Each HTTP method returns a `requests.Response` object encapsulating the data and status code returned by the server.
+API responses are returned as `requests.Response` objects encapsulating the response data and status code.
 
 ```python
 response = client.http_get('version')
@@ -52,11 +50,11 @@ print(response.status_code)
 print(response.content)
 ```
 
-
 ## CRUD Operations
 
-Dedicated methods are provided for create, retrieve, update, and delete (CRUD) operations against each API endpoint. 
+Dedicated methods are provided for create, retrieve, update, and delete (CRUD) operations for each API resource.
 These methods simplify data manipulation by automatically handling the request and response logic.
+
 CRUD methods adhere to the following naming scheme:
 
 | Method Name           | Description                                              |
