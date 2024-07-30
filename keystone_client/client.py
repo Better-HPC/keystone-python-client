@@ -27,6 +27,7 @@ HTTPMethod = Literal["get", "post", "put", "patch", "delete"]
 # API schema mapping human-readable, python-friendly names to API endpoints
 Schema = namedtuple("Schema", [
     "allocations",
+    "clusters",
     "requests",
     "research_groups",
     "users",
@@ -45,6 +46,7 @@ class KeystoneClient:
     authentication_refresh = "authentication/refresh/"
     schema = Schema(
         allocations="allocations/allocations/",
+        clusters="allocations/clusters",
         requests="allocations/requests/",
         research_groups="users/researchgroups/",
         users="users/users/",
