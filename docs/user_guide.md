@@ -68,24 +68,23 @@ The following example demonstrates how to use the CRUD methods:
 
 ```python
 # Create a new record
-new_allocation = client.create_allocation(
-    name="New Allocation",
-    description="Description for new allocation"
+new_cluster = client.create_cluster(
+    name="New-Cluster",
+    description="Cluster created for example purposes."
 )
 
-# Retrieve a record by primary key
-allocation = client.retrieve_allocation(pk=1)
+# Retrieve a single record by primary key
+cluster = client.retrieve_cluster(pk=1)
 
-# Retrieve multiple allocation records with filters
-allocations = client.retrieve_allocation(filters={"status": "active"})
+# Retrieve multiple records with filters
+clusters = client.retrieve_cluster(filters={"name": "New-Cluster"})
 
-# Update an existing allocation record
-updated_allocation = client.update_allocation(
+# Update an existing record
+updated_cluster = client.update_cluster(
     pk=1,
-    name="Updated Allocation",
-    description="Updated description"
+    data={'description': "Updated description"}
 )
 
-# Delete an allocation record
-client.delete_allocation(pk=1)
+# Delete an existing record
+client.delete_cluster(pk=1)
 ```
