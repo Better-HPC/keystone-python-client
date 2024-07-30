@@ -7,50 +7,23 @@ authentication, data retrieval, and data manipulation.
 
 from __future__ import annotations
 
-from collections import namedtuple
-from datetime import datetime
-from functools import partial
-from typing import *
-from warnings import warn
+from functools import cached_property
+from typing import Literal, Union
+from urllib.parse import urljoin
 
-import jwt
 import requests
 
-__all__ = ["KeystoneClient"]
+from keystone_client.authentication import AuthenticationManager
+from keystone_client.schema import Endpoint, Schema
 
-# Custom types
-ContentType = Literal["json", "text", "content"]
-ResponseContent = Union[Dict[str, Any], str, bytes]
-QueryResult = Union[None, dict, List[dict]]
+DEFAULT_TIMEOUT = 15
 HTTPMethod = Literal["get", "post", "put", "patch", "delete"]
 
-# API schema mapping human-readable, python-friendly names to API endpoints
-Schema = namedtuple("Schema", [
-    "allocations",
-    "clusters",
-    "requests",
-    "research_groups",
-    "users",
-])
 
+class HTTPClient:
+    """Low level API client for sending standard HTTP operations"""
 
-class KeystoneClient:
-    """Client class for submitting requests to the Keystone API"""
-
-    # Default API behavior
-    default_timeout = 15
-
-    # API endpoints
-    authentication_new = "authentication/new/"
-    authentication_blacklist = "authentication/blacklist/"
-    authentication_refresh = "authentication/refresh/"
-    schema = Schema(
-        allocations="allocations/allocations/",
-        clusters="allocations/clusters",
-        requests="allocations/requests/",
-        research_groups="users/researchgroups/",
-        users="users/users/",
-    )
+    schema = Schema()
 
     def __init__(self, url: str) -> None:
         """Initialize the class
@@ -59,89 +32,44 @@ class KeystoneClient:
             url: The base URL for a running Keystone API server
         """
 
-        self._url = url.rstrip('/')
-        self._api_version: Optional[str] = None
-        self._access_token: Optional[str] = None
-        self._access_expiration: Optional[datetime] = None
-        self._refresh_token: Optional[str] = None
-        self._refresh_expiration: Optional[datetime] = None
+        self._url = url.rstrip('/') + '/'
+        self._auth = AuthenticationManager(url, self.schema)
 
-    def __new__(cls, *args, **kwargs) -> KeystoneClient:
-        """Dynamically create CRUD methods for each endpoint in the API schema
+    @property
+    def url(self) -> str:
+        """Return the server URL"""
 
-        Dynamic method are only generated of they do not already implemented
-        in the class definition.
-        """
+        return self._url
 
-        instance: KeystoneClient = super().__new__(cls)
-        for key, endpoint in zip(cls.schema._fields, cls.schema):
-
-            # Create a retrieve method
-            retrieve_name = f"retrieve_{key}"
-            if not hasattr(instance, retrieve_name):
-                retrieve_method = partial(instance._retrieve_records, _endpoint=endpoint)
-                setattr(instance, f"retrieve_{key}", retrieve_method)
-
-        return instance
-
-    def _retrieve_records(
-        self,
-        _endpoint: str,
-        pk: Optional[int] = None,
-        filters: Optional[dict] = None,
-        timeout=default_timeout
-    ) -> QueryResult:
-        """Retrieve data from the specified endpoint with optional primary key and filters
-
-        A single record is returned when specifying a primary key, otherwise the returned
-        object is a list of records. In either case, the return value is `None` when no data
-        is available for the query.
+    def login(self, username: str, password: str, timeout: int = DEFAULT_TIMEOUT) -> None:
+        """Authenticate a new user session
 
         Args:
-            pk: Optional primary key to fetch a specific record
-            filters: Optional query parameters to include in the request
+            username: The authentication username
+            password: The authentication password
             timeout: Seconds before the request times out
 
-        Returns:
-            The response from the API in JSON format
+        Raises:
+            requests.HTTPError: If the login request fails
         """
 
-        if pk is not None:
-            _endpoint = f"{_endpoint}/{pk}/"
+        self._auth.login(username, password, timeout)  # pragma: nocover
 
-        try:
-            response = self.http_get(_endpoint, params=filters, timeout=timeout)
-            response.raise_for_status()
-            return response.json()
+    def logout(self, timeout: int = DEFAULT_TIMEOUT) -> None:
+        """Log out and blacklist any active credentials
 
-        except requests.HTTPError as exception:
-            if exception.response.status_code == 404:
-                return None
-
-            raise
-
-    def _get_headers(self) -> Dict[str, str]:
-        """Return header data for API requests
-
-        Returns:
-            A dictionary with header data
+        Args:
+            timeout: Seconds before the blacklist request times out
         """
 
-        if not self._access_token:
-            return dict()
+        self._auth.logout(timeout)  # pragma: nocover
 
-        return {
-            "Authorization": f"Bearer {self._access_token}",
-            "Content-Type": "application/json"
-        }
+    def is_authenticated(self) -> bool:
+        """Return whether the client instance has active credentials"""
 
-    def _send_request(
-        self,
-        method: HTTPMethod,
-        endpoint: str,
-        timeout: int = default_timeout,
-        **kwargs
-    ) -> requests.Response:
+        return self._auth.is_authenticated()  # pragma: nocover
+
+    def _send_request(self, method: HTTPMethod, endpoint: str, **kwargs) -> requests.Response:
         """Send an HTTP request
 
         Args:
@@ -153,24 +81,16 @@ class KeystoneClient:
             An HTTP response
         """
 
-        self._refresh_tokens(force=False, timeout=timeout)
-
-        url = f'{self.url}/{endpoint}'
+        url = urljoin(self.url, endpoint)
         response = requests.request(method, url, **kwargs)
         response.raise_for_status()
         return response
 
-    @property
-    def url(self) -> str:
-        """Return the server URL"""
-
-        return self._url
-
     def http_get(
         self,
         endpoint: str,
-        params: Optional[Dict[str, Any]] = None,
-        timeout: int = default_timeout
+        params: dict[str, any] | None = None,
+        timeout: int = DEFAULT_TIMEOUT
     ) -> requests.Response:
         """Send a GET request to an API endpoint
 
@@ -186,13 +106,19 @@ class KeystoneClient:
             requests.HTTPError: If the request returns an error code
         """
 
-        return self._send_request("get", endpoint, params=params, timeout=timeout)
+        return self._send_request(
+            "get",
+            endpoint,
+            params=params,
+            headers=self._auth.get_auth_headers(),
+            timeout=timeout
+        )
 
     def http_post(
         self,
         endpoint: str,
-        data: Optional[Dict[str, Any]] = None,
-        timeout: int = default_timeout
+        data: dict[str, any] | None = None,
+        timeout: int = DEFAULT_TIMEOUT
     ) -> requests.Response:
         """Send a POST request to an API endpoint
 
@@ -208,13 +134,19 @@ class KeystoneClient:
             requests.HTTPError: If the request returns an error code
         """
 
-        return self._send_request("post", endpoint, data=data, timeout=timeout)
+        return self._send_request(
+            "post",
+            endpoint,
+            data=data,
+            headers=self._auth.get_auth_headers(),
+            timeout=timeout
+        )
 
     def http_patch(
         self,
         endpoint: str,
-        data: Optional[Dict[str, Any]] = None,
-        timeout: int = default_timeout
+        data: dict[str, any] | None = None,
+        timeout: int = DEFAULT_TIMEOUT
     ) -> requests.Response:
         """Send a PATCH request to an API endpoint
 
@@ -230,13 +162,19 @@ class KeystoneClient:
             requests.HTTPError: If the request returns an error code
         """
 
-        return self._send_request("patch", endpoint, data=data, timeout=timeout)
+        return self._send_request(
+            "patch",
+            endpoint,
+            data=data,
+            headers=self._auth.get_auth_headers(),
+            timeout=timeout
+        )
 
     def http_put(
         self,
         endpoint: str,
-        data: Optional[Dict[str, Any]] = None,
-        timeout: int = default_timeout
+        data: dict[str, any] | None = None,
+        timeout: int = DEFAULT_TIMEOUT
     ) -> requests.Response:
         """Send a PUT request to an endpoint
 
@@ -252,12 +190,18 @@ class KeystoneClient:
             requests.HTTPError: If the request returns an error code
         """
 
-        return self._send_request("put", endpoint, data=data, timeout=timeout)
+        return self._send_request(
+            "put",
+            endpoint,
+            data=data,
+            headers=self._auth.get_auth_headers(),
+            timeout=timeout
+        )
 
     def http_delete(
         self,
         endpoint: str,
-        timeout: int = default_timeout
+        timeout: int = DEFAULT_TIMEOUT
     ) -> requests.Response:
         """Send a DELETE request to an endpoint
 
@@ -272,111 +216,152 @@ class KeystoneClient:
             requests.HTTPError: If the request returns an error code
         """
 
-        return self._send_request("delete", endpoint, timeout=timeout)
+        return self._send_request(
+            "delete",
+            endpoint,
+            headers=self._auth.get_auth_headers(),
+            timeout=timeout
+        )
 
-    @property
-    def is_authenticated(self) -> None:
-        """Return whether the client instance has been authenticated"""
 
-        now = datetime.now()
-        has_token = self._refresh_token is not None
-        access_token_valid = self._access_expiration is not None and self._access_expiration > now
-        access_token_refreshable = self._refresh_expiration is not None and self._refresh_expiration > now
-        return has_token and (access_token_valid or access_token_refreshable)
+class KeystoneClient(HTTPClient):
+    """Client class for submitting requests to the Keystone API"""
 
-    @property
+    @cached_property
     def api_version(self) -> str:
         """Return the version number of the API server"""
 
-        if self._api_version is None:
-            response = self.http_get("version")
-            response.raise_for_status()
-            self._api_version = response.text
-
-        return self._api_version
-
-    def login(self, username: str, password: str, timeout: int = default_timeout) -> None:
-        """Log in to the Keystone API and cache the returned JWT
-
-        Args:
-            username: The authentication username
-            password: The authentication password
-            timeout: Seconds before the request times out
-
-        Raises:
-            requests.HTTPError: If the login request fails
-        """
-
-        response = requests.post(
-            f"{self.url}/{self.authentication_new}",
-            json={"username": username, "password": password},
-            timeout=timeout
-        )
-
+        response = self.http_get("version")
         response.raise_for_status()
+        return response.text
 
-        # Parse data from the refresh token
-        refresh_payload = jwt.decode(self._refresh_token)
-        self._refresh_token = response.json().get("refresh")
-        self._refresh_expiration = datetime.fromtimestamp(refresh_payload["exp"])
+    def __new__(cls, *args, **kwargs) -> KeystoneClient:
+        """Dynamically create CRUD methods for each data endpoint in the API schema"""
 
-        # Parse data from the access token
-        access_payload = jwt.decode(self._access_token)
-        self._access_token = response.json().get("access")
-        self._access_expiration = datetime.fromtimestamp(access_payload["exp"])
+        new: KeystoneClient = super().__new__(cls)
 
-    def logout(self, timeout: int = default_timeout) -> None:
-        """Log out and blacklist any active JWTs
+        new.create_allocation = new._create_factory(cls.schema.data.allocations)
+        new.retrieve_allocation = new._retrieve_factory(cls.schema.data.allocations)
+        new.update_allocation = new._update_factory(cls.schema.data.allocations)
+        new.delete_allocation = new._delete_factory(cls.schema.data.allocations)
 
-        Args:
-            timeout: Seconds before the request times out
-        """
+        new.create_request = new._create_factory(cls.schema.data.requests)
+        new.retrieve_request = new._retrieve_factory(cls.schema.data.requests)
+        new.update_request = new._update_factory(cls.schema.data.requests)
+        new.delete_request = new._delete_factory(cls.schema.data.requests)
 
-        if self._refresh_token is not None:
-            response = requests.post(
-                f"{self.url}/{self.authentication_blacklist}",
-                data={"refresh": self._refresh_token},
-                timeout=timeout
-            )
+        new.create_research_group = new._create_factory(cls.schema.data.research_groups)
+        new.retrieve_research_group = new._retrieve_factory(cls.schema.data.research_groups)
+        new.update_research_group = new._update_factory(cls.schema.data.research_groups)
+        new.delete_research_group = new._delete_factory(cls.schema.data.research_groups)
+
+        new.create_user = new._create_factory(cls.schema.data.users)
+        new.retrieve_user = new._retrieve_factory(cls.schema.data.users)
+        new.update_user = new._update_factory(cls.schema.data.users)
+        new.delete_user = new._delete_factory(cls.schema.data.users)
+
+        return new
+
+    def _create_factory(self, endpoint: Endpoint) -> callable:
+        """Factory function for data creation methods"""
+
+        def create_record(**data) -> None:
+            """Create an API record
+
+            Args:
+                **data: New record values
+
+            Returns:
+                A copy of the updated record
+            """
+
+            url = endpoint.join_url(self.url)
+            response = self.http_post(url, data=data)
+            response.raise_for_status()
+            return response.json()
+
+        return create_record
+
+    def _retrieve_factory(self, endpoint: Endpoint) -> callable:
+        """Factory function for data retrieval methods"""
+
+        def retrieve_record(
+            pk: int | None = None,
+            filters: dict | None = None,
+            timeout=DEFAULT_TIMEOUT
+        ) -> Union[None, dict, list[dict]]:
+            """Retrieve one or more API records
+
+            A single record is returned when specifying a primary key, otherwise the returned
+            object is a list of records. In either case, the return value is `None` when no data
+            is available for the query.
+
+            Args:
+                pk: Optional primary key to fetch a specific record
+                filters: Optional query parameters to include in the request
+                timeout: Seconds before the request times out
+
+            Returns:
+                The data record(s) or None
+            """
+
+            url = endpoint.join_url(self.url, pk)
 
             try:
+                response = self.http_get(url, params=filters, timeout=timeout)
+                response.raise_for_status()
+                return response.json()
+
+            except requests.HTTPError as exception:
+                if exception.response.status_code == 404:
+                    return None
+
+                raise
+
+        return retrieve_record
+
+    def _update_factory(self, endpoint: Endpoint) -> callable:
+        """Factory function for data update methods"""
+
+        def update_record(pk: int, data) -> dict:
+            """Update an API record
+
+            Args:
+                pk: Primary key of the record to update
+                data: New record values
+
+            Returns:
+                A copy of the updated record
+            """
+
+            url = endpoint.join_url(self.url, pk)
+            response = self.http_patch(url, data=data)
+            response.raise_for_status()
+            return response.json()
+
+        return update_record
+
+    def _delete_factory(self, endpoint: Endpoint) -> callable:
+        """Factory function for data deletion methods"""
+
+        def delete_record(pk: int, raise_not_exists: bool = False) -> None:
+            """Delete an API record
+
+            Args:
+                pk: Primary key of the record to delete
+                raise_not_exists: Raise an error if the record does not exist
+            """
+
+            url = endpoint.join_url(self.url, pk)
+
+            try:
+                response = self.http_delete(url)
                 response.raise_for_status()
 
-            except Exception as exception:
-                warn(str(exception))
+            except requests.HTTPError as exception:
+                if exception.response.status_code == 404 and not raise_not_exists:
+                    return
 
-        self._refresh_token = None
-        self._refresh_expiration = None
-        self._access_token = None
-        self._access_expiration = None
+                raise
 
-    def _refresh_tokens(self, force: bool = True, timeout: int = default_timeout) -> None:
-        """Refresh the JWT access token
-
-        Args:
-            timeout: Seconds before the request times out
-            force: Refresh the access token even if it has not expired yet
-        """
-
-        if not self.is_authenticated:
-            return
-
-        # Don't refresh the token if it's not necessary
-        now = datetime.now()
-        if self._access_expiration > now and not force:
-            return
-
-        # Alert the user when a refresh is not possible
-        if self._refresh_expiration > now:
-            raise RuntimeError("Refresh token has expired. Login again to continue.")
-
-        response = requests.post(
-            f"{self.url}/{self.authentication_refresh}",
-            data={"refresh": self._refresh_token},
-            timeout=timeout
-        )
-
-        response.raise_for_status()
-        refresh_payload = jwt.decode(self._refresh_token)
-        self._refresh_token = response.json().get("refresh")
-        self._refresh_expiration = datetime.fromtimestamp(refresh_payload["exp"])
+        return delete_record
