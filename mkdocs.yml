@@ -1,1 +1,5 @@
 site_name: Keystone Python Client
+nav:
+  - index.md
+  - usage_guide.md
+  - Class Reference: class_reference.md
