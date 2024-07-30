@@ -1,4 +1,4 @@
-# Usage Guide
+# User Guide
 
 
 ## Client Authentication
