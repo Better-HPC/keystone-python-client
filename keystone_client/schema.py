@@ -43,6 +43,7 @@ class DataSchema:
     """Schema defining API endpoints for data access"""
 
     allocations: Endpoint = Endpoint("allocations/allocations")
+    clusters: Endpoint = Endpoint("allocations/clusters")
     requests: Endpoint = Endpoint("allocations/requests")
     research_groups: Endpoint = Endpoint("users/researchgroups")
     users: Endpoint = Endpoint("users/users")
