@@ -245,6 +245,11 @@ class KeystoneClient(HTTPClient):
         new.update_allocation = new._update_factory(cls.schema.data.allocations)
         new.delete_allocation = new._delete_factory(cls.schema.data.allocations)
 
+        new.create_cluster = new._create_factory(cls.schema.data.clusters)
+        new.retrieve_cluster = new._retrieve_factory(cls.schema.data.clusters)
+        new.update_cluster = new._update_factory(cls.schema.data.clusters)
+        new.delete_cluster = new._delete_factory(cls.schema.data.clusters)
+
         new.create_request = new._create_factory(cls.schema.data.requests)
         new.retrieve_request = new._retrieve_factory(cls.schema.data.requests)
         new.update_request = new._update_factory(cls.schema.data.requests)
