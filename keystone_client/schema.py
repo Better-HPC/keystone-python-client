@@ -6,7 +6,7 @@ from os import path
 
 
 class Endpoint(str):
-    """API endpoint agnostic th to baseAPI URL"""
+    """API endpoint agnostic to the baseAPI URL"""
 
     def join_url(self, base: str, *append) -> str:
         """Join the endpoint with a base URL

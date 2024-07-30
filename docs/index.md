@@ -1,13 +1,7 @@
----
-hide:
-  - navigation
----
+# Introduction
 
-# API Client
-
-Keystone provides a light-weight Python client for streamlining interactions with the Keystone API.
-The client automatically manages user authentication and data parsing, making it easier for developers to build against
-the Keystone framework.
+Keystone provides a light-weight Python client for streamlining interactions with the application's REST API.
+The client automatically manages user authentication and data parsing, freeing developers to focus on core application logic.
 
 ## Installation and Setup
 
@@ -17,66 +11,26 @@ The Python client is hosted on PyPI and can be installed in the standard fashion
 pip install keystone-api-client
 ```
 
-## Client Authentication
+## Getting Started
 
-The `KeystoneClient` class is used to encapsulate user authentication and API requests.
-New instances are created by specifying the API server you want to interact with.
-In the following example, a client instance is defined for a locally running server on port `8000`.
+For more information, see the resources below.
 
-```python
-from keystone_client import KeystoneClient
+<div class="grid cards" markdown>
 
-client = KeystoneClient(url="http://localhost:8000")
-```
+-   :material-rocket-launch: **User Guide**
 
-The `login` and `logout` methods are used to handle authentication against the API server.
+    ---
 
-```python
-# Authenticate a new user session
-client.login(username="username", password="password")
+    Get up and running with the client quickstart guide.
 
-# Check the authentication status at any time
-assert client.is_authenticated
+    [:octicons-arrow-right-24: Get Started](user_guide.md)
 
-# End the authenticated session
-client.logout()
-```
+-   :octicons-codescan-16: **Source Code Reference**
 
-The client will cache any JWT tokens in memory and automatically refresh them as necessary.
-No mechanism is provided to manually manage cached credentials.
+    ---
 
-## Submitting API Requests
+    Low level developer documentation for the Keystone-API Python client.
 
-The API client provides two groups of methods for submitting requests.
+    [:octicons-arrow-right-24: See the Docs](client_reference.md)
 
-### CRUD Methods
-
-Dedicate methods are provided for create, retrieve, update, and delete (CRUD) operations against each API endpoint.
-
-!!! warning "Work in Progress"
-
-    Methods for performing CRUD operations are till under development.
-    Formal documentation is unavailable at this time.
-
-### Generic HTTP Requests
-
-For developers looking to make generic HTTP requests, the client provides dedicated methods for each HTTP request type.
-If authenticated, the client will automatically include the appropriate authentication headers when submitting new requests.
-
-| HTTP Method | Function Name |
-|-------------|---------------|
-| `GET`       | `http_get`    | 
-| `POST`      | `http_post`   |
-| `PUT`       | `http_put`    |
-| `DELETE`    | `http_delete` |
-| `PATCH`     | `http_patch`  |
-
-Request/response logic is handled using the popular `requests` library.
-Each HTTP method returns a `requests.Response` object encapsulating the data and status code returned by the server.
-
-```python
-response = client.http_get('version')
-
-print(response.status_code)
-print(response.content)
-```
+</div>
