@@ -64,27 +64,58 @@ CRUD methods adhere to the following naming scheme:
 | `update_{resource}`   | Update an existing record for the specified resource.    |
 | `delete_{resource}`   | Delete an existing record for the specified resource.    |
 
-The following example demonstrates how to use the CRUD methods:
+### Creating Records
+
+Create methods are used to submit new records to the API server.
+These methods accept record details as keyword arguments and return a dictionary with the successfully created record data.
 
 ```python
-# Create a new record
-new_cluster = client.create_cluster(
+new_record_data = client.create_cluster(
     name="New-Cluster",
     description="Cluster created for example purposes."
 )
+```
 
-# Retrieve a single record by primary key
-cluster = client.retrieve_cluster(pk=1)
+### Retrieving Records
 
-# Retrieve multiple records with filters
-clusters = client.retrieve_cluster(filters={"name": "New-Cluster"})
+Data retrieval methods are used to search and return existing records.
+By default, these methods return all available records on the server as a list of dictionaries.
+The `filters` argument can be used to optionally filter these values against a set of search parameters.
+See the [filtering requests documentation](../../keystone-api/api/filtering/) for instructions on structuring search queries.
 
-# Update an existing record
-updated_cluster = client.update_cluster(
+```python
+all_cluster_data = client.retrieve_cluster(filters={"name": "New-Cluster"})
+```
+
+In situations where a record's primary key (i.e., it's `id` field) is already known, the individual record can be retrieved directly. 
+
+```python
+cluster_pk_one = client.retrieve_cluster(pk=1)
+```
+
+### Updating Records
+
+Update operations are used to modify values for an existing record.
+Doing so requires specifying the record's primary key in addition to the new record values.
+
+```python
+updated_record_data = client.update_cluster(
     pk=1,
     data={'description': "Updated description"}
 )
+```
 
-# Delete an existing record
+### Deleting Records
+
+Delete methods are used to removed records from the server.
+
+```python
 client.delete_cluster(pk=1)
+```
+
+If a record does not exist for the provided primary key, the function call will exit silently.
+The `raise_not_exists` argument can be used to raise an exception instead.
+
+```python
+client.delete_cluster(pk=1, raise_not_exists=True)
 ```
