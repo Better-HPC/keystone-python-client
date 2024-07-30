@@ -6,8 +6,7 @@ hide:
 # API Client
 
 Keystone provides a light-weight Python client for streamlining interactions with the application's REST API.
-The client automatically manages user authentication and data parsing, making it easier for developers to build against
-the Keystone framework.
+The client automatically manages user authentication and data parsing, freeing developers to focus on their core application logic.
 
 ## Installation and Setup
 
@@ -20,7 +19,7 @@ pip install keystone-api-client
 ## Client Authentication
 
 The `KeystoneClient` class is used to encapsulate user authentication and API requests.
-New instances are created by specifying the desired API URL.
+New instances are created by specifying the API URL.
 In the following example, a client instance is defined for a locally running server on port `8000`.
 
 ```python
@@ -33,7 +32,6 @@ client = KeystoneClient(url="http://localhost:8000") # (1)!
 
 The `login` and `logout` methods are used to handle user authentication.
 Once authenticated, the client will automatically manage the resulting user credentials, including refreshing JWT tokens.
-No mechanism is provided to manually manage cached credentials.
 
 ```python
 client.login(username="username", password="password") # (1)!
@@ -47,8 +45,7 @@ client.logout() # (3)!
 
 ## Submitting API Requests
 
-The API client provides multiple approaches for submitting requests.
-
+The API client supports multiple approaches for submitting requests.
 
 ### Generic HTTP Requests
 
@@ -77,10 +74,9 @@ print(response.content)
 
 ### CRUD Methods
 
-The `KeystoneClient` class provides methods for create, retrieve, update, and delete (CRUD) operations against each API endpoint. 
+Dedicated methods are provided for create, retrieve, update, and delete (CRUD) operations against each API endpoint. 
 These methods simplify data manipulation by automatically handling the request and response logic.
-
-The following CRUD methods are available for interacting with the API endpoints:
+CRUD methods adhere to the following naming scheme:
 
 | Method Name           | Description                                              |
 |-----------------------|----------------------------------------------------------|
@@ -89,7 +85,7 @@ The following CRUD methods are available for interacting with the API endpoints:
 | `update_{resource}`   | Update an existing record for the specified resource.    |
 | `delete_{resource}`   | Delete an existing record for the specified resource.    |
 
-Below are examples demonstrating how to use the CRUD methods:
+The following example demonstrates how to use the CRUD methods:
 
 ```python
 # Create a new record
