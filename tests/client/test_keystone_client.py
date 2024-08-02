@@ -127,7 +127,7 @@ class Retrieve(TestCase):
     def test_none_on_missing_record(self) -> None:
         """Test `None` is returned when a record does not exist"""
 
-        missing_cluster = self.client.retrieve_cluster(pk=999999)  # Assuming this ID does not exist
+        missing_cluster = self.client.retrieve_cluster(pk=999999)
         self.assertIsNone(missing_cluster)
 
 
@@ -184,3 +184,42 @@ class Update(TestCase):
         original_data = self.test_cluster.copy()
         updated_record = self.client.update_cluster(pk=pk, data={})
         self.assertEqual(updated_record, original_data)
+
+
+class Delete(TestCase):
+    """Test record deletion via the `delete_cluster` method"""
+
+    def setUp(self) -> None:
+        """Set up the test client and log in"""
+
+        self.client = KeystoneClient(API_HOST)
+        self.client.login(API_USER, API_PASSWORD)
+        self.test_cluster = self.client.create_cluster(
+            name='Test-Cluster',
+            description='Cluster created for delete testing purposes.'
+        )
+
+    def tearDown(self) -> None:
+        """Clean up by deleting existing test clusters"""
+
+        for cluster in self.client.http_get(f'allocations/clusters/', params={'name': 'Test-Cluster'}).json():
+            self.client.http_delete(f"allocations/clusters/{cluster['id']}").raise_for_status()
+
+    def test_delete_record(self) -> None:
+        """Test a record is deleted successfully"""
+
+        pk = self.test_cluster['id']
+        self.client.delete_cluster(pk=pk)
+        retrieved_cluster = self.client.retrieve_cluster(pk=pk)
+        self.assertIsNone(retrieved_cluster)
+
+    def test_delete_nonexistent_record_silent(self) -> None:
+        """Test deleting a nonexistent record exits silently"""
+
+        self.client.delete_cluster(pk=999999)
+
+    def test_delete_nonexistent_record_raise(self) -> None:
+        """Test deleting a nonexistent record raises an exception when specified"""
+
+        with self.assertRaises(HTTPError):
+            self.client.delete_cluster(pk=999999, raise_not_exists=True)
