@@ -80,22 +80,54 @@ class Create(TestCase):
 class Retrieve(TestCase):
     """Test record retrieval via the `retrieve_cluster` method"""
 
+    def setUp(self) -> None:
+        """Set up the test client and log in"""
+
+        self.client = KeystoneClient(API_HOST)
+        self.client.login(API_USER, API_PASSWORD)
+        self.test_cluster = self.client.create_cluster(
+            name='Test-Cluster',
+            description='Cluster created for retrieval testing purposes.'
+        )
+
+        self.other_cluster = self.client.create_cluster(
+            name='Other-Cluster',
+            description='Another cluster created for testing purposes.'
+        )
+
+    def tearDown(self) -> None:
+        """Clean up by deleting existing test clusters"""
+
+        for cluster in self.client.http_get(f'allocations/clusters/', params={'name': 'Test-Cluster'}).json():
+            self.client.http_delete(f"allocations/clusters/{cluster['id']}").raise_for_status()
+
+        for cluster in self.client.http_get(f'allocations/clusters/', params={'name': 'Other-Cluster'}).json():
+            self.client.http_delete(f"allocations/clusters/{cluster['id']}").raise_for_status()
+
     def test_retrieve_by_pk(self) -> None:
         """Test the retrieval of a specific record via its primary key"""
 
-        self.fail()
+        pk = self.test_cluster['id']
+        retrieved_cluster = self.client.retrieve_cluster(pk=pk)
+        self.assertIsNotNone(retrieved_cluster)
+        self.assertEqual(retrieved_cluster['id'], pk)
 
     def test_retrieve_by_filters(self) -> None:
         """Test the filtering of returned records via search params"""
 
-        self.fail()
+        retrieved_clusters = self.client.retrieve_cluster(filters={"name": "Test-Cluster"})
+        self.assertIsInstance(retrieved_clusters, list)
+        self.assertTrue(all(cluster['name'] == "Test-Cluster" for cluster in retrieved_clusters))
 
     def test_retrieve_all(self) -> None:
         """Test the retrieval of all records"""
 
-        self.fail()
+        all_clusters = self.client.retrieve_cluster()
+        self.assertIsInstance(all_clusters, list)
+        self.assertGreater(len(all_clusters), 0)
 
     def test_none_on_missing_record(self) -> None:
         """Test `None` is returned when a record does not exist"""
 
-        self.fail()
+        missing_cluster = self.client.retrieve_cluster(pk=999999)  # Assuming this ID does not exist
+        self.assertIsNone(missing_cluster)
