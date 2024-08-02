@@ -76,3 +76,26 @@ class Create(TestCase):
         with self.assertRaises(HTTPError):
             self.client.create_cluster()
 
+
+class Retrieve(TestCase):
+    """Test record retrieval via the `retrieve_cluster` method"""
+
+    def test_retrieve_by_pk(self) -> None:
+        """Test the retrieval of a specific record via its primary key"""
+
+        self.fail()
+
+    def test_retrieve_by_filters(self) -> None:
+        """Test the filtering of returned records via search params"""
+
+        self.fail()
+
+    def test_retrieve_all(self) -> None:
+        """Test the retrieval of all records"""
+
+        self.fail()
+
+    def test_none_on_missing_record(self) -> None:
+        """Test `None` is returned when a record does not exist"""
+
+        self.fail()
