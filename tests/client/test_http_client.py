@@ -35,7 +35,7 @@ class BaseHttpMethodTests:
     endpoint_str = "test/endpoint"
 
     def setUp(self) -> None:
-        """Set up variables and a client instance for each test case"""
+        """Set a client instance for each test case"""
 
         self.client = HTTPClient(API_HOST)
         self.method_to_test = getattr(self.client, self.client_method)
