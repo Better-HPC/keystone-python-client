@@ -130,6 +130,13 @@ class Retrieve(TestCase):
         missing_cluster = self.client.retrieve_cluster(pk=999999)
         self.assertIsNone(missing_cluster)
 
+    def test_error_on_failure(self) -> None:
+        """Test an error is raised when record retrieval fails"""
+
+        # Use an unauthenticated client session on an endpoint requiring authentication
+        with self.assertRaises(HTTPError):
+            KeystoneClient(API_HOST).retrieve_cluster()
+
 
 class Update(TestCase):
     """Test record updates via the `update_cluster` method"""
