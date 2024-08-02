@@ -1,6 +1,5 @@
 """Tests for the `HTTPClient` class"""
 
-import unittest
 from unittest import TestCase
 from unittest.mock import Mock, patch
 from urllib.parse import urljoin
@@ -27,331 +26,102 @@ class Url(TestCase):
 
 
 @patch('requests.request')
-class HttpGet(unittest.TestCase):
+class BaseHttpMethodTests:
+    """Base class for HTTP method tests with common setup and assertions"""
+
+    client_method: str
+    request_type: str
+    request_params: dict[str, str]
+    endpoint_str = "test/endpoint"
+
+    def setUp(self) -> None:
+        """Set up variables and a client instance for each test case"""
+
+        self.client = HTTPClient(API_HOST)
+        self.method_to_test = getattr(self.client, self.client_method)
+
+        # Setup mock objects
+        self.mock_response = Mock()
+        self.mock_response.raise_for_status = Mock()
+
+    def assert_http_request_called(self) -> None:
+        """Assert that the request was called with expected arguments"""
+
+        self.mock_request.assert_called_once_with(
+            self.request_type,
+            urljoin(self.client.url, self.endpoint_str),
+            headers=self.client._auth.get_auth_headers(),
+            **self.request_params
+        )
+        self.mock_response.raise_for_status.assert_called_once()
+
+    def test_unauthenticated_request(self, mock_request: Mock) -> None:
+        """Test the HTTP method for a successful, unauthenticated request"""
+
+        self.mock_request = mock_request
+        self.mock_request.return_value = self.mock_response
+
+        self.method_to_test(self.endpoint_str, **self.request_params)
+        self.assert_http_request_called()
+
+    def test_authenticated_request(self, mock_request: Mock) -> None:
+        """Test the HTTP method for a successful, authenticated request"""
+
+        self.client.login(API_USER, API_PASSWORD)
+        self.mock_request = mock_request
+        self.mock_request.return_value = self.mock_response
+
+        self.method_to_test(self.endpoint_str, **self.request_params)
+        self.assert_http_request_called()
+
+    def test_http_error(self, mock_request: Mock) -> None:
+        """Test the HTTP method for a failed request"""
+
+        self.mock_response.raise_for_status.side_effect = requests.HTTPError("Error")
+        self.mock_request = mock_request
+        self.mock_request.return_value = self.mock_response
+
+        with self.assertRaises(requests.HTTPError):
+            self.method_to_test(self.endpoint_str, **self.request_params)
+
+        self.assert_http_request_called()
+
+
+class HttpGetTest(BaseHttpMethodTests, TestCase):
     """Tests for the `http_get` method"""
 
-    def setUp(self) -> None:
-        """Set up variables and a client instance for each test case"""
-
-        self.client = HTTPClient(API_HOST)
-        self.endpoint_str = "/test-endpoint"
-        self.params = {"key": "value"}
-        self.timeout = 10
-
-    def test_unauthenticated_request(self, mock_request: Mock) -> None:
-        """Test the `http_get` method for a successful, unauthenticated request"""
-
-        mock_response = Mock()
-        mock_response.raise_for_status = Mock()
-        mock_request.return_value = mock_response
-
-        self.client.http_get(self.endpoint_str, params=self.params, timeout=self.timeout)
-        mock_request.assert_called_once_with(
-            "get",
-            urljoin(self.client.url, self.endpoint_str),
-            params=self.params,
-            headers=self.client._auth.get_auth_headers(),
-            timeout=self.timeout
-        )
-        mock_response.raise_for_status.assert_called_once()
-
-    def test_authenticated_request(self, mock_request: Mock) -> None:
-        """Test the `http_get` method for a successful, authenticated request"""
-
-        mock_response = Mock()
-        mock_response.raise_for_status = Mock()
-        mock_request.return_value = mock_response
-
-        self.client.login(API_USER, API_PASSWORD)
-        self.client.http_get(self.endpoint_str, params=self.params, timeout=self.timeout)
-        mock_request.assert_called_once_with(
-            "get",
-            urljoin(self.client.url, self.endpoint_str),
-            params=self.params,
-            headers=self.client._auth.get_auth_headers(),
-            timeout=self.timeout
-        )
-        mock_response.raise_for_status.assert_called_once()
-
-    def test_http_get_error(self, mock_request: Mock) -> None:
-        """Test the `http_get` method for a failed request"""
-
-        mock_response = Mock()
-        mock_response.raise_for_status.side_effect = requests.HTTPError("Error")
-        mock_request.return_value = mock_response
-
-        with self.assertRaises(requests.HTTPError):
-            self.client.http_get(self.endpoint_str, params=self.params, timeout=self.timeout)
-
-        mock_request.assert_called_once_with(
-            "get",
-            urljoin(self.client.url, self.endpoint_str),
-            params=self.params,
-            headers=self.client._auth.get_auth_headers(),
-            timeout=self.timeout
-        )
-        mock_response.raise_for_status.assert_called_once()
+    request_type = 'get'
+    client_method = 'http_get'
+    request_params = {'params': {"key": "value"}, 'timeout': 10}
 
 
-@patch('requests.request')
-class HttpPost(TestCase):
+class HttpPostTest(BaseHttpMethodTests, TestCase):
     """Tests for the `http_post` method"""
 
-    def setUp(self) -> None:
-        """Set up variables and a client instance for each test case"""
-
-        self.client = HTTPClient(API_HOST)
-        self.endpoint_str = "/test-endpoint"
-        self.data = {"key": "value"}
-        self.timeout = 10
-
-    def test_unauthenticated_request(self, mock_request: Mock) -> None:
-        """Test the `http_post` method for a successful, unauthenticated request"""
-
-        mock_response = Mock()
-        mock_response.raise_for_status = Mock()
-        mock_request.return_value = mock_response
-
-        self.client.http_post(self.endpoint_str, data=self.data, timeout=self.timeout)
-        mock_request.assert_called_once_with(
-            "post",
-            urljoin(self.client.url, self.endpoint_str),
-            data=self.data,
-            headers=self.client._auth.get_auth_headers(),
-            timeout=self.timeout
-        )
-        mock_response.raise_for_status.assert_called_once()
-
-    def test_authenticated_request(self, mock_request: Mock) -> None:
-        """Test the `http_post` method for a successful, authenticated request"""
-
-        mock_response = Mock()
-        mock_response.raise_for_status = Mock()
-        mock_request.return_value = mock_response
-
-        self.client.login(API_USER, API_PASSWORD)
-        self.client.http_post(self.endpoint_str, data=self.data, timeout=self.timeout)
-        mock_request.assert_called_once_with(
-            "post",
-            urljoin(self.client.url, self.endpoint_str),
-            data=self.data,
-            headers=self.client._auth.get_auth_headers(),
-            timeout=self.timeout
-        )
-        mock_response.raise_for_status.assert_called_once()
-
-    def test_http_post_error(self, mock_request: Mock) -> None:
-        """Test the `http_post` method for a failed request"""
-
-        mock_response = Mock()
-        mock_response.raise_for_status.side_effect = requests.HTTPError("Error")
-        mock_request.return_value = mock_response
-
-        with self.assertRaises(requests.HTTPError):
-            self.client.http_post(self.endpoint_str, data=self.data, timeout=self.timeout)
-
-        mock_request.assert_called_once_with(
-            "post",
-            urljoin(self.client.url, self.endpoint_str),
-            data=self.data,
-            headers=self.client._auth.get_auth_headers(),
-            timeout=self.timeout
-        )
-        mock_response.raise_for_status.assert_called_once()
+    request_type = 'post'
+    client_method = 'http_post'
+    request_params = {'data': {"key": "value"}, 'timeout': 10}
 
 
-@patch('requests.request')
-class HttpPatch(TestCase):
+class HttpPatchTest(BaseHttpMethodTests, TestCase):
     """Tests for the `http_patch` method"""
 
-    def setUp(self) -> None:
-        """Set up variables and a client instance for each test case"""
-
-        self.client = HTTPClient(API_HOST)
-        self.endpoint_str = "/test-endpoint"
-        self.data = {"key": "value"}
-        self.timeout = 10
-
-    def test_unauthenticated_request(self, mock_request: Mock) -> None:
-        """Test the `http_patch` method for a successful, unauthenticated request"""
-
-        mock_response = Mock()
-        mock_response.raise_for_status = Mock()
-        mock_request.return_value = mock_response
-
-        self.client.http_patch(self.endpoint_str, data=self.data, timeout=self.timeout)
-        mock_request.assert_called_once_with(
-            "patch",
-            urljoin(self.client.url, self.endpoint_str),
-            data=self.data,
-            headers=self.client._auth.get_auth_headers(),
-            timeout=self.timeout
-        )
-        mock_response.raise_for_status.assert_called_once()
-
-    def test_authenticated_request(self, mock_request: Mock) -> None:
-        """Test the `http_patch` method for a successful, authenticated request"""
-
-        mock_response = Mock()
-        mock_response.raise_for_status = Mock()
-        mock_request.return_value = mock_response
-
-        self.client.login(API_USER, API_PASSWORD)
-        self.client.http_patch(self.endpoint_str, data=self.data, timeout=self.timeout)
-        mock_request.assert_called_once_with(
-            "patch",
-            urljoin(self.client.url, self.endpoint_str),
-            data=self.data,
-            headers=self.client._auth.get_auth_headers(),
-            timeout=self.timeout
-        )
-        mock_response.raise_for_status.assert_called_once()
-
-    def test_http_patch_error(self, mock_request: Mock) -> None:
-        """Test the `http_patch` method for a failed request"""
-
-        mock_response = Mock()
-        mock_response.raise_for_status.side_effect = requests.HTTPError("Error")
-        mock_request.return_value = mock_response
-
-        with self.assertRaises(requests.HTTPError):
-            self.client.http_patch(self.endpoint_str, data=self.data, timeout=self.timeout)
-
-        mock_request.assert_called_once_with(
-            "patch",
-            urljoin(self.client.url, self.endpoint_str),
-            data=self.data,
-            headers=self.client._auth.get_auth_headers(),
-            timeout=self.timeout
-        )
-        mock_response.raise_for_status.assert_called_once()
+    request_type = 'patch'
+    client_method = 'http_patch'
+    request_params = {'data': {"key": "value"}, 'timeout': 10}
 
 
-@patch('requests.request')
-class HttpPut(TestCase):
+class HttpPutTest(BaseHttpMethodTests, TestCase):
     """Tests for the `http_put` method"""
 
-    def setUp(self) -> None:
-        """Set up variables and a client instance for each test case"""
-
-        self.client = HTTPClient(API_HOST)
-        self.endpoint_str = "/test-endpoint"
-        self.data = {"key": "value"}
-        self.timeout = 10
-
-    def test_unauthenticated_request(self, mock_request: Mock) -> None:
-        """Test the `http_put` method for a successful, unauthenticated request"""
-
-        mock_response = Mock()
-        mock_response.raise_for_status = Mock()
-        mock_request.return_value = mock_response
-
-        self.client.http_put(self.endpoint_str, data=self.data, timeout=self.timeout)
-        mock_request.assert_called_once_with(
-            "put",
-            urljoin(self.client.url, self.endpoint_str),
-            data=self.data,
-            headers=self.client._auth.get_auth_headers(),
-            timeout=self.timeout
-        )
-        mock_response.raise_for_status.assert_called_once()
-
-    def test_authenticated_request(self, mock_request: Mock) -> None:
-        """Test the `http_put` method for a successful, authenticated request"""
-
-        mock_response = Mock()
-        mock_response.raise_for_status = Mock()
-        mock_request.return_value = mock_response
-
-        self.client.login(API_USER, API_PASSWORD)
-        self.client.http_put(self.endpoint_str, data=self.data, timeout=self.timeout)
-        mock_request.assert_called_once_with(
-            "put",
-            urljoin(self.client.url, self.endpoint_str),
-            data=self.data,
-            headers=self.client._auth.get_auth_headers(),
-            timeout=self.timeout
-        )
-        mock_response.raise_for_status.assert_called_once()
-
-    def test_http_put_error(self, mock_request: Mock) -> None:
-        """Test the `http_put` method for a failed request"""
-
-        mock_response = Mock()
-        mock_response.raise_for_status.side_effect = requests.HTTPError("Error")
-        mock_request.return_value = mock_response
-
-        with self.assertRaises(requests.HTTPError):
-            self.client.http_put(self.endpoint_str, data=self.data, timeout=self.timeout)
-
-        mock_request.assert_called_once_with(
-            "put",
-            urljoin(self.client.url, self.endpoint_str),
-            data=self.data,
-            headers=self.client._auth.get_auth_headers(),
-            timeout=self.timeout
-        )
-        mock_response.raise_for_status.assert_called_once()
+    request_type = 'put'
+    client_method = 'http_put'
+    request_params = {'data': {"key": "value"}, 'timeout': 10}
 
 
-@patch('requests.request')
-class HttpDelete(TestCase):
+class HttpDeleteTest(BaseHttpMethodTests, TestCase):
     """Tests for the `http_delete` method"""
 
-    def setUp(self) -> None:
-        """Set up variables and a client instance for each test case"""
-
-        self.client = HTTPClient(API_HOST)
-        self.endpoint_str = "/test-endpoint"
-        self.timeout = 10
-
-    def test_unauthenticated_request(self, mock_request: Mock) -> None:
-        """Test the `http_delete` method for a successful, unauthenticated request"""
-
-        mock_response = Mock()
-        mock_response.raise_for_status = Mock()
-        mock_request.return_value = mock_response
-
-        self.client.http_delete(self.endpoint_str, timeout=self.timeout)
-        mock_request.assert_called_once_with(
-            "delete",
-            urljoin(self.client.url, self.endpoint_str),
-            headers=self.client._auth.get_auth_headers(),
-            timeout=self.timeout
-        )
-        mock_response.raise_for_status.assert_called_once()
-
-    def test_authenticated_request(self, mock_request: Mock) -> None:
-        """Test the `http_delete` method for a successful, authenticated request"""
-
-        mock_response = Mock()
-        mock_response.raise_for_status = Mock()
-        mock_request.return_value = mock_response
-
-        self.client.login(API_USER, API_PASSWORD)
-        self.client.http_delete(self.endpoint_str, timeout=self.timeout)
-        mock_request.assert_called_once_with(
-            "delete",
-            urljoin(self.client.url, self.endpoint_str),
-            headers=self.client._auth.get_auth_headers(),
-            timeout=self.timeout
-        )
-        mock_response.raise_for_status.assert_called_once()
-
-    def test_http_delete_error(self, mock_request: Mock) -> None:
-        """Test the `http_delete` method for a failed request"""
-
-        mock_response = Mock()
-        mock_response.raise_for_status.side_effect = requests.HTTPError("Error")
-        mock_request.return_value = mock_response
-
-        with self.assertRaises(requests.HTTPError):
-            self.client.http_delete(self.endpoint_str, timeout=self.timeout)
-
-        mock_request.assert_called_once_with(
-            "delete",
-            urljoin(self.client.url, self.endpoint_str),
-            headers=self.client._auth.get_auth_headers(),
-            timeout=self.timeout
-        )
-        mock_response.raise_for_status.assert_called_once()
+    request_type = 'delete'
+    client_method = 'http_delete'
+    request_params = {'timeout': 10}
