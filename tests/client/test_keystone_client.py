@@ -44,13 +44,11 @@ class Create(TestCase):
     def tearDown(self) -> None:
         """Delete any test records"""
 
-        existing_clusters = self.client.http_get(f'allocations/clusters/', params={'name': 'Test-Cluster'}).json()
-        for cluster in existing_clusters:
-            pk = cluster['id']
-            self.client.http_delete(f'allocations/clusters/{pk}').raise_for_status()
+        for cluster in self.client.http_get(f'allocations/clusters/', params={'name': 'Test-Cluster'}).json():
+            self.client.http_delete(f"allocations/clusters/{cluster['id']}").raise_for_status()
 
     def test_record_is_created(self) -> None:
-        """Test that a record is created successfully"""
+        """Test a record is created successfully"""
 
         new_record_data = self.client.create_cluster(
             name='Test-Cluster',
@@ -81,7 +79,7 @@ class Retrieve(TestCase):
     """Test record retrieval via the `retrieve_cluster` method"""
 
     def setUp(self) -> None:
-        """Set up the test client and log in"""
+        """Set up a test client and create records for testing"""
 
         self.client = KeystoneClient(API_HOST)
         self.client.login(API_USER, API_PASSWORD)
@@ -96,7 +94,7 @@ class Retrieve(TestCase):
         )
 
     def tearDown(self) -> None:
-        """Clean up by deleting existing test clusters"""
+        """Delete any test records"""
 
         for cluster in self.client.http_get(f'allocations/clusters/', params={'name': 'Test-Cluster'}).json():
             self.client.http_delete(f"allocations/clusters/{cluster['id']}").raise_for_status()
@@ -131,3 +129,58 @@ class Retrieve(TestCase):
 
         missing_cluster = self.client.retrieve_cluster(pk=999999)  # Assuming this ID does not exist
         self.assertIsNone(missing_cluster)
+
+
+class Update(TestCase):
+    """Test record updates via the `update_cluster` method"""
+
+    def setUp(self) -> None:
+        """Set up a test client and create records for testing"""
+
+        self.client = KeystoneClient(API_HOST)
+        self.client.login(API_USER, API_PASSWORD)
+        self.test_cluster = self.client.create_cluster(
+            name='Test-Cluster',
+            description='Cluster created for update testing purposes.'
+        )
+
+    def tearDown(self) -> None:
+        """Delete any test records"""
+
+        for cluster in self.client.http_get(f'allocations/clusters/', params={'name': 'Test-Cluster'}).json():
+            self.client.http_delete(f"allocations/clusters/{cluster['id']}").raise_for_status()
+
+    def test_update_record(self) -> None:
+        """Test the record is updated successfully"""
+
+        pk = self.test_cluster['id']
+        updated_data = {'description': "Updated description"}
+        updated_record = self.client.update_cluster(pk=pk, data=updated_data)
+        self.assertIsNotNone(updated_record)
+        self.assertEqual(updated_record['description'], "Updated description")
+
+    def test_update_nonexistent_record(self) -> None:
+        """Test updating a nonexistent record raises an error"""
+
+        with self.assertRaises(HTTPError):
+            self.client.update_cluster(pk=999999, data={'description': "This should fail"})
+
+    def test_partial_update(self) -> None:
+        """Test a partial update modifies only specified fields"""
+
+        pk = self.test_cluster['id']
+        original_status = self.test_cluster['enabled']
+
+        updated_data = {'description': "Partially updated description"}
+        updated_record = self.client.update_cluster(pk=pk, data=updated_data)
+
+        self.assertEqual(updated_record['description'], "Partially updated description")
+        self.assertEqual(updated_record['enabled'], original_status)
+
+    def test_no_update_on_empty_data(self) -> None:
+        """Test an empty update request does not change the record"""
+
+        pk = self.test_cluster['id']
+        original_data = self.test_cluster.copy()
+        updated_record = self.client.update_cluster(pk=pk, data={})
+        self.assertEqual(updated_record, original_data)
