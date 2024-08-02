@@ -87,7 +87,7 @@ class BaseHttpMethodTests:
         self.assert_http_request_called()
 
 
-class HttpGetTest(BaseHttpMethodTests, TestCase):
+class HttpGet(BaseHttpMethodTests, TestCase):
     """Tests for the `http_get` method"""
 
     request_type = 'get'
@@ -95,7 +95,7 @@ class HttpGetTest(BaseHttpMethodTests, TestCase):
     request_params = {'params': {"key": "value"}, 'timeout': 10}
 
 
-class HttpPostTest(BaseHttpMethodTests, TestCase):
+class HttpPost(BaseHttpMethodTests, TestCase):
     """Tests for the `http_post` method"""
 
     request_type = 'post'
@@ -103,7 +103,7 @@ class HttpPostTest(BaseHttpMethodTests, TestCase):
     request_params = {'data': {"key": "value"}, 'timeout': 10}
 
 
-class HttpPatchTest(BaseHttpMethodTests, TestCase):
+class HttpPatch(BaseHttpMethodTests, TestCase):
     """Tests for the `http_patch` method"""
 
     request_type = 'patch'
@@ -111,7 +111,7 @@ class HttpPatchTest(BaseHttpMethodTests, TestCase):
     request_params = {'data': {"key": "value"}, 'timeout': 10}
 
 
-class HttpPutTest(BaseHttpMethodTests, TestCase):
+class HttpPut(BaseHttpMethodTests, TestCase):
     """Tests for the `http_put` method"""
 
     request_type = 'put'
@@ -119,7 +119,7 @@ class HttpPutTest(BaseHttpMethodTests, TestCase):
     request_params = {'data': {"key": "value"}, 'timeout': 10}
 
 
-class HttpDeleteTest(BaseHttpMethodTests, TestCase):
+class HttpDelete(BaseHttpMethodTests, TestCase):
     """Tests for the `http_delete` method"""
 
     request_type = 'delete'
