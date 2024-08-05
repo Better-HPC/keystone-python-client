@@ -138,6 +138,15 @@ class Login(TestCase):
         self.assertEqual(manager.jwt.access, 'fake_access_token')
         self.assertEqual(manager.jwt.refresh, 'fake_refresh_token')
 
+    @patch('requests.post')
+    def test_login_network_error(self, mock_post: Mock) -> None:
+        """Test network errors during login"""
+
+        mock_post.side_effect = requests.ConnectionError()
+        manager = AuthenticationManager(API_HOST)
+        with self.assertRaises(requests.ConnectionError):
+            manager.login(API_USER, API_PASSWORD)
+
 
 class Logout(TestCase):
     """Test session invalidation via the `logout` method"""
@@ -156,7 +165,7 @@ class Logout(TestCase):
         self.assertIsNone(self.manager.jwt)
 
     @patch('requests.post')
-    def test_blacklist_request_sent(self, mock_post):
+    def test_blacklist_request_sent(self, mock_post: Mock) -> None:
         """Test a blacklist request is sent to the API server"""
 
         refresh_token = self.manager.jwt.refresh
@@ -205,10 +214,13 @@ class Refresh(TestCase):
             mock_post.assert_not_called()
 
     def test_refresh_with_valid_access_token(self) -> None:
-        """Test the refresh call exits silently when not credentials are not expired"""
+        """Test the refresh call exits silently when credentials are not expired"""
 
         manager = AuthenticationManager(API_HOST)
-        manager.login(API_USER, API_PASSWORD)
+        manager.jwt = create_token(
+            access_expires=datetime.now() + timedelta(hours=1),
+            refresh_expires=datetime.now() + timedelta(days=1)
+        )
 
         with patch('requests.post') as mock_post:
             manager.refresh()
@@ -218,7 +230,10 @@ class Refresh(TestCase):
         """Test the refresh call refreshes valid credentials `force=True`"""
 
         manager = AuthenticationManager(API_HOST)
-        manager.login(API_USER, API_PASSWORD)
+        manager.jwt = create_token(
+            access_expires=datetime.now() + timedelta(hours=1),
+            refresh_expires=datetime.now() + timedelta(days=1)
+        )
         refresh_token = manager.jwt.refresh
 
         with patch('requests.post') as mock_post:
