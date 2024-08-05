@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from warnings import warn
 
 import jwt
 import requests
