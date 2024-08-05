@@ -55,14 +55,20 @@ class HTTPClient:
 
         self._auth.login(username, password, timeout)  # pragma: nocover
 
-    def logout(self, timeout: int = DEFAULT_TIMEOUT) -> None:
-        """Log out and blacklist any active credentials
+    def logout(self, raise_blacklist: bool = False, timeout: int = DEFAULT_TIMEOUT) -> None:
+        """Clear current credentials and blacklist any active credentials
 
         Args:
+            raise_blacklist: Optionally raise an exception if the blacklist request fails
             timeout: Seconds before the blacklist request times out
         """
 
-        self._auth.logout(timeout)  # pragma: nocover
+        try:
+            self._auth.logout(timeout)  # pragma: nocover
+
+        except requests.HTTPError:
+            if raise_blacklist:
+                raise
 
     def is_authenticated(self) -> bool:
         """Return whether the client instance has active credentials"""
