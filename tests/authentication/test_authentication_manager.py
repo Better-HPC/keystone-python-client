@@ -188,3 +188,96 @@ class Logout(TestCase):
 
         AuthenticationManager(API_HOST).logout()
         mock_post.assert_not_called()
+
+
+class Refresh(TestCase):
+    """Test credential refreshing via the `refresh` method"""
+
+    def test_refresh_while_not_authenticated(self) -> None:
+        """Test the refresh call exits silently when not authenticated"""
+
+        manager = AuthenticationManager(API_HOST)
+        self.assertFalse(manager.is_authenticated())
+        self.assertIsNone(manager.jwt)
+
+        with patch('requests.post') as mock_post:
+            manager.refresh()
+            mock_post.assert_not_called()
+
+    def test_refresh_with_valid_access_token(self) -> None:
+        """Test the refresh call exits silently when not credentials are not expired"""
+
+        manager = AuthenticationManager(API_HOST)
+        manager.login(API_USER, API_PASSWORD)
+
+        with patch('requests.post') as mock_post:
+            manager.refresh()
+            mock_post.assert_not_called()
+
+    def test_refresh_with_valid_access_token_force(self) -> None:
+        """Test the refresh call refreshes valid credentials `force=True`"""
+
+        manager = AuthenticationManager(API_HOST)
+        manager.login(API_USER, API_PASSWORD)
+        refresh_token = manager.jwt.refresh
+
+        with patch('requests.post') as mock_post:
+            manager.refresh(force=True)
+            mock_post.assert_called_once_with(
+                manager.refresh_url,
+                data={'refresh': refresh_token},
+                timeout=None
+            )
+
+    @patch('requests.post')
+    def test_refresh_with_expired_access_token(self, mock_post: Mock) -> None:
+        """Test refreshing when the access token is expired"""
+
+        # Mock a session with an expired token
+        manager = AuthenticationManager(API_HOST)
+        manager.jwt = create_token(
+            access_expires=datetime.now() - timedelta(days=1),
+            refresh_expires=datetime.now() + timedelta(days=1)
+        )
+        refresh_token = manager.jwt.refresh
+
+        # Mock response for successful refresh
+        mock_response = Mock()
+        mock_response.json.return_value = {"refresh": "new_refresh_token"}
+        mock_post.return_value = mock_response
+
+        manager.refresh()
+        mock_post.assert_called_once_with(
+            manager.refresh_url,
+            data={'refresh': refresh_token},
+            timeout=None
+        )
+
+        # Check if refresh token was updated
+        self.assertEqual(manager.jwt.refresh, "new_refresh_token")
+
+    @patch('requests.post')
+    def test_refresh_with_expired_refresh_token(self, mock_post: Mock) -> None:
+        """Test refreshing when the refresh token is expired"""
+
+        # Mock a session with an expired token
+        manager = AuthenticationManager(API_HOST)
+        manager.jwt = create_token(
+            access_expires=datetime.now() - timedelta(days=1),
+            refresh_expires=datetime.now() - timedelta(days=1)
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "Refresh token has expired. Login again to continue."):
+            manager.refresh()
+
+        mock_post.assert_not_called()
+
+    def test_refresh_error(self) -> None:
+        """Test an HTTP error is raised when the credential refresh fails"""
+
+        manager = AuthenticationManager(API_HOST)
+        manager.login(API_USER, API_PASSWORD)
+
+        with patch('requests.post') as mock_post, self.assertRaises(requests.HTTPError):
+            mock_post.side_effect = requests.HTTPError()
+            manager.refresh(force=True)
