@@ -2,8 +2,10 @@
 
 from datetime import datetime, timedelta
 from unittest import TestCase
+from unittest.mock import Mock, patch
 
 import jwt
+import requests
 from requests.exceptions import HTTPError
 
 from keystone_client.authentication import AuthenticationManager, JWT
@@ -94,10 +96,10 @@ class GetAuthHeaders(TestCase):
         self.assertEqual(f"Bearer {manager.jwt.access}", headers["Authorization"])
 
 
-class LoginLogout(TestCase):
-    """Test the logging in/out of users"""
+class Login(TestCase):
+    """Test session authentication via the `login` method"""
 
-    def test_correct_credentials(self) -> None:
+    def test_with_correct_credentials(self) -> None:
         """Test users are successfully logged in/out when providing correct credentials"""
 
         manager = AuthenticationManager(API_HOST)
@@ -106,13 +108,83 @@ class LoginLogout(TestCase):
         manager.login(API_USER, API_PASSWORD)
         self.assertTrue(manager.is_authenticated())
 
-        manager.logout()
-        self.assertFalse(manager.is_authenticated())
-
-    def test_incorrect_credentials(self) -> None:
+    def test_with_incorrect_credentials(self) -> None:
         """Test an error is raised when authenticating with invalid credentials"""
 
         manager = AuthenticationManager(API_HOST)
         with self.assertRaises(HTTPError) as error:
             manager.login('foo', 'bar')
             self.assertEqual(401, error.response.status_code)
+
+    @patch('requests.post')
+    def test_jwt_credentials_are_cached(self, mock_post: Mock) -> None:
+        """Test JWT credentials are cached after a successful login"""
+
+        # Mock response for successful login
+        mock_response = Mock()
+        mock_response.json.return_value = {
+            'access': 'fake_access_token',
+            'refresh': 'fake_refresh_token'
+        }
+        mock_response.raise_for_status = Mock()
+        mock_post.return_value = mock_response
+
+        # Call the login method
+        manager = AuthenticationManager(API_HOST)
+        manager.login(API_USER, API_PASSWORD)
+
+        # Assertions to check if tokens are set correctly
+        self.assertIsNotNone(manager.jwt)
+        self.assertEqual(manager.jwt.access, 'fake_access_token')
+        self.assertEqual(manager.jwt.refresh, 'fake_refresh_token')
+
+
+class Logout(TestCase):
+    """Test session invalidation via the `logout` method"""
+
+    def setUp(self) -> None:
+        """Authenticate a new `AuthenticationManager` instance"""
+
+        self.manager = AuthenticationManager(API_HOST)
+        self.manager.login(API_USER, API_PASSWORD)
+
+    def test_user_is_logged_out(self) -> None:
+        """Test the credentials are cleared and the user is logged out"""
+
+        self.manager.logout()
+        self.assertFalse(self.manager.is_authenticated())
+        self.assertIsNone(self.manager.jwt)
+
+    @patch('requests.post')
+    def test_blacklist_request_sent(self, mock_post):
+        """Test a blacklist request is sent to the API server"""
+
+        refresh_token = self.manager.jwt.refresh
+        blacklist_url = self.manager.blacklist_url
+
+        self.manager.logout()
+        mock_post.assert_called_once_with(
+            blacklist_url,
+            data={'refresh': refresh_token},
+            timeout=None
+        )
+
+        self.assertIsNone(self.manager.jwt)
+
+    @patch('requests.post')
+    def test_logout_failure(self, mock_post: Mock) -> None:
+        """Test an error is raised when the token blacklist request fails"""
+
+        mock_response = Mock()
+        mock_response.raise_for_status.side_effect = requests.HTTPError("Failed to blacklist token")
+        mock_post.return_value = mock_response
+
+        with self.assertRaises(requests.HTTPError):
+            self.manager.logout()
+
+    @patch('requests.post')
+    def test_logout_with_no_jwt(self, mock_post: Mock) -> None:
+        """Test the function exits silently when already not authenticated"""
+
+        AuthenticationManager(API_HOST).logout()
+        mock_post.assert_not_called()
