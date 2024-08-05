@@ -86,6 +86,15 @@ class BaseHttpMethodTests:
 
         self.assert_http_request_called()
 
+    def test_connection_error(self, mock_request: Mock) -> None:
+        """Test that a connection error is raised"""
+
+        self.mock_request = mock_request
+        self.mock_request.side_effect = requests.ConnectionError("Connection error")
+
+        with self.assertRaises(requests.ConnectionError):
+            self.method_to_test(self.endpoint_str, **self.request_params)
+
 
 class HttpGet(BaseHttpMethodTests, TestCase):
     """Tests for the `http_get` method"""
