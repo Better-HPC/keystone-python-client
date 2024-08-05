@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from warnings import warn
 
 import jwt
 import requests
@@ -74,20 +73,20 @@ class AuthenticationManager:
         access_token_refreshable = self.jwt.refresh_expiration > now
         return access_token_valid or access_token_refreshable
 
-    def get_auth_headers(self, refresh: bool = True, timeout: int = None) -> dict[str, str]:
+    def get_auth_headers(self, auto_refresh: bool = True, timeout: int = None) -> dict[str, str]:
         """Return headers data for authenticating API requests
 
         The returned dictionary is empty when not authenticated.
 
         Args:
-            refresh: Automatically refresh the JWT credentials if necessary
+            auto_refresh: Automatically refresh the JWT credentials if necessary
             timeout: Seconds before the token refresh request times out
 
         Returns:
             A dictionary with header ata for JWT authentication
         """
 
-        if refresh:
+        if auto_refresh:
             self.refresh(timeout=timeout)
 
         if not self.is_authenticated():
@@ -154,7 +153,7 @@ class AuthenticationManager:
             return
 
         # Alert the user when a refresh is not possible
-        if self.jwt.refresh_expiration > now:
+        if self.jwt.refresh_expiration < now:
             raise RuntimeError("Refresh token has expired. Login again to continue.")
 
         response = requests.post(
