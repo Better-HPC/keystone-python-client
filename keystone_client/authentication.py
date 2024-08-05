@@ -14,7 +14,7 @@ from keystone_client.schema import Schema
 class JWT:
     """JWT authentication tokens"""
 
-    def __init__(self, access: str, refresh: str, algorithm='HS256') -> None:
+    def __init__(self, access: str, refresh: str, algorithm: str = 'HS256') -> None:
         """Initialize a new pair of JWT tokens
 
         Args:
@@ -59,9 +59,9 @@ class AuthenticationManager:
         """
 
         self.jwt: JWT | None = None
-        self.auth_url = schema.auth.new.join_url(url)
-        self.refresh_url = schema.auth.refresh.join_url(url)
-        self.blacklist_url = schema.auth.blacklist.join_url(url)
+        self.auth_url: str = schema.auth.new.join_url(url)
+        self.refresh_url: str = schema.auth.refresh.join_url(url)
+        self.blacklist_url: str = schema.auth.blacklist.join_url(url)
 
     def is_authenticated(self) -> bool:
         """Return whether the client instance has active credentials"""
@@ -126,17 +126,11 @@ class AuthenticationManager:
 
         # Tell the API to blacklist the current token
         if self.jwt is not None:
-            response = requests.post(
+            requests.post(
                 self.blacklist_url,
                 data={"refresh": self.jwt.refresh},
                 timeout=timeout
-            )
-
-            try:
-                response.raise_for_status()
-
-            except Exception as error:
-                warn(f"Token blacklist request failed: {error}")
+            ).raise_for_status()
 
         self.jwt = None
 
