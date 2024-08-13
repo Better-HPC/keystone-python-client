@@ -21,15 +21,15 @@ HTTPMethod = Literal["get", "post", "put", "patch", "delete"]
 
 
 class HTTPClient:
-    """Low level API client for sending standard HTTP operations"""
+    """Low level API client for sending standard HTTP operations."""
 
     schema = Schema()
 
     def __init__(self, url: str) -> None:
-        """Initialize the class
+        """Initialize the class.
 
         Args:
-            url: The base URL for a running Keystone API server
+            url: The base URL for a running Keystone API server.
         """
 
         self._url = url.rstrip('/') + '/'
@@ -37,30 +37,30 @@ class HTTPClient:
 
     @property
     def url(self) -> str:
-        """Return the server URL"""
+        """Return the server URL."""
 
         return self._url
 
     def login(self, username: str, password: str, timeout: int = DEFAULT_TIMEOUT) -> None:
-        """Authenticate a new user session
+        """Authenticate a new user session.
 
         Args:
-            username: The authentication username
-            password: The authentication password
-            timeout: Seconds before the request times out
+            username: The authentication username.
+            password: The authentication password.
+            timeout: Seconds before the request times out.
 
         Raises:
-            requests.HTTPError: If the login request fails
+            requests.HTTPError: If the login request fails.
         """
 
         self._auth.login(username, password, timeout)  # pragma: nocover
 
     def logout(self, raise_blacklist: bool = False, timeout: int = DEFAULT_TIMEOUT) -> None:
-        """Clear current credentials and blacklist any active credentials
+        """Clear current credentials and blacklist any active credentials.
 
         Args:
-            raise_blacklist: Optionally raise an exception if the blacklist request fails
-            timeout: Seconds before the blacklist request times out
+            raise_blacklist: Optionally raise an exception if the blacklist request fails.
+            timeout: Seconds before the blacklist request times out.
         """
 
         try:
@@ -71,20 +71,20 @@ class HTTPClient:
                 raise
 
     def is_authenticated(self) -> bool:
-        """Return whether the client instance has active credentials"""
+        """Return whether the client instance has active credentials."""
 
         return self._auth.is_authenticated()  # pragma: nocover
 
     def _send_request(self, method: HTTPMethod, endpoint: str, **kwargs) -> requests.Response:
-        """Send an HTTP request
+        """Send an HTTP request.
 
         Args:
-            method: The HTTP method to use
-            endpoint: The complete url to send the request to
-            timeout: Seconds before the request times out
+            method: The HTTP method to use.
+            endpoint: The complete url to send the request to.
+            timeout: Seconds before the request times out.
 
         Returns:
-            An HTTP response
+            An HTTP response.
         """
 
         url = urljoin(self.url, endpoint)
@@ -98,18 +98,18 @@ class HTTPClient:
         params: dict[str, any] | None = None,
         timeout: int = DEFAULT_TIMEOUT
     ) -> requests.Response:
-        """Send a GET request to an API endpoint
+        """Send a GET request to an API endpoint.
 
         Args:
-            endpoint: API endpoint to send the request to
-            params: Query parameters to include in the request
-            timeout: Seconds before the request times out
+            endpoint: API endpoint to send the request to.
+            params: Query parameters to include in the request.
+            timeout: Seconds before the request times out.
 
         Returns:
-            The response from the API in the specified format
+            The response from the API in the specified format.
 
         Raises:
-            requests.HTTPError: If the request returns an error code
+            requests.HTTPError: If the request returns an error code.
         """
 
         return self._send_request(
@@ -126,18 +126,18 @@ class HTTPClient:
         data: dict[str, any] | None = None,
         timeout: int = DEFAULT_TIMEOUT
     ) -> requests.Response:
-        """Send a POST request to an API endpoint
+        """Send a POST request to an API endpoint.
 
         Args:
-            endpoint: API endpoint to send the request to
-            data: JSON data to include in the POST request
-            timeout: Seconds before the request times out
+            endpoint: API endpoint to send the request to.
+            data: JSON data to include in the POST request.
+            timeout: Seconds before the request times out.
 
         Returns:
-            The response from the API in the specified format
+            The response from the API in the specified format.
 
         Raises:
-            requests.HTTPError: If the request returns an error code
+            requests.HTTPError: If the request returns an error code.
         """
 
         return self._send_request(
@@ -154,18 +154,18 @@ class HTTPClient:
         data: dict[str, any] | None = None,
         timeout: int = DEFAULT_TIMEOUT
     ) -> requests.Response:
-        """Send a PATCH request to an API endpoint
+        """Send a PATCH request to an API endpoint.
 
         Args:
-            endpoint: API endpoint to send the request to
-            data: JSON data to include in the PATCH request
-            timeout: Seconds before the request times out
+            endpoint: API endpoint to send the request to.
+            data: JSON data to include in the PATCH request.
+            timeout: Seconds before the request times out.
 
         Returns:
-            The response from the API in the specified format
+            The response from the API in the specified format.
 
         Raises:
-            requests.HTTPError: If the request returns an error code
+            requests.HTTPError: If the request returns an error code.
         """
 
         return self._send_request(
@@ -182,18 +182,18 @@ class HTTPClient:
         data: dict[str, any] | None = None,
         timeout: int = DEFAULT_TIMEOUT
     ) -> requests.Response:
-        """Send a PUT request to an endpoint
+        """Send a PUT request to an endpoint.
 
         Args:
-            endpoint: API endpoint to send the request to
-            data: JSON data to include in the PUT request
-            timeout: Seconds before the request times out
+            endpoint: API endpoint to send the request to.
+            data: JSON data to include in the PUT request.
+            timeout: Seconds before the request times out.
 
         Returns:
-            The API response
+            The API response.
 
         Raises:
-            requests.HTTPError: If the request returns an error code
+            requests.HTTPError: If the request returns an error code.
         """
 
         return self._send_request(
@@ -209,17 +209,17 @@ class HTTPClient:
         endpoint: str,
         timeout: int = DEFAULT_TIMEOUT
     ) -> requests.Response:
-        """Send a DELETE request to an endpoint
+        """Send a DELETE request to an endpoint.
 
         Args:
-            endpoint: API endpoint to send the request to
-            timeout: Seconds before the request times out
+            endpoint: API endpoint to send the request to.
+            timeout: Seconds before the request times out.
 
         Returns:
-            The API response
+            The API response.
 
         Raises:
-            requests.HTTPError: If the request returns an error code
+            requests.HTTPError: If the request returns an error code.
         """
 
         return self._send_request(
@@ -231,18 +231,18 @@ class HTTPClient:
 
 
 class KeystoneClient(HTTPClient):
-    """Client class for submitting requests to the Keystone API"""
+    """Client class for submitting requests to the Keystone API."""
 
     @cached_property
     def api_version(self) -> str:
-        """Return the version number of the API server"""
+        """Return the version number of the API server."""
 
         response = self.http_get("version")
         response.raise_for_status()
         return response.text
 
     def __new__(cls, *args, **kwargs) -> KeystoneClient:
-        """Dynamically create CRUD methods for each data endpoint in the API schema"""
+        """Dynamically create CRUD methods for each data endpoint in the API schema."""
 
         new: KeystoneClient = super().__new__(cls)
 
@@ -274,16 +274,16 @@ class KeystoneClient(HTTPClient):
         return new
 
     def _create_factory(self, endpoint: Endpoint) -> callable:
-        """Factory function for data creation methods"""
+        """Factory function for data creation methods."""
 
         def create_record(**data) -> None:
-            """Create an API record
+            """Create an API record.
 
             Args:
-                **data: New record values
+                **data: New record values.
 
             Returns:
-                A copy of the updated record
+                A copy of the updated record.
             """
 
             url = endpoint.join_url(self.url)
@@ -294,26 +294,26 @@ class KeystoneClient(HTTPClient):
         return create_record
 
     def _retrieve_factory(self, endpoint: Endpoint) -> callable:
-        """Factory function for data retrieval methods"""
+        """Factory function for data retrieval methods."""
 
         def retrieve_record(
             pk: int | None = None,
             filters: dict | None = None,
             timeout=DEFAULT_TIMEOUT
         ) -> Union[None, dict, list[dict]]:
-            """Retrieve one or more API records
+            """Retrieve one or more API records.
 
             A single record is returned when specifying a primary key, otherwise the returned
             object is a list of records. In either case, the return value is `None` when no data
             is available for the query.
 
             Args:
-                pk: Optional primary key to fetch a specific record
-                filters: Optional query parameters to include in the request
-                timeout: Seconds before the request times out
+                pk: Optional primary key to fetch a specific record.
+                filters: Optional query parameters to include in the request.
+                timeout: Seconds before the request times out.
 
             Returns:
-                The data record(s) or None
+                The data record(s) or None.
             """
 
             url = endpoint.join_url(self.url, pk)
@@ -332,17 +332,17 @@ class KeystoneClient(HTTPClient):
         return retrieve_record
 
     def _update_factory(self, endpoint: Endpoint) -> callable:
-        """Factory function for data update methods"""
+        """Factory function for data update methods."""
 
         def update_record(pk: int, data) -> dict:
-            """Update an API record
+            """Update an API record.
 
             Args:
-                pk: Primary key of the record to update
-                data: New record values
+                pk: Primary key of the record to update.
+                data: New record values.
 
             Returns:
-                A copy of the updated record
+                A copy of the updated record.
             """
 
             url = endpoint.join_url(self.url, pk)
@@ -353,14 +353,14 @@ class KeystoneClient(HTTPClient):
         return update_record
 
     def _delete_factory(self, endpoint: Endpoint) -> callable:
-        """Factory function for data deletion methods"""
+        """Factory function for data deletion methods."""
 
         def delete_record(pk: int, raise_not_exists: bool = False) -> None:
-            """Delete an API record
+            """Delete an API record.
 
             Args:
-                pk: Primary key of the record to delete
-                raise_not_exists: Raise an error if the record does not exist
+                pk: Primary key of the record to delete.
+                raise_not_exists: Raise an error if the record does not exist.
             """
 
             url = endpoint.join_url(self.url, pk)

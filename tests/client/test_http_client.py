@@ -1,4 +1,4 @@
-"""Tests for the `HTTPClient` class"""
+"""Test the sending of HTTP requests."""
 
 from unittest import TestCase
 from unittest.mock import Mock, patch
@@ -11,10 +11,10 @@ from .. import API_HOST, API_PASSWORD, API_USER
 
 
 class Url(TestCase):
-    """Tests for the `url` property"""
+    """Tests for the `url` property."""
 
     def test_trailing_slash_removed(self) -> None:
-        """Test extra trailing slashes are removed from URLs provided at init"""
+        """Test extra trailing slashes are removed from URLs provided at init."""
 
         base_url = 'https://test.domain.com'
         expected_url = base_url + '/'
@@ -27,7 +27,7 @@ class Url(TestCase):
 
 @patch('requests.request')
 class BaseHttpMethodTests:
-    """Base class for HTTP method tests with common setup and assertions"""
+    """Base class for HTTP method tests with common setup and assertions."""
 
     client_method: str
     request_type: str
@@ -35,7 +35,7 @@ class BaseHttpMethodTests:
     endpoint_str = "test/endpoint"
 
     def setUp(self) -> None:
-        """Set a client instance for each test case"""
+        """Set a client instance for each test case."""
 
         self.client = HTTPClient(API_HOST)
         self.method_to_test = getattr(self.client, self.client_method)
@@ -45,7 +45,7 @@ class BaseHttpMethodTests:
         self.mock_response.raise_for_status = Mock()
 
     def assert_http_request_called(self) -> None:
-        """Assert that the request was called with expected arguments"""
+        """Assert that the request was called with expected arguments."""
 
         self.mock_request.assert_called_once_with(
             self.request_type,
@@ -56,7 +56,7 @@ class BaseHttpMethodTests:
         self.mock_response.raise_for_status.assert_called_once()
 
     def test_unauthenticated_request(self, mock_request: Mock) -> None:
-        """Test the HTTP method for a successful, unauthenticated request"""
+        """Test the HTTP method for a successful, unauthenticated request."""
 
         self.mock_request = mock_request
         self.mock_request.return_value = self.mock_response
@@ -65,7 +65,7 @@ class BaseHttpMethodTests:
         self.assert_http_request_called()
 
     def test_authenticated_request(self, mock_request: Mock) -> None:
-        """Test the HTTP method for a successful, authenticated request"""
+        """Test the HTTP method for a successful, authenticated request."""
 
         self.client.login(API_USER, API_PASSWORD)
         self.mock_request = mock_request
@@ -75,7 +75,7 @@ class BaseHttpMethodTests:
         self.assert_http_request_called()
 
     def test_http_error(self, mock_request: Mock) -> None:
-        """Test the HTTP method for a failed request"""
+        """Test the HTTP method for a failed request."""
 
         self.mock_response.raise_for_status.side_effect = requests.HTTPError("Error")
         self.mock_request = mock_request
@@ -87,7 +87,7 @@ class BaseHttpMethodTests:
         self.assert_http_request_called()
 
     def test_connection_error(self, mock_request: Mock) -> None:
-        """Test that a connection error is raised"""
+        """Test that a connection error is raised."""
 
         self.mock_request = mock_request
         self.mock_request.side_effect = requests.ConnectionError("Connection error")
@@ -97,7 +97,7 @@ class BaseHttpMethodTests:
 
 
 class HttpGet(BaseHttpMethodTests, TestCase):
-    """Tests for the `http_get` method"""
+    """Tests for the `http_get` method."""
 
     request_type = 'get'
     client_method = 'http_get'
@@ -105,7 +105,7 @@ class HttpGet(BaseHttpMethodTests, TestCase):
 
 
 class HttpPost(BaseHttpMethodTests, TestCase):
-    """Tests for the `http_post` method"""
+    """Tests for the `http_post` method."""
 
     request_type = 'post'
     client_method = 'http_post'
@@ -113,7 +113,7 @@ class HttpPost(BaseHttpMethodTests, TestCase):
 
 
 class HttpPatch(BaseHttpMethodTests, TestCase):
-    """Tests for the `http_patch` method"""
+    """Tests for the `http_patch` method."""
 
     request_type = 'patch'
     client_method = 'http_patch'
@@ -121,7 +121,7 @@ class HttpPatch(BaseHttpMethodTests, TestCase):
 
 
 class HttpPut(BaseHttpMethodTests, TestCase):
-    """Tests for the `http_put` method"""
+    """Tests for the `http_put` method."""
 
     request_type = 'put'
     client_method = 'http_put'
@@ -129,7 +129,7 @@ class HttpPut(BaseHttpMethodTests, TestCase):
 
 
 class HttpDelete(BaseHttpMethodTests, TestCase):
-    """Tests for the `http_delete` method"""
+    """Tests for the `http_delete` method."""
 
     request_type = 'delete'
     client_method = 'http_delete'
