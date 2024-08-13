@@ -1,4 +1,4 @@
-"""Tests for the `AuthenticationManager` class."""
+"""Tests for user authentication management."""
 
 from datetime import datetime, timedelta
 from unittest import TestCase
@@ -13,14 +13,14 @@ from tests import API_HOST, API_PASSWORD, API_USER
 
 
 def create_token(access_expires: datetime, refresh_expires: datetime) -> JWT:
-    """Create a JWT token
+    """Create a JWT token.
 
     Args:
-        access_expires: The expiration datetime for the access token
-        refresh_expires: The expiration datetime for the refresh token
+        access_expires: The expiration datetime for the access token.
+        refresh_expires: The expiration datetime for the refresh token.
 
     Returns:
-        A JWT instance with the given expiration dates
+        A JWT instance with the given expiration dates.
     """
 
     return JWT(
@@ -30,17 +30,17 @@ def create_token(access_expires: datetime, refresh_expires: datetime) -> JWT:
 
 
 class IsAuthenticated(TestCase):
-    """Tests for the `is_authenticated` method"""
+    """Tests for the `is_authenticated` method."""
 
     def test_not_authenticated(self) -> None:
-        """Test the return value is `false` when the manager has no JWT data"""
+        """Test the return value is `false` when the manager has no JWT data."""
 
         manager = AuthenticationManager(API_HOST)
         self.assertIsNone(manager.jwt)
         self.assertFalse(manager.is_authenticated())
 
     def test_valid_jwt(self) -> None:
-        """Test the return value is `True` when the JWT token is not expired"""
+        """Test the return value is `True` when the JWT token is not expired."""
 
         manager = AuthenticationManager(API_HOST)
         manager.jwt = create_token(
@@ -51,7 +51,7 @@ class IsAuthenticated(TestCase):
         self.assertTrue(manager.is_authenticated())
 
     def test_refreshable_jwt(self) -> None:
-        """Test the return value is `True` when the JWT token expired but refreshable"""
+        """Test the return value is `True` when the JWT token expired but refreshable."""
 
         manager = AuthenticationManager(API_HOST)
         manager.jwt = create_token(
@@ -62,7 +62,7 @@ class IsAuthenticated(TestCase):
         self.assertTrue(manager.is_authenticated())
 
     def test_expired_jwt(self) -> None:
-        """Test the return value is `False` when the JWT token is expired"""
+        """Test the return value is `False` when the JWT token is expired."""
 
         manager = AuthenticationManager(API_HOST)
         manager.jwt = create_token(
@@ -74,17 +74,17 @@ class IsAuthenticated(TestCase):
 
 
 class GetAuthHeaders(TestCase):
-    """Tests for the `get_auth_headers` method"""
+    """Tests for the `get_auth_headers` method."""
 
     def test_not_authenticated(self) -> None:
-        """Test the returned headers are empty when not authenticated"""
+        """Test the returned headers are empty when not authenticated."""
 
         manager = AuthenticationManager(API_HOST)
         headers = manager.get_auth_headers()
         self.assertEqual(dict(), headers)
 
     def test_headers_match_jwt(self) -> None:
-        """Test the returned data matches the JWT token"""
+        """Test the returned data matches the JWT token."""
 
         manager = AuthenticationManager(API_HOST)
         manager.jwt = create_token(
@@ -97,10 +97,10 @@ class GetAuthHeaders(TestCase):
 
 
 class Login(TestCase):
-    """Test session authentication via the `login` method"""
+    """Test session authentication via the `login` method."""
 
     def test_with_correct_credentials(self) -> None:
-        """Test users are successfully logged in/out when providing correct credentials"""
+        """Test users are successfully logged in/out when providing correct credentials."""
 
         manager = AuthenticationManager(API_HOST)
         self.assertFalse(manager.is_authenticated())
@@ -109,7 +109,7 @@ class Login(TestCase):
         self.assertTrue(manager.is_authenticated())
 
     def test_with_incorrect_credentials(self) -> None:
-        """Test an error is raised when authenticating with invalid credentials"""
+        """Test an error is raised when authenticating with invalid credentials."""
 
         manager = AuthenticationManager(API_HOST)
         with self.assertRaises(HTTPError) as error:
@@ -118,7 +118,7 @@ class Login(TestCase):
 
     @patch('requests.post')
     def test_jwt_credentials_are_cached(self, mock_post: Mock) -> None:
-        """Test JWT credentials are cached after a successful login"""
+        """Test JWT credentials are cached after a successful login."""
 
         # Mock response for successful login
         mock_response = Mock()
@@ -140,7 +140,7 @@ class Login(TestCase):
 
     @patch('requests.post')
     def test_login_network_error(self, mock_post: Mock) -> None:
-        """Test network errors during login"""
+        """Test network errors during login."""
 
         mock_post.side_effect = requests.ConnectionError()
         manager = AuthenticationManager(API_HOST)
@@ -149,16 +149,16 @@ class Login(TestCase):
 
 
 class Logout(TestCase):
-    """Test session invalidation via the `logout` method"""
+    """Test session invalidation via the `logout` method."""
 
     def setUp(self) -> None:
-        """Authenticate a new `AuthenticationManager` instance"""
+        """Authenticate a new `AuthenticationManager` instance."""
 
         self.manager = AuthenticationManager(API_HOST)
         self.manager.login(API_USER, API_PASSWORD)
 
     def test_user_is_logged_out(self) -> None:
-        """Test the credentials are cleared and the user is logged out"""
+        """Test the credentials are cleared and the user is logged out."""
 
         self.manager.logout()
         self.assertFalse(self.manager.is_authenticated())
@@ -166,7 +166,7 @@ class Logout(TestCase):
 
     @patch('requests.post')
     def test_blacklist_request_sent(self, mock_post: Mock) -> None:
-        """Test a blacklist request is sent to the API server"""
+        """Test a blacklist request is sent to the API server."""
 
         refresh_token = self.manager.jwt.refresh
         blacklist_url = self.manager.blacklist_url
@@ -182,7 +182,7 @@ class Logout(TestCase):
 
     @patch('requests.post')
     def test_logout_failure(self, mock_post: Mock) -> None:
-        """Test an error is raised when the token blacklist request fails"""
+        """Test an error is raised when the token blacklist request fails."""
 
         mock_response = Mock()
         mock_response.raise_for_status.side_effect = requests.HTTPError("Failed to blacklist token")
@@ -193,17 +193,17 @@ class Logout(TestCase):
 
     @patch('requests.post')
     def test_logout_with_no_jwt(self, mock_post: Mock) -> None:
-        """Test the function exits silently when already not authenticated"""
+        """Test the function exits silently when already not authenticated."""
 
         AuthenticationManager(API_HOST).logout()
         mock_post.assert_not_called()
 
 
 class Refresh(TestCase):
-    """Test credential refreshing via the `refresh` method"""
+    """Test credential refreshing via the `refresh` method."""
 
     def test_refresh_while_not_authenticated(self) -> None:
-        """Test the refresh call exits silently when not authenticated"""
+        """Test the refresh call exits silently when not authenticated."""
 
         manager = AuthenticationManager(API_HOST)
         self.assertFalse(manager.is_authenticated())
@@ -214,7 +214,7 @@ class Refresh(TestCase):
             mock_post.assert_not_called()
 
     def test_refresh_with_valid_access_token(self) -> None:
-        """Test the refresh call exits silently when credentials are not expired"""
+        """Test the refresh call exits silently when credentials are not expired."""
 
         manager = AuthenticationManager(API_HOST)
         manager.jwt = create_token(
@@ -227,7 +227,7 @@ class Refresh(TestCase):
             mock_post.assert_not_called()
 
     def test_refresh_with_valid_access_token_force(self) -> None:
-        """Test the refresh call refreshes valid credentials `force=True`"""
+        """Test the refresh call refreshes valid credentials `force=True`."""
 
         manager = AuthenticationManager(API_HOST)
         manager.jwt = create_token(
@@ -246,7 +246,7 @@ class Refresh(TestCase):
 
     @patch('requests.post')
     def test_refresh_with_expired_access_token(self, mock_post: Mock) -> None:
-        """Test refreshing when the access token is expired"""
+        """Test refreshing when the access token is expired."""
 
         # Mock a session with an expired token
         manager = AuthenticationManager(API_HOST)
@@ -273,7 +273,7 @@ class Refresh(TestCase):
 
     @patch('requests.post')
     def test_refresh_with_expired_refresh_token(self, mock_post: Mock) -> None:
-        """Test refreshing when the refresh token is expired"""
+        """Test refreshing when the refresh token is expired."""
 
         # Mock a session with an expired token
         manager = AuthenticationManager(API_HOST)
@@ -288,7 +288,7 @@ class Refresh(TestCase):
         mock_post.assert_not_called()
 
     def test_refresh_error(self) -> None:
-        """Test an HTTP error is raised when the credential refresh fails"""
+        """Test an HTTP error is raised when the credential refresh fails."""
 
         manager = AuthenticationManager(API_HOST)
         manager.login(API_USER, API_PASSWORD)

@@ -5,20 +5,20 @@ from os import path
 
 
 class Endpoint(str):
-    """API endpoint agnostic to the baseAPI URL"""
+    """API endpoint agnostic to the baseAPI URL."""
 
     def join_url(self, base: str, *append) -> str:
-        """Join the endpoint with a base URL
+        """Join the endpoint with a base URL.
 
         This method returns URLs in a format that avoids trailing slash
         redirects from the Keystone API.
 
         Args:
-            base: The base URL
-            *append: Partial paths to append onto the url
+            base: The base URL.
+            *append: Partial paths to append onto the url.
 
         Returns:
-            The base URL join with the endpoint
+            The base URL join with the endpoint.
         """
 
         url = path.join(base, self)
@@ -30,7 +30,7 @@ class Endpoint(str):
 
 @dataclass
 class AuthSchema:
-    """Schema defining API endpoints used for JWT authentication"""
+    """Schema defining API endpoints used for JWT authentication."""
 
     new: Endpoint = Endpoint("authentication/new")
     refresh: Endpoint = Endpoint("authentication/refresh")
@@ -39,7 +39,7 @@ class AuthSchema:
 
 @dataclass
 class DataSchema:
-    """Schema defining API endpoints for data access"""
+    """Schema defining API endpoints for data access."""
 
     allocations: Endpoint = Endpoint("allocations/allocations")
     clusters: Endpoint = Endpoint("allocations/clusters")
@@ -50,7 +50,7 @@ class DataSchema:
 
 @dataclass
 class Schema:
-    """Schema defining the complete set of API endpoints"""
+    """Schema defining the complete set of API endpoints."""
 
     auth: AuthSchema = field(default_factory=AuthSchema)
     data: DataSchema = field(default_factory=DataSchema)

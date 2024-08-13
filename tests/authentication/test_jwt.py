@@ -1,4 +1,4 @@
-"""Tests for the `JWT` class."""
+"""Tests the handling of JWT credentials."""
 
 from datetime import datetime, timedelta
 from unittest import TestCase
@@ -9,13 +9,13 @@ from keystone_client.authentication import JWT
 
 
 class BaseParsingTests:
-    """Base class containing reusable tests for token parsing"""
+    """Base class containing reusable tests for token parsing."""
 
     algorithm: str
 
     @classmethod
     def setUpClass(cls) -> None:
-        """Test the parsing of JWT data"""
+        """Test the parsing of JWT data."""
 
         # Build a JWT
         cls.access_expiration = datetime.now() + timedelta(hours=1)
@@ -27,13 +27,13 @@ class BaseParsingTests:
         cls.jwt = JWT(cls.access_token, cls.refresh_token, cls.algorithm)
 
     def test_access_token(self) -> None:
-        """Test the access token is parsed correctly"""
+        """Test the access token is parsed correctly."""
 
         self.assertEqual(self.access_token, self.jwt.access)
         self.assertEqual(self.access_expiration, self.jwt.access_expiration)
 
     def test_refresh_token(self) -> None:
-        """Test the refresh token is parsed correctly"""
+        """Test the refresh token is parsed correctly."""
 
         self.assertEqual(self.refresh_token, self.jwt.refresh)
         self.assertEqual(self.refresh_expiration, self.jwt.refresh_expiration)
