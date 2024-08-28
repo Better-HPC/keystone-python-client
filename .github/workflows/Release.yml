@@ -40,5 +40,7 @@ jobs:
     needs: [ version, test ]
     uses: ./.github/workflows/Publish.yml
     secrets: inherit
+    permissions:
+      id-token: write
     with:
       version: ${{needs.version.outputs.version}}
