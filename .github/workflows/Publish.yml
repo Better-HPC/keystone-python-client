@@ -13,6 +13,7 @@ jobs:
   publish-pypi:
     name: Python Distribution
     runs-on: ubuntu-latest
+    environment: publish
 
     steps:
       - name: Set up Python
@@ -35,12 +36,12 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           print-hash: true
-          user: ${{ secrets.REPO_USER }}
-          password: ${{ secrets.REPO_PASSWORD }}
 
   trigger-docs:
     name: Trigger Docs
     runs-on: ubuntu-latest
+    environment: publish
+
     steps:
       - name: Update docs
         uses: pitt-crc/keystone-docs/.github/actions/update-action/@main
