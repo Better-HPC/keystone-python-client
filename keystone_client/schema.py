@@ -1,6 +1,6 @@
 """Schema objects used to define available API endpoints."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from os import path
 
 
@@ -29,28 +29,14 @@ class Endpoint(str):
 
 
 @dataclass
-class AuthSchema:
-    """Schema defining API endpoints used for JWT authentication."""
+class Schema:
+    """Schema defining the complete set of API endpoints."""
 
-    new: Endpoint = Endpoint("authentication/new")
-    refresh: Endpoint = Endpoint("authentication/refresh")
-    blacklist: Endpoint = Endpoint("authentication/blacklist")
-
-
-@dataclass
-class DataSchema:
-    """Schema defining API endpoints for data access."""
+    login = Endpoint('authentication/login')
+    logout = Endpoint('authentication/logout')
 
     allocations: Endpoint = Endpoint("allocations/allocations")
     clusters: Endpoint = Endpoint("allocations/clusters")
     requests: Endpoint = Endpoint("allocations/requests")
     research_groups: Endpoint = Endpoint("users/researchgroups")
     users: Endpoint = Endpoint("users/users")
-
-
-@dataclass
-class Schema:
-    """Schema defining the complete set of API endpoints."""
-
-    auth: AuthSchema = field(default_factory=AuthSchema)
-    data: DataSchema = field(default_factory=DataSchema)

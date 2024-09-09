@@ -12,8 +12,8 @@ from typing import Literal, Union
 from urllib.parse import urljoin
 
 import requests
+from requests import Session
 
-from keystone_client.authentication import AuthenticationManager
 from keystone_client.schema import Endpoint, Schema
 
 DEFAULT_TIMEOUT = 15
@@ -33,7 +33,7 @@ class HTTPClient:
         """
 
         self._url = url.rstrip('/') + '/'
-        self._auth = AuthenticationManager(url, self.schema)
+        self._session = Session()
 
     @property
     def url(self) -> str:
@@ -53,42 +53,53 @@ class HTTPClient:
             requests.HTTPError: If the login request fails.
         """
 
-        self._auth.login(username, password, timeout)  # pragma: nocover
+        login_url = self.schema.login.join_url(self.url)
+        self._session.post(login_url, json={'username': username, 'password': password}, timeout=timeout)
 
-    def logout(self, raise_blacklist: bool = False, timeout: int = DEFAULT_TIMEOUT) -> None:
+    def logout(self, timeout: int = DEFAULT_TIMEOUT) -> None:
         """Clear current credentials and blacklist any active credentials.
 
         Args:
-            raise_blacklist: Optionally raise an exception if the blacklist request fails.
             timeout: Seconds before the blacklist request times out.
         """
 
-        try:
-            self._auth.logout(timeout)  # pragma: nocover
-
-        except requests.HTTPError:
-            if raise_blacklist:
-                raise
+        logout_url = self.schema.logout.join_url(self.url)
+        self.http_post(logout_url, timeout=timeout)
 
     def is_authenticated(self) -> bool:
         """Return whether the client instance has active credentials."""
 
-        return self._auth.is_authenticated()  # pragma: nocover
+        raise NotImplementedError
 
-    def _send_request(self, method: HTTPMethod, endpoint: str, **kwargs) -> requests.Response:
+    def _send_request(
+        self,
+        method: HTTPMethod,
+        endpoint: str,
+        data=None,
+        params=None,
+        timeout=None
+    ) -> requests.Response:
         """Send an HTTP request.
 
         Args:
             method: The HTTP method to use.
+            data: JSON data to include in the POST request.
             endpoint: The complete url to send the request to.
+            params: Query parameters to include in the request.
             timeout: Seconds before the request times out.
 
         Returns:
             An HTTP response.
         """
 
+        if data is None:
+            data = dict()
+
+        if csrf_token := self._session.cookies.get('csrftoken'):
+            data.setdefault('csrfmiddlewaretoken', csrf_token)
+
         url = urljoin(self.url, endpoint)
-        response = requests.request(method, url, **kwargs)
+        response = self._session.request(method, url, data=data, params=params, timeout=timeout)
         response.raise_for_status()
         return response
 
@@ -112,13 +123,7 @@ class HTTPClient:
             requests.HTTPError: If the request returns an error code.
         """
 
-        return self._send_request(
-            "get",
-            endpoint,
-            params=params,
-            headers=self._auth.get_auth_headers(),
-            timeout=timeout
-        )
+        return self._send_request("get", endpoint, params=params, timeout=timeout)
 
     def http_post(
         self,
@@ -140,13 +145,7 @@ class HTTPClient:
             requests.HTTPError: If the request returns an error code.
         """
 
-        return self._send_request(
-            "post",
-            endpoint,
-            data=data,
-            headers=self._auth.get_auth_headers(),
-            timeout=timeout
-        )
+        return self._send_request("post", endpoint, data=data, timeout=timeout)
 
     def http_patch(
         self,
@@ -168,13 +167,7 @@ class HTTPClient:
             requests.HTTPError: If the request returns an error code.
         """
 
-        return self._send_request(
-            "patch",
-            endpoint,
-            data=data,
-            headers=self._auth.get_auth_headers(),
-            timeout=timeout
-        )
+        return self._send_request("patch", endpoint, data=data, timeout=timeout)
 
     def http_put(
         self,
@@ -196,13 +189,7 @@ class HTTPClient:
             requests.HTTPError: If the request returns an error code.
         """
 
-        return self._send_request(
-            "put",
-            endpoint,
-            data=data,
-            headers=self._auth.get_auth_headers(),
-            timeout=timeout
-        )
+        return self._send_request("put", endpoint, data=data, timeout=timeout)
 
     def http_delete(
         self,
@@ -222,12 +209,7 @@ class HTTPClient:
             requests.HTTPError: If the request returns an error code.
         """
 
-        return self._send_request(
-            "delete",
-            endpoint,
-            headers=self._auth.get_auth_headers(),
-            timeout=timeout
-        )
+        return self._send_request("delete", endpoint, timeout=timeout)
 
 
 class KeystoneClient(HTTPClient):
@@ -246,30 +228,30 @@ class KeystoneClient(HTTPClient):
 
         new: KeystoneClient = super().__new__(cls)
 
-        new.create_allocation = new._create_factory(cls.schema.data.allocations)
-        new.retrieve_allocation = new._retrieve_factory(cls.schema.data.allocations)
-        new.update_allocation = new._update_factory(cls.schema.data.allocations)
-        new.delete_allocation = new._delete_factory(cls.schema.data.allocations)
+        new.create_allocation = new._create_factory(cls.schema.allocations)
+        new.retrieve_allocation = new._retrieve_factory(cls.schema.allocations)
+        new.update_allocation = new._update_factory(cls.schema.allocations)
+        new.delete_allocation = new._delete_factory(cls.schema.allocations)
 
-        new.create_cluster = new._create_factory(cls.schema.data.clusters)
-        new.retrieve_cluster = new._retrieve_factory(cls.schema.data.clusters)
-        new.update_cluster = new._update_factory(cls.schema.data.clusters)
-        new.delete_cluster = new._delete_factory(cls.schema.data.clusters)
+        new.create_cluster = new._create_factory(cls.schema.clusters)
+        new.retrieve_cluster = new._retrieve_factory(cls.schema.clusters)
+        new.update_cluster = new._update_factory(cls.schema.clusters)
+        new.delete_cluster = new._delete_factory(cls.schema.clusters)
 
-        new.create_request = new._create_factory(cls.schema.data.requests)
-        new.retrieve_request = new._retrieve_factory(cls.schema.data.requests)
-        new.update_request = new._update_factory(cls.schema.data.requests)
-        new.delete_request = new._delete_factory(cls.schema.data.requests)
+        new.create_request = new._create_factory(cls.schema.requests)
+        new.retrieve_request = new._retrieve_factory(cls.schema.requests)
+        new.update_request = new._update_factory(cls.schema.requests)
+        new.delete_request = new._delete_factory(cls.schema.requests)
 
-        new.create_research_group = new._create_factory(cls.schema.data.research_groups)
-        new.retrieve_research_group = new._retrieve_factory(cls.schema.data.research_groups)
-        new.update_research_group = new._update_factory(cls.schema.data.research_groups)
-        new.delete_research_group = new._delete_factory(cls.schema.data.research_groups)
+        new.create_research_group = new._create_factory(cls.schema.research_groups)
+        new.retrieve_research_group = new._retrieve_factory(cls.schema.research_groups)
+        new.update_research_group = new._update_factory(cls.schema.research_groups)
+        new.delete_research_group = new._delete_factory(cls.schema.research_groups)
 
-        new.create_user = new._create_factory(cls.schema.data.users)
-        new.retrieve_user = new._retrieve_factory(cls.schema.data.users)
-        new.update_user = new._update_factory(cls.schema.data.users)
-        new.delete_user = new._delete_factory(cls.schema.data.users)
+        new.create_user = new._create_factory(cls.schema.users)
+        new.retrieve_user = new._retrieve_factory(cls.schema.users)
+        new.update_user = new._update_factory(cls.schema.users)
+        new.delete_user = new._delete_factory(cls.schema.users)
 
         return new
 
