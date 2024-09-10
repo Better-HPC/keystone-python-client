@@ -4,9 +4,6 @@ on:
   release:
     types: [ "released" ]
 
-env:
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/keystone-api
-
 jobs:
   version:
     name: Get Release Version
