@@ -13,8 +13,7 @@ client = KeystoneClient(url="http://localhost:8000")  # (1)!
 1. Specifying a network protocol is required when instantiating new instances (e.g., `http://` or `https://`).
 
 The `login` and `logout` methods are used to handle user authentication.
-Once authenticated, the client will automatically manage the resulting user credentials, including refreshing JWT
-tokens.
+Once authenticated, the client will automatically manage the resulting user credentials.
 
 ```python
 client.login(username="username", password="password")  # (1)!
