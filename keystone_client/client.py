@@ -53,8 +53,12 @@ class HTTPClient:
             requests.HTTPError: If the login request fails.
         """
 
+        if self.is_authenticated():
+            return
+
         login_url = self.schema.login.join_url(self.url)
-        self._session.post(login_url, json={'username': username, 'password': password}, timeout=timeout)
+        response = self._session.post(login_url, json={'username': username, 'password': password}, timeout=timeout)
+        response.raise_for_status()
 
     def logout(self, timeout: int = DEFAULT_TIMEOUT) -> None:
         """Clear current credentials and blacklist any active credentials.
@@ -64,12 +68,13 @@ class HTTPClient:
         """
 
         logout_url = self.schema.logout.join_url(self.url)
-        self.http_post(logout_url, timeout=timeout)
+        response = self.http_post(logout_url, timeout=timeout)
+        response.raise_for_status()
 
     def is_authenticated(self) -> bool:
         """Return whether the client instance has active credentials."""
 
-        raise NotImplementedError
+        return self._session.get(f'{self.url}/authentication/whoami/').status_code == 200
 
     def _send_request(
         self,

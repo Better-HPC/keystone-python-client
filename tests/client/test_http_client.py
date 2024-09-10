@@ -14,8 +14,8 @@ from tests import API_HOST, API_PASSWORD, API_USER
 class Url(TestCase):
     """Tests for the `url` property."""
 
-    def test_trailing_slash_removed(self) -> None:
-        """Test extra trailing slashes are removed from URLs provided at init."""
+    def test_trailing_slash_enforced(self) -> None:
+        """Test the URL is returned with a single trailing slash."""
 
         base_url = 'https://test.domain.com'
         expected_url = base_url + '/'
@@ -44,7 +44,7 @@ class Login(TestCase):
         client = HTTPClient(API_HOST)
         with self.assertRaises(HTTPError) as error:
             client.login('foo', 'bar')
-            self.assertEqual(401, error.response.status_code)
+            self.assertEqual(401, error.exception.response.status_code)
 
     def test_user_already_logged_in(self) -> None:
         """Test the method succeeds when re-logging in a successful user"""
@@ -56,11 +56,11 @@ class Login(TestCase):
         client.login(API_USER, API_PASSWORD)
         self.assertTrue(client.is_authenticated())
 
-    @patch('requests.post')
-    def test_errors_are_forwarded(self, mock_post: Mock) -> None:
+    @patch('requests.Session.request')
+    def test_errors_are_forwarded(self, mock_request: Mock) -> None:
         """Test errors are forwarded to the user during login."""
 
-        mock_post.side_effect = requests.ConnectionError()
+        mock_request.side_effect = requests.ConnectionError()
 
         client = HTTPClient(API_HOST)
         with self.assertRaises(requests.ConnectionError):
@@ -91,17 +91,17 @@ class Logout(TestCase):
         client.logout()
         self.assertFalse(client.is_authenticated())
 
-    @patch('requests.post')
-    def test_errors_are_forwarded(self, mock_post: Mock) -> None:
+    @patch('requests.Session.request')
+    def test_errors_are_forwarded(self, mock_request: Mock) -> None:
         """Test errors are forwarded to the user during logout."""
 
-        mock_post.side_effect = requests.ConnectionError()
+        mock_request.side_effect = requests.ConnectionError()
 
         with self.assertRaises(requests.ConnectionError):
             self.client.login(API_USER, API_PASSWORD)
 
 
-@patch('requests.request')
+@patch('requests.Session.request')
 class BaseHttpMethodTests:
     """Base class for HTTP method tests with common setup and assertions."""
 
