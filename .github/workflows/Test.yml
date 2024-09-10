@@ -10,7 +10,7 @@ jobs:
 
     services:
       api:
-        image: ${{ github.repository_owner }}/pitt-crc/keystone-api:latest
+        image: ghcr.io/${{ github.repository_owner }}/keystone-api:latest
         ports:
           - 8000:8000
 
