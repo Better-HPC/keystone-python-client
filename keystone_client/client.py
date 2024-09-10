@@ -95,11 +95,12 @@ class HTTPClient:
         if data is None:
             data = dict()
 
+        headers = dict()
         if csrf_token := self._session.cookies.get('csrftoken'):
-            data.setdefault('csrfmiddlewaretoken', csrf_token)
+            headers['X-CSRFToken'] = csrf_token
 
         url = urljoin(self.url, endpoint)
-        response = self._session.request(method, url, data=data, params=params, timeout=timeout)
+        response = self._session.request(method, url, data=data, headers=headers, params=params, timeout=timeout)
         response.raise_for_status()
         return response
 
