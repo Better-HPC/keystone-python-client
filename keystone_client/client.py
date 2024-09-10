@@ -76,13 +76,20 @@ class HTTPClient:
 
         return self._session.get(f'{self.url}/authentication/whoami/').status_code == 200
 
+    def _csrf_headers(self) -> dict:
+        """Return the CSRF headers for the current session"""
+
+        headers = dict()
+        if csrf_token := self._session.cookies.get('csrftoken'):
+            headers['X-CSRFToken'] = csrf_token
+
+        return headers
+
     def _send_request(
         self,
         method: HTTPMethod,
         endpoint: str,
-        data=None,
-        params=None,
-        timeout=None
+        **kwargs
     ) -> requests.Response:
         """Send an HTTP request.
 
@@ -97,15 +104,10 @@ class HTTPClient:
             An HTTP response.
         """
 
-        if data is None:
-            data = dict()
-
-        headers = dict()
-        if csrf_token := self._session.cookies.get('csrftoken'):
-            headers['X-CSRFToken'] = csrf_token
-
+        headers = self._csrf_headers()
         url = urljoin(self.url, endpoint)
-        response = self._session.request(method, url, data=data, headers=headers, params=params, timeout=timeout)
+
+        response = self._session.request(method=method, url=url, headers=headers, **kwargs)
         response.raise_for_status()
         return response
 
