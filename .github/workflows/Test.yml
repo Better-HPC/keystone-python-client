@@ -3,9 +3,6 @@ name: 🤖 Test
 on:
   workflow_call:
 
-env:
-  API_IMAGE_NAME: ghcr.io/better-hpc/keystone-api
-
 jobs:
   unit-tests:
     name: Unit Tests
@@ -13,7 +10,7 @@ jobs:
 
     services:
       api:
-        image: ${{ env.API_IMAGE_NAME }}
+        image: ghcr.io/better-hpc/keystone-api
         ports:
           - 8000:8000
 
