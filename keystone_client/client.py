@@ -12,12 +12,11 @@ from typing import Literal, Union
 from urllib.parse import urljoin
 
 import requests
-from requests import Session
+from requests import HTTPError, Session
 
 from keystone_client.schema import Endpoint, Schema
 
 DEFAULT_TIMEOUT = 15
-HTTPMethod = Literal["get", "post", "put", "patch", "delete"]
 
 
 class HTTPClient:
@@ -29,7 +28,7 @@ class HTTPClient:
         """Initialize the class.
 
         Args:
-            url: The base URL for a running Keystone API server.
+            url: The base URL for a Keystone API server.
         """
 
         self._url = url.rstrip('/') + '/'
@@ -53,15 +52,19 @@ class HTTPClient:
             requests.HTTPError: If the login request fails.
         """
 
-        if self.is_authenticated():
-            return
-
+        # Prevent HTTP errors raised when authenticating an existing session
         login_url = self.schema.login.join_url(self.url)
         response = self._session.post(login_url, json={'username': username, 'password': password}, timeout=timeout)
-        response.raise_for_status()
+
+        try:
+            response.raise_for_status()
+
+        except HTTPError:
+            if not self.is_authenticated(timeout=timeout):
+                raise
 
     def logout(self, timeout: int = DEFAULT_TIMEOUT) -> None:
-        """Clear current credentials and blacklist any active credentials.
+        """Logout the current user session.
 
         Args:
             timeout: Seconds before the blacklist request times out.
@@ -71,10 +74,15 @@ class HTTPClient:
         response = self.http_post(logout_url, timeout=timeout)
         response.raise_for_status()
 
-    def is_authenticated(self) -> bool:
-        """Return whether the client instance has active credentials."""
+    def is_authenticated(self, timeout: int = DEFAULT_TIMEOUT) -> bool:
+        """Query the server for the current session's authentication status.
 
-        return self._session.get(f'{self.url}/authentication/whoami/').status_code == 200
+        Args:
+            timeout: Seconds before the blacklist request times out.
+        """
+
+        response = self._session.get(f'{self.url}/authentication/whoami/', timeout=timeout)
+        return response.status_code == 200
 
     def _csrf_headers(self) -> dict:
         """Return the CSRF headers for the current session"""
@@ -87,7 +95,7 @@ class HTTPClient:
 
     def _send_request(
         self,
-        method: HTTPMethod,
+        method: Literal["get", "post", "put", "patch", "delete"],
         endpoint: str,
         **kwargs
     ) -> requests.Response:
