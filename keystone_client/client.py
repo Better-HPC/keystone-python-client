@@ -82,6 +82,10 @@ class HTTPClient:
         """
 
         response = self._session.get(f'{self.url}/authentication/whoami/', timeout=timeout)
+        if response.status_code == 401:
+            return False
+
+        response.raise_for_status()
         return response.status_code == 200
 
     def _csrf_headers(self) -> dict:
