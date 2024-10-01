@@ -6,8 +6,7 @@ from unittest import TestCase
 from requests import HTTPError
 
 from keystone_client import KeystoneClient
-from tests import API_HOST, API_PASSWORD
-from .. import API_USER
+from tests import API_HOST, API_PASSWORD, API_USER
 
 
 class APIVersion(TestCase):
