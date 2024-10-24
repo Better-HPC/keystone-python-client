@@ -38,5 +38,6 @@ class Schema:
     allocations: Endpoint = Endpoint("allocations/allocations")
     clusters: Endpoint = Endpoint("allocations/clusters")
     requests: Endpoint = Endpoint("allocations/requests")
-    research_groups: Endpoint = Endpoint("users/researchgroups")
+    teams: Endpoint = Endpoint("users/teams")
+    memberships: Endpoint = Endpoint("users/memberships")
     users: Endpoint = Endpoint("users/users")

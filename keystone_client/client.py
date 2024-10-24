@@ -263,10 +263,15 @@ class KeystoneClient(HTTPClient):
         new.update_request = new._update_factory(cls.schema.requests)
         new.delete_request = new._delete_factory(cls.schema.requests)
 
-        new.create_research_group = new._create_factory(cls.schema.research_groups)
-        new.retrieve_research_group = new._retrieve_factory(cls.schema.research_groups)
-        new.update_research_group = new._update_factory(cls.schema.research_groups)
-        new.delete_research_group = new._delete_factory(cls.schema.research_groups)
+        new.create_team = new._create_factory(cls.schema.teams)
+        new.retrieve_team = new._retrieve_factory(cls.schema.teams)
+        new.update_team = new._update_factory(cls.schema.teams)
+        new.delete_team = new._delete_factory(cls.schema.teams)
+
+        new.create_membership = new._create_factory(cls.schema.memberships)
+        new.retrieve_membership = new._retrieve_factory(cls.schema.memberships)
+        new.update_membership = new._update_factory(cls.schema.memberships)
+        new.delete_membership = new._delete_factory(cls.schema.memberships)
 
         new.create_user = new._create_factory(cls.schema.users)
         new.retrieve_user = new._retrieve_factory(cls.schema.users)
