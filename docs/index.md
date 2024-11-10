@@ -16,7 +16,7 @@ The Python client is hosted on PyPI and can be installed in the standard fashion
 pip install keystone-api-client
 ```
 
-## User Guide
+## Instantiating a Client
 
 The `KeystoneClient` class is used to encapsulate user authentication and API requests.
 New instances are created by specifying the API URL.
@@ -25,7 +25,7 @@ In the following example, a client instance is defined for a locally running ser
 ```python
 from keystone_client import KeystoneClient
 
-client = KeystoneClient(url="http://localhost:8000")  # (1)!
+client = KeystoneClient(url="http://localhost:8000") # (1)!
 ```
 
 1. Specifying a network protocol is required when instantiating new instances (e.g., `http://` or `https://`).
@@ -35,18 +35,18 @@ Once authenticated, the client will automatically manage the resulting user cred
 tokens.
 
 ```python
-client.login(username="username", password="password")  # (1)!
-assert client.is_authenticated  # (2)!
-client.logout()  # (3)!
+client.login(username="username", password="password") # (1)!
+assert client.is_authenticated # (2)!
+client.logout() # (3)!
 ```
 
 1. Authenticate a new user session.
 2. Check the authentication status at any time.
-3. End the authenticated session and blacklist current credentials.
+3. End the authenticated session and invalidate current credentials.
 
 ## Generic HTTP Requests
 
-The client provides dedicated methods for each HTTP request type supported by the API.
+The client class provides dedicated methods for each HTTP request type supported by the API.
 When authenticated, the client will automatically include the appropriate authentication headers when submitting
 requests.
 
