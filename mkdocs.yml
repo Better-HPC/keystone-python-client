@@ -1,5 +1,1 @@
 site_name: Keystone Python Client
-nav:
-  - index.md
-  - user_guide.md
-  - Client Reference: client_reference.md
