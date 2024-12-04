@@ -115,7 +115,7 @@ class Retrieve(TestCase):
         self.assertIsNotNone(retrieved_cluster)
         self.assertEqual(retrieved_cluster['id'], pk)
 
-    def test_retrieve_by_filters(self) -> None:
+    def test_retrieve_with_filters(self) -> None:
         """Test the filtering of returned records via search params."""
 
         retrieved_clusters = self.client.retrieve_cluster(filters={"name": "Test-Cluster"})
