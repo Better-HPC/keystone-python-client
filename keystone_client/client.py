@@ -306,6 +306,8 @@ class KeystoneClient(HTTPClient):
         def retrieve_record(
             pk: int | None = None,
             filters: dict | None = None,
+            search: str | None = None,
+            order: str | None = None,
             timeout=DEFAULT_TIMEOUT
         ) -> Union[None, dict, list[dict]]:
             """Retrieve one or more API records.
@@ -317,6 +319,8 @@ class KeystoneClient(HTTPClient):
             Args:
                 pk: Optional primary key to fetch a specific record.
                 filters: Optional query parameters to include in the request.
+                search: Optionally search records for the given string.
+                order: Optional order returned values by the given parameter.
                 timeout: Seconds before the request times out.
 
             Returns:
@@ -324,6 +328,11 @@ class KeystoneClient(HTTPClient):
             """
 
             url = endpoint.join_url(self.url, pk)
+
+            for param_name, value in zip(('_search', '_order'), (search, order)):
+                if value is not None:
+                    filters = filters or {}
+                    filters[param_name] = value
 
             try:
                 response = self.http_get(url, params=filters, timeout=timeout)
