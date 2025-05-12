@@ -7,6 +7,7 @@ authentication, data retrieval, and data manipulation.
 
 from __future__ import annotations
 
+import uuid
 from functools import cached_property
 from typing import Literal, Union
 from urllib.parse import urljoin
@@ -33,6 +34,7 @@ class HTTPClient:
 
         self._url = url.rstrip('/') + '/'
         self._session = Session()
+        self._session.headers['X-KEYSTONE-CID'] = str(uuid.uuid4())
 
     @property
     def url(self) -> str:
@@ -240,7 +242,6 @@ class KeystoneClient(HTTPClient):
         """Return the version number of the API server."""
 
         response = self.http_get("version")
-        response.raise_for_status()
         return response.text
 
     def __new__(cls, *args, **kwargs) -> KeystoneClient:
@@ -295,7 +296,6 @@ class KeystoneClient(HTTPClient):
 
             url = endpoint.join_url(self.url)
             response = self.http_post(url, data=data)
-            response.raise_for_status()
             return response.json()
 
         return create_record
@@ -336,7 +336,6 @@ class KeystoneClient(HTTPClient):
 
             try:
                 response = self.http_get(url, params=filters, timeout=timeout)
-                response.raise_for_status()
                 return response.json()
 
             except requests.HTTPError as exception:
@@ -363,7 +362,6 @@ class KeystoneClient(HTTPClient):
 
             url = endpoint.join_url(self.url, pk)
             response = self.http_patch(url, data=data)
-            response.raise_for_status()
             return response.json()
 
         return update_record
@@ -382,8 +380,7 @@ class KeystoneClient(HTTPClient):
             url = endpoint.join_url(self.url, pk)
 
             try:
-                response = self.http_delete(url)
-                response.raise_for_status()
+                self.http_delete(url)
 
             except requests.HTTPError as exception:
                 if exception.response.status_code == 404 and not raise_not_exists:
