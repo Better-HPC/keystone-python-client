@@ -124,7 +124,7 @@ updated_record_data = client.update_cluster(
 
 ### Deleting Records
 
-Delete methods are used to removed records from the server.
+Delete methods are used to remove records from the server.
 
 ```python
 client.delete_cluster(pk=1)
