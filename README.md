@@ -1,3 +1,3 @@
 # Keystone Python Client
 
-Official Python client for ineracting with the Keystone API.
+Official Python client for the Keystone API.
