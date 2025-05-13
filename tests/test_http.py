@@ -7,7 +7,7 @@ from urllib.parse import urljoin
 import requests
 from requests import HTTPError
 
-from keystone_client.client import HTTPClient
+from keystone_client.http import HTTPClient
 from tests import API_HOST, API_PASSWORD, API_USER
 
 
