@@ -45,7 +45,7 @@ class Create(TestCase):
         """Delete any test records."""
 
         for cluster in self.client.http_get(f'allocations/clusters/', params={'name': 'Test-Cluster'}).json():
-            self.client.http_delete(f"allocations/clusters/{cluster['id']}").raise_for_status()
+            self.client.http_delete(f"allocations/clusters/{cluster['id']}/").raise_for_status()
 
     def test_record_is_created(self) -> None:
         """Test a record is created successfully."""
@@ -56,7 +56,7 @@ class Create(TestCase):
         )
 
         pk = new_record_data['id']
-        self.client.http_get(f'allocations/clusters/{pk}').raise_for_status()
+        self.client.http_get(f'allocations/clusters/{pk}/').raise_for_status()
 
     def test_record_data_matches_request(self) -> None:
         """Test the returned record data matches the request."""
@@ -102,10 +102,10 @@ class Retrieve(TestCase):
         """Delete any test records."""
 
         for cluster in self.client.http_get(f'allocations/clusters/', params={'name': 'Test-Cluster'}).json():
-            self.client.http_delete(f"allocations/clusters/{cluster['id']}").raise_for_status()
+            self.client.http_delete(f"allocations/clusters/{cluster['id']}/").raise_for_status()
 
         for cluster in self.client.http_get(f'allocations/clusters/', params={'name': 'Other-Cluster'}).json():
-            self.client.http_delete(f"allocations/clusters/{cluster['id']}").raise_for_status()
+            self.client.http_delete(f"allocations/clusters/{cluster['id']}/").raise_for_status()
 
     def test_retrieve_by_pk(self) -> None:
         """Test the retrieval of a specific record via its primary key."""
@@ -165,7 +165,7 @@ class Update(TestCase):
         """Delete any test records."""
 
         for cluster in self.client.http_get(f'allocations/clusters/', params={'name': 'Test-Cluster'}).json():
-            self.client.http_delete(f"allocations/clusters/{cluster['id']}").raise_for_status()
+            self.client.http_delete(f"allocations/clusters/{cluster['id']}/").raise_for_status()
 
     def test_update_record(self) -> None:
         """Test the record is updated successfully."""
@@ -225,7 +225,7 @@ class Delete(TestCase):
         """Delete any test records."""
 
         for cluster in self.client.http_get(f'allocations/clusters/', params={'name': 'Test-Cluster'}).json():
-            self.client.http_delete(f"allocations/clusters/{cluster['id']}").raise_for_status()
+            self.client.http_delete(f"allocations/clusters/{cluster['id']}/").raise_for_status()
 
     def test_delete_record(self) -> None:
         """Test a record is deleted successfully."""

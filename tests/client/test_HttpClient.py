@@ -108,7 +108,7 @@ class BaseHttpMethodTests:
     client_method_name: str
     client_method_args: dict[str, str]
     request_type: str
-    request_endpoint = "test/endpoint"
+    request_endpoint = "test/endpoint/"
 
     def setUp(self) -> None:
         """Set a client instance for each test case."""
