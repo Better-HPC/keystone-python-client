@@ -10,7 +10,7 @@ from __future__ import annotations
 import uuid
 from functools import cached_property
 from typing import Literal, Union
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import requests
 from requests import HTTPError, Session
@@ -32,7 +32,7 @@ class HTTPClient:
             url: The base URL for a Keystone API server.
         """
 
-        self._url = url.rstrip('/') + '/'
+        self._url = self._normalize_url(url)
         self._session = Session()
         self._session.headers['X-KEYSTONE-CID'] = str(uuid.uuid4())
 
@@ -41,6 +41,56 @@ class HTTPClient:
         """Return the server URL."""
 
         return self._url
+
+    def _normalize_url(self, url: str) -> str:
+        """Return a copy of the given url with a trailing slash enforced on the URL path.
+
+        Args:
+            url: The URL to normalize.
+
+        Returns:
+            A normalized copy of the URL.
+        """
+
+        parts = urlparse(url)
+        return parts._replace(
+            path=parts.path.rstrip('/') + '/',
+        ).geturl()
+
+    def _csrf_headers(self) -> dict:
+        """Return the CSRF headers for the current session"""
+
+        headers = dict()
+        if csrf_token := self._session.cookies.get('csrftoken'):
+            headers['X-CSRFToken'] = csrf_token
+
+        return headers
+
+    def _send_request(
+        self,
+        method: Literal["get", "post", "put", "patch", "delete"],
+        endpoint: str,
+        **kwargs
+    ) -> requests.Response:
+        """Send an HTTP request.
+
+        Args:
+            method: The HTTP method to use.
+            data: JSON data to include in the POST request.
+            endpoint: The complete url to send the request to.
+            params: Query parameters to include in the request.
+            timeout: Seconds before the request times out.
+
+        Returns:
+            An HTTP response.
+        """
+
+        headers = self._csrf_headers()
+        url = self._normalize_url(urljoin(self.url, endpoint))
+
+        response = self._session.request(method=method, url=url, headers=headers, **kwargs)
+        response.raise_for_status()
+        return response
 
     def login(self, username: str, password: str, timeout: int = DEFAULT_TIMEOUT) -> None:
         """Authenticate a new user session.
@@ -89,41 +139,6 @@ class HTTPClient:
 
         response.raise_for_status()
         return response.status_code == 200
-
-    def _csrf_headers(self) -> dict:
-        """Return the CSRF headers for the current session"""
-
-        headers = dict()
-        if csrf_token := self._session.cookies.get('csrftoken'):
-            headers['X-CSRFToken'] = csrf_token
-
-        return headers
-
-    def _send_request(
-        self,
-        method: Literal["get", "post", "put", "patch", "delete"],
-        endpoint: str,
-        **kwargs
-    ) -> requests.Response:
-        """Send an HTTP request.
-
-        Args:
-            method: The HTTP method to use.
-            data: JSON data to include in the POST request.
-            endpoint: The complete url to send the request to.
-            params: Query parameters to include in the request.
-            timeout: Seconds before the request times out.
-
-        Returns:
-            An HTTP response.
-        """
-
-        headers = self._csrf_headers()
-        url = urljoin(self.url, endpoint)
-
-        response = self._session.request(method=method, url=url, headers=headers, **kwargs)
-        response.raise_for_status()
-        return response
 
     def http_get(
         self,
