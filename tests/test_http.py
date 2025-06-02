@@ -126,7 +126,7 @@ class BaseHttpMethodTests:
         self.mock_request.assert_called_with(
             method=self.request_type,
             url=urljoin(self.client.url, self.request_endpoint),
-            headers=self.client._csrf_headers(),
+            headers=self.client._get_headers(),
             **self.client_method_args
         )
         self.mock_response.raise_for_status.assert_called_once()

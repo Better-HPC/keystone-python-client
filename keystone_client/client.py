@@ -26,6 +26,55 @@ class KeystoneClient(HTTPClient):
         response = self.http_get("version")
         return response.text
 
+
+    def login(self, username: str, password: str, timeout: int = DEFAULT_TIMEOUT) -> None:
+        """Authenticate a new user session.
+
+        Args:
+            username: The authentication username.
+            password: The authentication password.
+            timeout: Seconds before the request times out.
+
+        Raises:
+            requests.HTTPError: If the login request fails.
+        """
+
+        # Prevent HTTP errors raised when authenticating an existing session
+        login_url = self.schema.login.join_url(self.url)
+        response = self._client.post(login_url, json={'username': username, 'password': password}, timeout=timeout)
+
+        try:
+            response.raise_for_status()
+
+        except HTTPError:
+            if not self.is_authenticated(timeout=timeout):
+                raise
+
+    def logout(self, timeout: int = DEFAULT_TIMEOUT) -> None:
+        """Logout the current user session.
+
+        Args:
+            timeout: Seconds before the blacklist request times out.
+        """
+
+        logout_url = self.schema.logout.join_url(self.url)
+        response = self.http_post(logout_url, timeout=timeout)
+        response.raise_for_status()
+
+    def is_authenticated(self, timeout: int = DEFAULT_TIMEOUT) -> bool:
+        """Query the server for the current session's authentication status.
+
+        Args:
+            timeout: Seconds before the blacklist request times out.
+        """
+
+        response = self._client.get(f'{self.url}/authentication/whoami/', timeout=timeout)
+        if response.status_code == 401:
+            return False
+
+        response.raise_for_status()
+        return response.status_code == 200
+
     def __new__(cls, *args, **kwargs) -> KeystoneClient:
         """Dynamically create CRUD methods for each data endpoint in the API schema."""
 

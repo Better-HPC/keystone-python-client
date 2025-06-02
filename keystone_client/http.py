@@ -2,12 +2,10 @@ from __future__ import annotations
 
 import uuid
 from typing import Literal
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse
 
-import requests
-from requests import HTTPError, Session
-
-from keystone_client.schema import Schema
+import httpx
+from httpx import Client
 
 DEFAULT_TIMEOUT = 15
 
@@ -15,24 +13,25 @@ DEFAULT_TIMEOUT = 15
 class HTTPClient:
     """Low level API client for sending standard HTTP operations."""
 
-    schema = Schema()
+    _CID_HEADER = 'X-KEYSTONE-CID'
+    _CSRF_COOKIE = 'csrftoken'
+    _CSRF_HEADER = 'X-CSRFToken'
 
-    def __init__(self, url: str) -> None:
+    def __init__(self, base_url: str) -> None:
         """Initialize the class.
 
         Args:
-            url: The base URL for a Keystone API server.
+            base_url: The base URL for a Keystone API server.
         """
 
-        self._url = self._normalize_url(url)
-        self._session = Session()
-        self._session.headers['X-KEYSTONE-CID'] = str(uuid.uuid4())
+        self._cid = str(uuid.uuid4())
+        self._client = Client(base_url=self._normalize_url(base_url))
 
     @property
-    def url(self) -> str:
+    def base_url(self) -> str:
         """Return the server URL."""
 
-        return self._url
+        return str(self._client.base_url)
 
     def _normalize_url(self, url: str) -> str:
         """Return a copy of the given url with a trailing slash enforced on the URL path.
@@ -49,11 +48,11 @@ class HTTPClient:
             path=parts.path.rstrip('/') + '/',
         ).geturl()
 
-    def _csrf_headers(self) -> dict:
+    def _get_headers(self) -> dict:
         """Return the CSRF headers for the current session"""
 
-        headers = dict()
-        if csrf_token := self._session.cookies.get('csrftoken'):
+        headers = {self._CID_HEADER: self._cid}
+        if csrf_token := self._client.cookies.get('csrftoken'):
             headers['X-CSRFToken'] = csrf_token
 
         return headers
@@ -63,7 +62,7 @@ class HTTPClient:
         method: Literal["get", "post", "put", "patch", "delete"],
         endpoint: str,
         **kwargs
-    ) -> requests.Response:
+    ) -> httpx.Response:
         """Send an HTTP request.
 
         Args:
@@ -77,67 +76,19 @@ class HTTPClient:
             An HTTP response.
         """
 
-        headers = self._csrf_headers()
-        url = self._normalize_url(urljoin(self.url, endpoint))
+        headers = self._get_headers()
+        url = self._normalize_url(endpoint)
 
-        response = self._session.request(method=method, url=url, headers=headers, **kwargs)
+        response = self._client.request(method=method, url=url, headers=headers, **kwargs)
         response.raise_for_status()
         return response
-
-    def login(self, username: str, password: str, timeout: int = DEFAULT_TIMEOUT) -> None:
-        """Authenticate a new user session.
-
-        Args:
-            username: The authentication username.
-            password: The authentication password.
-            timeout: Seconds before the request times out.
-
-        Raises:
-            requests.HTTPError: If the login request fails.
-        """
-
-        # Prevent HTTP errors raised when authenticating an existing session
-        login_url = self.schema.login.join_url(self.url)
-        response = self._session.post(login_url, json={'username': username, 'password': password}, timeout=timeout)
-
-        try:
-            response.raise_for_status()
-
-        except HTTPError:
-            if not self.is_authenticated(timeout=timeout):
-                raise
-
-    def logout(self, timeout: int = DEFAULT_TIMEOUT) -> None:
-        """Logout the current user session.
-
-        Args:
-            timeout: Seconds before the blacklist request times out.
-        """
-
-        logout_url = self.schema.logout.join_url(self.url)
-        response = self.http_post(logout_url, timeout=timeout)
-        response.raise_for_status()
-
-    def is_authenticated(self, timeout: int = DEFAULT_TIMEOUT) -> bool:
-        """Query the server for the current session's authentication status.
-
-        Args:
-            timeout: Seconds before the blacklist request times out.
-        """
-
-        response = self._session.get(f'{self.url}/authentication/whoami/', timeout=timeout)
-        if response.status_code == 401:
-            return False
-
-        response.raise_for_status()
-        return response.status_code == 200
 
     def http_get(
         self,
         endpoint: str,
         params: dict[str, any] | None = None,
         timeout: int = DEFAULT_TIMEOUT
-    ) -> requests.Response:
+    ) -> httpx.Response:
         """Send a GET request to an API endpoint.
 
         Args:
@@ -149,7 +100,7 @@ class HTTPClient:
             The response from the API in the specified format.
 
         Raises:
-            requests.HTTPError: If the request returns an error code.
+            httpx.HTTPError: If the request returns an error code.
         """
 
         return self._send_request("get", endpoint, params=params, timeout=timeout)
@@ -159,7 +110,7 @@ class HTTPClient:
         endpoint: str,
         data: dict[str, any] | None = None,
         timeout: int = DEFAULT_TIMEOUT
-    ) -> requests.Response:
+    ) -> httpx.Response:
         """Send a POST request to an API endpoint.
 
         Args:
@@ -171,7 +122,7 @@ class HTTPClient:
             The response from the API in the specified format.
 
         Raises:
-            requests.HTTPError: If the request returns an error code.
+            httpx.HTTPError: If the request returns an error code.
         """
 
         return self._send_request("post", endpoint, data=data, timeout=timeout)
@@ -181,7 +132,7 @@ class HTTPClient:
         endpoint: str,
         data: dict[str, any] | None = None,
         timeout: int = DEFAULT_TIMEOUT
-    ) -> requests.Response:
+    ) -> httpx.Response:
         """Send a PATCH request to an API endpoint.
 
         Args:
@@ -193,7 +144,7 @@ class HTTPClient:
             The response from the API in the specified format.
 
         Raises:
-            requests.HTTPError: If the request returns an error code.
+            httpx.HTTPError: If the request returns an error code.
         """
 
         return self._send_request("patch", endpoint, data=data, timeout=timeout)
@@ -203,7 +154,7 @@ class HTTPClient:
         endpoint: str,
         data: dict[str, any] | None = None,
         timeout: int = DEFAULT_TIMEOUT
-    ) -> requests.Response:
+    ) -> httpx.Response:
         """Send a PUT request to an endpoint.
 
         Args:
@@ -215,7 +166,7 @@ class HTTPClient:
             The API response.
 
         Raises:
-            requests.HTTPError: If the request returns an error code.
+            httpx.HTTPError: If the request returns an error code.
         """
 
         return self._send_request("put", endpoint, data=data, timeout=timeout)
@@ -224,7 +175,7 @@ class HTTPClient:
         self,
         endpoint: str,
         timeout: int = DEFAULT_TIMEOUT
-    ) -> requests.Response:
+    ) -> httpx.Response:
         """Send a DELETE request to an endpoint.
 
         Args:
@@ -235,7 +186,7 @@ class HTTPClient:
             The API response.
 
         Raises:
-            requests.HTTPError: If the request returns an error code.
+            httpx.HTTPError: If the request returns an error code.
         """
 
         return self._send_request("delete", endpoint, timeout=timeout)
