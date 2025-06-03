@@ -12,14 +12,14 @@ from typing import Union
 
 import httpx
 
+from keystone_client.schema import ApiSchema
 from keystone_client.http import DEFAULT_TIMEOUT, HTTPClient
-from keystone_client.schema import Schema
 
 
 class KeystoneClient(HTTPClient):
     """Client class for submitting requests to the Keystone API."""
 
-    schema = Schema('assets/api.yml')
+    schema = ApiSchema()
 
     @cached_property
     def api_version(self) -> str:
@@ -47,7 +47,7 @@ class KeystoneClient(HTTPClient):
         try:
             response.raise_for_status()
 
-        except HTTPError:
+        except httpx.HTTPError:
             if not self.is_authenticated(timeout=timeout):
                 raise
 
@@ -82,10 +82,10 @@ class KeystoneClient(HTTPClient):
         new: KeystoneClient = super().__new__(cls)
         for endpoint in cls.schema.endpoints:
             if endpoint.method == "GET":
-                method = new._create_factory(endpoint.path)
+                method = new._retrieve_factory(endpoint.path)
 
             elif endpoint.method == "POST":
-                method = new._retrieve_factory(endpoint.path)
+                method = new._create_factory(endpoint.path)
 
             elif endpoint.method == "PATCH":
                 method = new._update_factory(endpoint.path)

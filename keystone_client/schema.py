@@ -6,6 +6,8 @@ from typing import NamedTuple
 
 import yaml
 
+SchemaPath = Path(__file__).resolve().parent / 'assets/api.yml'
+
 
 class Endpoint(NamedTuple):
     """API endpoint metadata."""
@@ -15,17 +17,16 @@ class Endpoint(NamedTuple):
     operation_id: str
 
 
-class Schema:
+class ApiSchema:
     """Parses an OpenAPI specification file to extract HTTP operation metadata."""
 
-    def __init__(self, spec_path: str | Path) -> None:
+    def __init__(self, spec_path: Path = SchemaPath) -> None:
         """Load API endpoints from an OpenAPI spec file.
 
         Args:
             spec_path: Path to the OpenAPI file.
         """
 
-        spec_path = Path(spec_path)
         file_data = self._load_openapi_spec(spec_path)
         self._endpoints = self._extract_endpoints(file_data)
 
@@ -64,6 +65,6 @@ class Schema:
             for method, operation in methods.items():
                 if method.lower() in {"get", "post", "put", "patch", "delete"}:
                     operation_id = operation.get("operationId")
-                    endpoints.append(Endpoint(method.upper(), path, operation_id))
+                    endpoints.append(Endpoint(path, method.upper(), operation_id))
 
         return endpoints
