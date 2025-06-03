@@ -1,43 +1,69 @@
 """Schema objects used to define available API endpoints."""
 
-from dataclasses import dataclass
-from os import path
+import json
+from pathlib import Path
+from typing import NamedTuple
+
+import yaml
 
 
-class Endpoint(str):
-    """API endpoint agnostic to the baseAPI URL."""
+class Endpoint(NamedTuple):
+    """API endpoint metadata."""
 
-    def join_url(self, base: str, *append) -> str:
-        """Join the endpoint with a base URL.
+    method: str
+    path: str
+    operation_id: str
 
-        This method returns URLs in a format that avoids trailing slash
-        redirects from the Keystone API.
+
+class Schema:
+    """Parses an OpenAPI specification file to extract HTTP operation metadata."""
+
+    def __init__(self, spec_path: str | Path) -> None:
+        """Load API endpoints from an OpenAPI spec file.
 
         Args:
-            base: The base URL.
-            *append: Partial paths to append onto the url.
-
-        Returns:
-            The base URL join with the endpoint.
+            spec_path: Path to the OpenAPI file.
         """
 
-        url = path.join(base, self)
-        for partial_path in filter(lambda x: x is not None, append):
-            url = path.join(url, str(partial_path))
+        spec_path = Path(spec_path)
+        file_data = self._load_openapi_spec(spec_path)
+        self._operations = self._extract_endpoints(file_data)
 
-        return url.rstrip('/') + '/'
+    @property
+    def operations(self) -> list[Endpoint]:
+        return self._operations.copy()
 
+    def _load_openapi_spec(self, file_path: Path) -> dict:
+        """Parse an OpenAPI file and return its contents.
 
-@dataclass
-class Schema:
-    """Schema defining the complete set of API endpoints."""
+        Supports Yaml and Json file formats.
 
-    login = Endpoint('authentication/login')
-    logout = Endpoint('authentication/logout')
+        Args:
+            file_path: Path to the OpenAPI file.
 
-    allocations: Endpoint = Endpoint("allocations/allocations")
-    clusters: Endpoint = Endpoint("allocations/clusters")
-    requests: Endpoint = Endpoint("allocations/requests")
-    teams: Endpoint = Endpoint("users/teams")
-    memberships: Endpoint = Endpoint("users/membership")
-    users: Endpoint = Endpoint("users/users")
+        Returns:
+            A dictionary containing the OpenApi specification data.
+        """
+
+        with file_path.open() as in_file:
+            if file_path.suffix in ('.yaml', '.yml'):
+                return yaml.safe_load(in_file)
+
+            elif file_path.suffix == '.json':
+                return json.load(in_file)
+
+            raise ValueError("Unsupported OpenAPi file format. Use .json or .yaml/.yml")
+
+    def _extract_endpoints(self, openapi_spec: dict) -> list[Endpoint]:
+        """Extract endpoint definitions from the OpenAPI spec."""
+
+        endpoints: list[Endpoint] = []
+        paths = openapi_spec.get("paths", {})
+
+        for path, methods in paths.items():
+            for method, operation in methods.items():
+                if method.lower() in {"get", "post", "put", "patch", "delete"}:
+                    operation_id = operation.get("operationId")
+                    endpoints.append(Endpoint(method.upper(), path, operation_id))
+
+        return endpoints
