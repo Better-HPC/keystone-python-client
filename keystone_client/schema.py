@@ -10,8 +10,8 @@ import yaml
 class Endpoint(NamedTuple):
     """API endpoint metadata."""
 
-    method: str
     path: str
+    method: str
     operation_id: str
 
 
@@ -27,11 +27,11 @@ class Schema:
 
         spec_path = Path(spec_path)
         file_data = self._load_openapi_spec(spec_path)
-        self._operations = self._extract_endpoints(file_data)
+        self._endpoints = self._extract_endpoints(file_data)
 
     @property
-    def operations(self) -> list[Endpoint]:
-        return self._operations.copy()
+    def endpoints(self) -> list[Endpoint]:
+        return self._endpoints.copy()
 
     def _load_openapi_spec(self, file_path: Path) -> dict:
         """Parse an OpenAPI file and return its contents.

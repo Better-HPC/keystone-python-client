@@ -10,14 +10,16 @@ from __future__ import annotations
 from functools import cached_property
 from typing import Union
 
-import requests
+import httpx
 
 from keystone_client.http import DEFAULT_TIMEOUT, HTTPClient
-from keystone_client.schema import Endpoint
+from keystone_client.schema import Schema
 
 
 class KeystoneClient(HTTPClient):
     """Client class for submitting requests to the Keystone API."""
+
+    schema = Schema('assets/api.yml')
 
     @cached_property
     def api_version(self) -> str:
@@ -25,7 +27,6 @@ class KeystoneClient(HTTPClient):
 
         response = self.http_get("version")
         return response.text
-
 
     def login(self, username: str, password: str, timeout: int = DEFAULT_TIMEOUT) -> None:
         """Authenticate a new user session.
@@ -68,7 +69,7 @@ class KeystoneClient(HTTPClient):
             timeout: Seconds before the blacklist request times out.
         """
 
-        response = self._client.get(f'{self.url}/authentication/whoami/', timeout=timeout)
+        response = self.http_get('authentication/whoami/', timeout=timeout)
         if response.status_code == 401:
             return False
 
@@ -79,40 +80,27 @@ class KeystoneClient(HTTPClient):
         """Dynamically create CRUD methods for each data endpoint in the API schema."""
 
         new: KeystoneClient = super().__new__(cls)
+        for endpoint in cls.schema.endpoints:
+            if endpoint.method == "GET":
+                method = new._create_factory(endpoint.path)
 
-        new.create_allocation = new._create_factory(cls.schema.allocations)
-        new.retrieve_allocation = new._retrieve_factory(cls.schema.allocations)
-        new.update_allocation = new._update_factory(cls.schema.allocations)
-        new.delete_allocation = new._delete_factory(cls.schema.allocations)
+            elif endpoint.method == "POST":
+                method = new._retrieve_factory(endpoint.path)
 
-        new.create_cluster = new._create_factory(cls.schema.clusters)
-        new.retrieve_cluster = new._retrieve_factory(cls.schema.clusters)
-        new.update_cluster = new._update_factory(cls.schema.clusters)
-        new.delete_cluster = new._delete_factory(cls.schema.clusters)
+            elif endpoint.method == "PATCH":
+                method = new._update_factory(endpoint.path)
 
-        new.create_request = new._create_factory(cls.schema.requests)
-        new.retrieve_request = new._retrieve_factory(cls.schema.requests)
-        new.update_request = new._update_factory(cls.schema.requests)
-        new.delete_request = new._delete_factory(cls.schema.requests)
+            elif endpoint.method == "DELETE":
+                method = new._delete_factory(endpoint.path)
 
-        new.create_team = new._create_factory(cls.schema.teams)
-        new.retrieve_team = new._retrieve_factory(cls.schema.teams)
-        new.update_team = new._update_factory(cls.schema.teams)
-        new.delete_team = new._delete_factory(cls.schema.teams)
+            else:
+                continue
 
-        new.create_membership = new._create_factory(cls.schema.memberships)
-        new.retrieve_membership = new._retrieve_factory(cls.schema.memberships)
-        new.update_membership = new._update_factory(cls.schema.memberships)
-        new.delete_membership = new._delete_factory(cls.schema.memberships)
-
-        new.create_user = new._create_factory(cls.schema.users)
-        new.retrieve_user = new._retrieve_factory(cls.schema.users)
-        new.update_user = new._update_factory(cls.schema.users)
-        new.delete_user = new._delete_factory(cls.schema.users)
+            setattr(new, endpoint.operation_id, method)
 
         return new
 
-    def _create_factory(self, endpoint: Endpoint) -> callable:
+    def _create_factory(self, endpoint: str) -> callable:
         """Factory function for data creation methods."""
 
         def create_record(**data) -> None:
@@ -125,13 +113,13 @@ class KeystoneClient(HTTPClient):
                 A copy of the updated record.
             """
 
-            url = endpoint.join_url(self.url)
-            response = self.http_post(url, data=data)
+            response = self.http_post(endpoint, data=data)
+            response.raise_for_status()
             return response.json()
 
         return create_record
 
-    def _retrieve_factory(self, endpoint: Endpoint) -> callable:
+    def _retrieve_factory(self, endpoint: str) -> callable:
         """Factory function for data retrieval methods."""
 
         def retrieve_record(
@@ -158,26 +146,26 @@ class KeystoneClient(HTTPClient):
                 The data record(s) or None.
             """
 
-            url = endpoint.join_url(self.url, pk)
-
             for param_name, value in zip(('_search', '_order'), (search, order)):
                 if value is not None:
                     filters = filters or {}
                     filters[param_name] = value
 
+            response = self.http_get(endpoint.format(id=pk), params=filters, timeout=timeout)
+
             try:
-                response = self.http_get(url, params=filters, timeout=timeout)
+                response.raise_for_status()
                 return response.json()
 
-            except requests.HTTPError as exception:
-                if exception.response.status_code == 404:
+            except httpx.HTTPError:
+                if response.status_code == 404:
                     return None
 
                 raise
 
         return retrieve_record
 
-    def _update_factory(self, endpoint: Endpoint) -> callable:
+    def _update_factory(self, endpoint: str) -> callable:
         """Factory function for data update methods."""
 
         def update_record(pk: int, data) -> dict:
@@ -191,13 +179,13 @@ class KeystoneClient(HTTPClient):
                 A copy of the updated record.
             """
 
-            url = endpoint.join_url(self.url, pk)
-            response = self.http_patch(url, data=data)
+            response = self.http_patch(endpoint.format(id=pk), data=data)
+            response.raise_for_status()
             return response.json()
 
         return update_record
 
-    def _delete_factory(self, endpoint: Endpoint) -> callable:
+    def _delete_factory(self, endpoint: str) -> callable:
         """Factory function for data deletion methods."""
 
         def delete_record(pk: int, raise_not_exists: bool = False) -> None:
@@ -208,13 +196,13 @@ class KeystoneClient(HTTPClient):
                 raise_not_exists: Raise an error if the record does not exist.
             """
 
-            url = endpoint.join_url(self.url, pk)
+            response = self.http_delete(endpoint.format(id=pk))
 
             try:
-                self.http_delete(url)
+                response.raise_for_status()
 
-            except requests.HTTPError as exception:
-                if exception.response.status_code == 404 and not raise_not_exists:
+            except httpx.HTTPError:
+                if response.status_code == 404 and not raise_not_exists:
                     return
 
                 raise
