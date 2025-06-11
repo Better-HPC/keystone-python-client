@@ -41,8 +41,8 @@ class KeystoneClient(HTTPClient):
         """
 
         # Prevent HTTP errors raised when authenticating an existing session
-        login_url = self.schema.login.join_url(self.url)
-        response = self._session.post(login_url, json={'username': username, 'password': password}, timeout=timeout)
+        login_url = self.schema.login.join_url(self.base_url)
+        response = self._client.post(login_url, json={'username': username, 'password': password}, timeout=timeout)
 
         try:
             response.raise_for_status()
@@ -58,7 +58,7 @@ class KeystoneClient(HTTPClient):
             timeout: Seconds before the blacklist request times out.
         """
 
-        logout_url = self.schema.logout.join_url(self.url)
+        logout_url = self.schema.logout.join_url(self.base_url)
         response = self.http_post(logout_url, timeout=timeout)
         response.raise_for_status()
 
@@ -69,7 +69,7 @@ class KeystoneClient(HTTPClient):
             timeout: Seconds before the blacklist request times out.
         """
 
-        response = self._session.get(f'{self.url}/authentication/whoami/', timeout=timeout)
+        response = self._client.get(f'{self.base_url}/authentication/whoami/', timeout=timeout)
         if response.status_code == 401:
             return False
 
@@ -126,7 +126,7 @@ class KeystoneClient(HTTPClient):
                 A copy of the updated record.
             """
 
-            url = endpoint.join_url(self.url)
+            url = endpoint.join_url(self.base_url)
             response = self.http_post(url, data=data)
             response.raise_for_status()
             return response.json()
@@ -160,20 +160,22 @@ class KeystoneClient(HTTPClient):
                 The data record(s) or None.
             """
 
-            url = endpoint.join_url(self.url, pk)
+            url = endpoint.join_url(self.base_url, pk)
 
             for param_name, value in zip(('_search', '_order'), (search, order)):
                 if value is not None:
                     filters = filters or {}
                     filters[param_name] = value
 
+            response = self.http_get(url, params=filters, timeout=timeout)
+
             try:
-                response = self.http_get(url, params=filters, timeout=timeout)
                 response.raise_for_status()
                 return response.json()
 
-            except httpx.HTTPError as exception:
-                if exception.response.status_code == 404:
+            except httpx.HTTPError:
+                breakpoint()
+                if response.status_code == 404:
                     return None
 
                 raise
@@ -194,7 +196,7 @@ class KeystoneClient(HTTPClient):
                 A copy of the updated record.
             """
 
-            url = endpoint.join_url(self.url, pk)
+            url = endpoint.join_url(self.base_url, pk)
             response = self.http_patch(url, data=data)
             response.raise_for_status()
             return response.json()
@@ -212,13 +214,14 @@ class KeystoneClient(HTTPClient):
                 raise_not_exists: Raise an error if the record does not exist.
             """
 
-            url = endpoint.join_url(self.url, pk)
+            url = endpoint.join_url(self.base_url, pk)
+            response = self.http_delete(url)
 
             try:
-                self.http_delete(url).raise_for_status()
+                response.raise_for_status()
 
             except httpx.HTTPError as exception:
-                if exception.response.status_code == 404 and not raise_not_exists:
+                if response.status_code == 404 and not raise_not_exists:
                     return
 
                 raise
