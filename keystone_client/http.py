@@ -14,9 +14,9 @@ HTTP_METHOD = Literal["get", "post", "put", "patch", "delete"]
 class HTTPClient:
     """Low level API client for sending standard HTTP operations."""
 
-    _CID_HEADER = 'X-KEYSTONE-CID'
     _CSRF_COOKIE = 'csrftoken'
     _CSRF_HEADER = 'X-CSRFToken'
+    _CID_HEADER = 'X-KEYSTONE-CID'
 
     def __init__(self, base_url: str) -> None:
         """Initialize the class.

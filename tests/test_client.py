@@ -245,3 +245,79 @@ class Delete(TestCase):
 
         with self.assertRaises(HTTPError):
             self.client.delete_cluster(pk=999999, raise_not_exists=True)
+
+
+class Login(TestCase):
+    """Test session authentication via the `login` method."""
+
+    def test_with_correct_credentials(self) -> None:
+        """Test users are successfully logged in/out when providing correct credentials."""
+
+        client = HTTPClient(API_HOST)
+        self.assertFalse(client.is_authenticated())
+
+        client.login(API_USER, API_PASSWORD)
+        self.assertTrue(client.is_authenticated())
+
+    def test_with_incorrect_credentials(self) -> None:
+        """Test an error is raised when authenticating with invalid credentials."""
+
+        client = HTTPClient(API_HOST)
+        with self.assertRaises(HTTPError) as error:
+            client.login('foo', 'bar')
+            self.assertEqual(401, error.exception.response.status_code)
+
+    def test_user_already_logged_in(self) -> None:
+        """Test the method succeeds when re-logging in a successful user"""
+
+        client = HTTPClient(API_HOST)
+        self.assertFalse(client.is_authenticated())
+
+        client.login(API_USER, API_PASSWORD)
+        client.login(API_USER, API_PASSWORD)
+        self.assertTrue(client.is_authenticated())
+
+    @patch('requests.Session.request')
+    def test_errors_are_forwarded(self, mock_request: Mock) -> None:
+        """Test errors are forwarded to the user during login."""
+
+        mock_request.side_effect = requests.ConnectionError()
+
+        client = HTTPClient(API_HOST)
+        with self.assertRaises(requests.ConnectionError):
+            client.login(API_USER, API_PASSWORD)
+
+
+class Logout(TestCase):
+    """Test session invalidation via the `logout` method."""
+
+    def setUp(self) -> None:
+        """Authenticate a new `AuthenticationManager` instance."""
+
+        self.client = HTTPClient(API_HOST)
+        self.client.login(API_USER, API_PASSWORD)
+
+    def test_user_is_logged_out(self) -> None:
+        """Test the credentials are cleared and the user is logged out."""
+
+        self.assertTrue(self.client.is_authenticated())
+        self.client.logout()
+        self.assertFalse(self.client.is_authenticated())
+
+    def test_user_already_logged_out(self) -> None:
+        """Test the `logout` method exits silents when the user is not authenticated"""
+
+        client = HTTPClient(API_HOST)
+        self.assertFalse(client.is_authenticated())
+        client.logout()
+        self.assertFalse(client.is_authenticated())
+
+    @patch('requests.Session.request')
+    def test_errors_are_forwarded(self, mock_request: Mock) -> None:
+        """Test errors are forwarded to the user during logout."""
+
+        mock_request.side_effect = requests.ConnectionError()
+
+        with self.assertRaises(requests.ConnectionError):
+            self.client.login(API_USER, API_PASSWORD)
+
