@@ -35,7 +35,7 @@ Once authenticated, the client will automatically manage the resulting user cred
 
 ```python
 client.login(username="username", password="password")  # (1)!
-assert client.whoami  # (2)!
+assert client.is_authenticated  # (2)!
 client.logout()  # (3)!
 ```
 

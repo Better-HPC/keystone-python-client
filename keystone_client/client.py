@@ -54,7 +54,7 @@ class KeystoneClient(HTTPClient):
         response = self.http_post(logout_url, timeout=timeout)
         response.raise_for_status()
 
-    def whoami(self, timeout: int = DEFAULT_TIMEOUT) -> dict:
+    def is_authenticated(self, timeout: int = DEFAULT_TIMEOUT) -> dict:
         """Return metadata for the currently authenticated user.
 
         Returns an empty dictionary if the current session is not authenticated.

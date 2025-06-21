@@ -50,7 +50,7 @@ class LoginMethod(TestCase):
 
 
 class LogoutMethod(TestCase):
-    """Test the structure of API login requests."""
+    """Test the structure of API logout requests."""
 
     def setUp(self) -> None:
         """Define common test variables."""
@@ -84,3 +84,55 @@ class LogoutMethod(TestCase):
         client = KeystoneClient(base_url=self.api_url, transport=httpx.MockTransport(handler))
         with self.assertRaises(httpx.HTTPStatusError):
             client.logout()
+
+
+class IsAuthenticatedMethod(TestCase):
+
+    def setUp(self) -> None:
+        """Define common test variables."""
+
+        self.api_url = "https://api.example.com"
+
+    def test_successful_response(self) -> None:
+        """Verify a GET request is made and user metadata is returned."""
+
+        expected_data = {"user_id": 42, "username": "testuser"}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            """Intercept and test HTTP requests."""
+
+            url_path = request.url.path.strip('/')
+
+            self.assertEqual('GET', request.method)
+            self.assertEqual(KeystoneClient.IDENTITY_ENDPOINT, url_path)
+
+            return httpx.Response(200, json=expected_data)
+
+        client = KeystoneClient(base_url=self.api_url, transport=httpx.MockTransport(handler))
+        result = client.is_authenticated()
+        self.assertEqual(result, expected_data)
+
+    def test_unauthenticated_response(self) -> None:
+        """Verify an empty dictionary is returned for 401 response."""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            """Intercept HTTP requests and return 401 Unauthorized."""
+
+            return httpx.Response(401, json={"detail": "Unauthorized"})
+
+        client = KeystoneClient(base_url=self.api_url, transport=httpx.MockTransport(handler))
+        result = client.is_authenticated()
+        self.assertEqual(result, {})
+
+    def test_http_error(self) -> None:
+        """Verify an error is raised for non-401, non-200 responses."""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            """Intercept HTTP requests and return a 500 error."""
+
+            return httpx.Response(500, json={"detail": "Internal Server Error"})
+
+        client = KeystoneClient(base_url=self.api_url, transport=httpx.MockTransport(handler))
+
+        with self.assertRaises(httpx.HTTPStatusError):
+            client.is_authenticated()
