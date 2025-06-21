@@ -10,14 +10,16 @@ from __future__ import annotations
 from functools import cached_property
 from typing import Union
 
-import requests
+import httpx
 
 from keystone_client.http import DEFAULT_TIMEOUT, HTTPClient
-from keystone_client.schema import Endpoint
+from keystone_client.schema import Endpoint, Schema
 
 
 class KeystoneClient(HTTPClient):
     """Client class for submitting requests to the Keystone API."""
+
+    schema = Schema()
 
     @cached_property
     def api_version(self) -> str:
@@ -25,6 +27,47 @@ class KeystoneClient(HTTPClient):
 
         response = self.http_get("version")
         return response.text
+
+    def login(self, username: str, password: str, timeout: int = DEFAULT_TIMEOUT) -> None:
+        """Authenticate a new user session.
+
+        Args:
+            username: The authentication username.
+            password: The authentication password.
+            timeout: Seconds before the request times out.
+
+        Raises:
+            requests.HTTPError: If the login request fails.
+        """
+
+        login_url = self.schema.login.join_url(self.base_url)
+        response = self._client.post(login_url, json={'username': username, 'password': password}, timeout=timeout)
+        response.raise_for_status()
+
+    def logout(self, timeout: int = DEFAULT_TIMEOUT) -> None:
+        """Logout the current user session.
+
+        Args:
+            timeout: Seconds before the blacklist request times out.
+        """
+
+        logout_url = self.schema.logout.join_url(self.base_url)
+        response = self.http_post(logout_url, timeout=timeout)
+        response.raise_for_status()
+
+    def is_authenticated(self, timeout: int = DEFAULT_TIMEOUT) -> bool:
+        """Query the server for the current session's authentication status.
+
+        Args:
+            timeout: Seconds before the blacklist request times out.
+        """
+
+        response = self._client.get(f'{self.base_url}/authentication/whoami/', timeout=timeout)
+        if response.status_code == 401:
+            return False
+
+        response.raise_for_status()
+        return response.status_code == 200
 
     def __new__(cls, *args, **kwargs) -> KeystoneClient:
         """Dynamically create CRUD methods for each data endpoint in the API schema."""
@@ -76,8 +119,9 @@ class KeystoneClient(HTTPClient):
                 A copy of the updated record.
             """
 
-            url = endpoint.join_url(self.url)
+            url = endpoint.join_url(self.base_url)
             response = self.http_post(url, data=data)
+            response.raise_for_status()
             return response.json()
 
         return create_record
@@ -109,19 +153,22 @@ class KeystoneClient(HTTPClient):
                 The data record(s) or None.
             """
 
-            url = endpoint.join_url(self.url, pk)
+            url = endpoint.join_url(self.base_url, pk)
 
             for param_name, value in zip(('_search', '_order'), (search, order)):
                 if value is not None:
                     filters = filters or {}
                     filters[param_name] = value
 
+            response = self.http_get(url, params=filters, timeout=timeout)
+
             try:
-                response = self.http_get(url, params=filters, timeout=timeout)
+                response.raise_for_status()
                 return response.json()
 
-            except requests.HTTPError as exception:
-                if exception.response.status_code == 404:
+            except httpx.HTTPError:
+                breakpoint()
+                if response.status_code == 404:
                     return None
 
                 raise
@@ -142,8 +189,9 @@ class KeystoneClient(HTTPClient):
                 A copy of the updated record.
             """
 
-            url = endpoint.join_url(self.url, pk)
+            url = endpoint.join_url(self.base_url, pk)
             response = self.http_patch(url, data=data)
+            response.raise_for_status()
             return response.json()
 
         return update_record
@@ -159,13 +207,14 @@ class KeystoneClient(HTTPClient):
                 raise_not_exists: Raise an error if the record does not exist.
             """
 
-            url = endpoint.join_url(self.url, pk)
+            url = endpoint.join_url(self.base_url, pk)
+            response = self.http_delete(url)
 
             try:
-                self.http_delete(url)
+                response.raise_for_status()
 
-            except requests.HTTPError as exception:
-                if exception.response.status_code == 404 and not raise_not_exists:
+            except httpx.HTTPError:
+                if response.status_code == 404 and not raise_not_exists:
                     return
 
                 raise
