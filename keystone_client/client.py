@@ -40,16 +40,9 @@ class KeystoneClient(HTTPClient):
             requests.HTTPError: If the login request fails.
         """
 
-        # Prevent HTTP errors raised when authenticating an existing session
         login_url = self.schema.login.join_url(self.base_url)
         response = self._client.post(login_url, json={'username': username, 'password': password}, timeout=timeout)
-
-        try:
-            response.raise_for_status()
-
-        except httpx.HTTPError:
-            if not self.is_authenticated(timeout=timeout):
-                raise
+        response.raise_for_status()
 
     def logout(self, timeout: int = DEFAULT_TIMEOUT) -> None:
         """Logout the current user session.
@@ -220,7 +213,7 @@ class KeystoneClient(HTTPClient):
             try:
                 response.raise_for_status()
 
-            except httpx.HTTPError as exception:
+            except httpx.HTTPError:
                 if response.status_code == 404 and not raise_not_exists:
                     return
 

@@ -2,8 +2,9 @@
 
 import re
 from unittest import TestCase
+from unittest.mock import Mock, patch
 
-from requests import HTTPError
+import httpx
 
 from keystone_client import KeystoneClient
 from tests import API_HOST, API_PASSWORD, API_USER
@@ -71,7 +72,7 @@ class Create(TestCase):
     def test_error_on_failure(self) -> None:
         """Test an error is raised when record creation fails."""
 
-        with self.assertRaises(HTTPError):
+        with self.assertRaises(httpx.HTTPError):
             self.client.create_cluster()
 
 
@@ -139,7 +140,7 @@ class Retrieve(TestCase):
         """Test an error is raised when record retrieval fails."""
 
         # Use an unauthenticated client session on an endpoint requiring authentication
-        with self.assertRaises(HTTPError):
+        with self.assertRaises(httpx.HTTPError):
             KeystoneClient(API_HOST).retrieve_cluster()
 
 
@@ -179,7 +180,7 @@ class Update(TestCase):
     def test_update_nonexistent_record(self) -> None:
         """Test updating a nonexistent record raises an error."""
 
-        with self.assertRaises(HTTPError):
+        with self.assertRaises(httpx.HTTPError):
             self.client.update_cluster(pk=999999, data={'description': "This should fail"})
 
     def test_partial_update(self) -> None:
@@ -243,7 +244,7 @@ class Delete(TestCase):
     def test_delete_nonexistent_record_raise(self) -> None:
         """Test deleting a nonexistent record raises an exception when specified."""
 
-        with self.assertRaises(HTTPError):
+        with self.assertRaises(httpx.HTTPError):
             self.client.delete_cluster(pk=999999, raise_not_exists=True)
 
 
@@ -253,7 +254,7 @@ class Login(TestCase):
     def test_with_correct_credentials(self) -> None:
         """Test users are successfully logged in/out when providing correct credentials."""
 
-        client = HTTPClient(API_HOST)
+        client = KeystoneClient(API_HOST)
         self.assertFalse(client.is_authenticated())
 
         client.login(API_USER, API_PASSWORD)
@@ -262,15 +263,15 @@ class Login(TestCase):
     def test_with_incorrect_credentials(self) -> None:
         """Test an error is raised when authenticating with invalid credentials."""
 
-        client = HTTPClient(API_HOST)
-        with self.assertRaises(HTTPError) as error:
+        client = KeystoneClient(API_HOST)
+        with self.assertRaises(httpx.HTTPError) as error:
             client.login('foo', 'bar')
             self.assertEqual(401, error.exception.response.status_code)
 
     def test_user_already_logged_in(self) -> None:
         """Test the method succeeds when re-logging in a successful user"""
 
-        client = HTTPClient(API_HOST)
+        client = KeystoneClient(API_HOST)
         self.assertFalse(client.is_authenticated())
 
         client.login(API_USER, API_PASSWORD)
@@ -281,10 +282,10 @@ class Login(TestCase):
     def test_errors_are_forwarded(self, mock_request: Mock) -> None:
         """Test errors are forwarded to the user during login."""
 
-        mock_request.side_effect = requests.ConnectionError()
+        mock_request.side_effect = httpx.HTTPError
 
-        client = HTTPClient(API_HOST)
-        with self.assertRaises(requests.ConnectionError):
+        client = KeystoneClient(API_HOST)
+        with self.assertRaises(httpx.HTTPError):
             client.login(API_USER, API_PASSWORD)
 
 
@@ -294,7 +295,7 @@ class Logout(TestCase):
     def setUp(self) -> None:
         """Authenticate a new `AuthenticationManager` instance."""
 
-        self.client = HTTPClient(API_HOST)
+        self.client = KeystoneClient(API_HOST)
         self.client.login(API_USER, API_PASSWORD)
 
     def test_user_is_logged_out(self) -> None:
@@ -307,7 +308,7 @@ class Logout(TestCase):
     def test_user_already_logged_out(self) -> None:
         """Test the `logout` method exits silents when the user is not authenticated"""
 
-        client = HTTPClient(API_HOST)
+        client = KeystoneClient(API_HOST)
         self.assertFalse(client.is_authenticated())
         client.logout()
         self.assertFalse(client.is_authenticated())
@@ -316,8 +317,7 @@ class Logout(TestCase):
     def test_errors_are_forwarded(self, mock_request: Mock) -> None:
         """Test errors are forwarded to the user during logout."""
 
-        mock_request.side_effect = requests.ConnectionError()
+        mock_request.side_effect = httpx.HTTPError
 
-        with self.assertRaises(requests.ConnectionError):
+        with self.assertRaises(httpx.HTTPError):
             self.client.login(API_USER, API_PASSWORD)
-
