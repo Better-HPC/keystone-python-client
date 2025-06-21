@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from typing import Literal
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import httpx
 from httpx import AsyncClient, Client
@@ -61,36 +61,32 @@ class HTTPClient:
 
         return headers
 
-    def _send_request(self, method: HTTP_METHOD, endpoint: str, **kwargs) -> httpx.Response:
+    def send_request(self, method: HTTP_METHOD, endpoint: str, **kwargs) -> httpx.Response:
         """Send an HTTP request.
 
         Args:
             method: The HTTP method to use.
-            data: JSON data to include in the POST request.
-            endpoint: The complete url to send the request to.
-            params: Query parameters to include in the request.
-            timeout: Seconds before the request times out.
+            endpoint: The API endpoint to send a request to.
+            **kwargs: Any additional arguments accepted by `httpx.Client.request`.
 
         Returns:
-            An HTTP response.
+            The HTTP response.
         """
 
         headers = self._get_headers()
-        url = self._normalize_url(endpoint)
+        url = urljoin(self.base_url, self._normalize_url(endpoint))
         return self._client.request(method=method, url=url, headers=headers, **kwargs)
 
-    async def _async_send_request(self, method: HTTP_METHOD, endpoint: str, **kwargs) -> httpx.Response:
+    async def async_send_request(self, method: HTTP_METHOD, endpoint: str, **kwargs) -> httpx.Response:
         """Send an asynchronous HTTP request.
 
         Args:
             method: The HTTP method to use.
-            data: JSON data to include in the POST request.
             endpoint: The complete url to send the request to.
-            params: Query parameters to include in the request.
-            timeout: Seconds before the request times out.
+            **kwargs: Any additional arguments accepted by `httpx.AsyncClient.request`.
 
         Returns:
-            An HTTP response.
+            The awaitable HTTP response.
         """
 
         headers = self._get_headers()
@@ -111,10 +107,10 @@ class HTTPClient:
             timeout: Seconds before the request times out.
 
         Returns:
-            The response from the API in the specified format.
+            The HTTP Response.
         """
 
-        return self._send_request("get", endpoint, params=params, timeout=timeout)
+        return self.send_request("get", endpoint, params=params, timeout=timeout)
 
     async def async_http_get(
         self,
@@ -130,10 +126,10 @@ class HTTPClient:
             timeout: Seconds before the request times out.
 
         Returns:
-            The response from the API in the specified format.
+            The awaitable HTTP Response.
         """
 
-        return await self._async_send_request("get", endpoint, params=params, timeout=timeout)
+        return await self.async_send_request("get", endpoint, params=params, timeout=timeout)
 
     def http_post(
         self,
@@ -149,10 +145,10 @@ class HTTPClient:
             timeout: Seconds before the request times out.
 
         Returns:
-            The response from the API in the specified format.
+            The HTTP Response.
         """
 
-        return self._send_request("post", endpoint, data=data, timeout=timeout)
+        return self.send_request("post", endpoint, data=data, timeout=timeout)
 
     async def async_http_post(
         self,
@@ -168,10 +164,10 @@ class HTTPClient:
             timeout: Seconds before the request times out.
 
         Returns:
-            The response from the API in the specified format.
+            The awaitable HTTP Response.
         """
 
-        return await self._async_send_request("post", endpoint, data=data, timeout=timeout)
+        return await self.async_send_request("post", endpoint, data=data, timeout=timeout)
 
     def http_patch(
         self,
@@ -187,10 +183,10 @@ class HTTPClient:
             timeout: Seconds before the request times out.
 
         Returns:
-            The response from the API in the specified format.
+            The HTTP Response.
         """
 
-        return self._send_request("patch", endpoint, data=data, timeout=timeout)
+        return self.send_request("patch", endpoint, data=data, timeout=timeout)
 
     async def async_http_patch(
         self,
@@ -206,10 +202,10 @@ class HTTPClient:
             timeout: Seconds before the request times out.
 
         Returns:
-            The response from the API in the specified format.
+            The awaitable HTTP Response.
         """
 
-        return await self._async_send_request("patch", endpoint, data=data, timeout=timeout)
+        return await self.async_send_request("patch", endpoint, data=data, timeout=timeout)
 
     def http_put(
         self,
@@ -228,7 +224,7 @@ class HTTPClient:
             The API response.
         """
 
-        return self._send_request("put", endpoint, data=data, timeout=timeout)
+        return self.send_request("put", endpoint, data=data, timeout=timeout)
 
     async def async_http_put(
         self,
@@ -244,10 +240,10 @@ class HTTPClient:
             timeout: Seconds before the request times out.
 
         Returns:
-            The API response.
+            The awaitable API response.
         """
 
-        return await self._async_send_request("put", endpoint, data=data, timeout=timeout)
+        return await self.async_send_request("put", endpoint, data=data, timeout=timeout)
 
     def http_delete(
         self,
@@ -264,21 +260,21 @@ class HTTPClient:
             The API response.
         """
 
-        return self._send_request("delete", endpoint, timeout=timeout)
+        return self.send_request("delete", endpoint, timeout=timeout)
 
     async def async_http_delete(
         self,
         endpoint: str,
         timeout: int = DEFAULT_TIMEOUT
     ) -> httpx.Response:
-        """Send a asynchronous DELETE request to an endpoint.
+        """Send an asynchronous DELETE request to an endpoint.
 
         Args:
             endpoint: API endpoint to send the request to.
             timeout: Seconds before the request times out.
 
         Returns:
-            The API response.
+            The awaitable API response.
         """
 
-        return await self._async_send_request("delete", endpoint, timeout=timeout)
+        return await self.async_send_request("delete", endpoint, timeout=timeout)
