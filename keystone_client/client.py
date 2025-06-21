@@ -7,7 +7,7 @@ authentication, data retrieval, and data manipulation.
 
 from __future__ import annotations
 
-from typing import Union
+from typing import Any, Dict, Optional, Union
 from urllib.parse import urljoin
 
 import httpx
@@ -135,11 +135,11 @@ class KeystoneClient(HTTPClient):
         """Factory function for data retrieval methods."""
 
         def retrieve_record(
-            pk: int | None = None,
-            filters: dict | None = None,
-            search: str | None = None,
-            order: str | None = None,
-            timeout=DEFAULT_TIMEOUT
+            pk: Optional[int] = None,
+            filters: Optional[Dict[str, Any]] = None,
+            search: Optional[str] = None,
+            order: Optional[str] = None,
+            timeout: int = DEFAULT_TIMEOUT
         ) -> Union[None, dict, list[dict]]:
             """Retrieve one or more API records.
 
@@ -182,7 +182,7 @@ class KeystoneClient(HTTPClient):
     def _update_factory(self, endpoint: Endpoint) -> callable:
         """Factory function for data update methods."""
 
-        def update_record(pk: int, data) -> dict:
+        def update_record(pk: int, data: dict) -> dict:
             """Update an API record.
 
             Args:
