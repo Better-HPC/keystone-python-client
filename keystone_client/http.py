@@ -9,6 +9,7 @@ automatic URL normalization, session management, and CSRF token handling.
 from __future__ import annotations
 
 import abc
+import re
 import uuid
 from typing import Literal
 from urllib.parse import urljoin, urlparse
@@ -56,7 +57,8 @@ class HTTPBase:
         """
 
         parts = urlparse(url)
-        return parts._replace(path=parts.path.rstrip("/") + "/").geturl()
+        path = re.sub(r"/{2,}", "/", parts.path).rstrip("/") + "/"
+        return parts._replace(path=path).geturl()
 
     def get_application_headers(self) -> dict[str, str]:
         """Return application specific headers for the current session"""
