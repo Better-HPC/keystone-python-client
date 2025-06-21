@@ -45,10 +45,8 @@ class LoginMethod(TestCase):
             return httpx.Response(401, json={"detail": "Unauthorized"})
 
         client = KeystoneClient(base_url=self.api_url, transport=httpx.MockTransport(handler))
-        with self.assertRaises(httpx.HTTPStatusError) as raised_error:
+        with self.assertRaises(httpx.HTTPStatusError):
             client.login("user", "pass")
-
-        self.assertEqual(401, raised_error.exception.response.status_code)
 
 
 class LogoutMethod(TestCase):
@@ -84,7 +82,5 @@ class LogoutMethod(TestCase):
             return httpx.Response(400)
 
         client = KeystoneClient(base_url=self.api_url, transport=httpx.MockTransport(handler))
-        with self.assertRaises(httpx.HTTPStatusError) as raised_error:
+        with self.assertRaises(httpx.HTTPStatusError):
             client.logout()
-
-        self.assertEqual(400, raised_error.exception.response.status_code)

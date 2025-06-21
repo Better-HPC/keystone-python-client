@@ -17,6 +17,10 @@ from .types import *
 __all__ = ['AsyncHTTPClient', 'HTTPClient']
 
 DEFAULT_TIMEOUT = 15
+DEFAULT_REDIRECTS = 10
+DEFAULT_VERIFY = True
+DEFAULT_FOLLOW = True
+DEFAULT_LIMITS = httpx.Limits(max_connections=100, max_keepalive_connections=20)
 
 
 class HTTPBase:
@@ -76,18 +80,35 @@ class HTTPClient(HTTPBase):
         self,
         base_url: str,
         *,
+        verify_ssl: bool = DEFAULT_VERIFY,
+        follow_redirects: bool = DEFAULT_FOLLOW,
+        max_redirects: int = DEFAULT_REDIRECTS,
         timeout: int | None = DEFAULT_TIMEOUT,
-        transport: httpx.BaseTransport | None = None
+        limits: httpx.Limits = DEFAULT_LIMITS,
+        transport: httpx.BaseTransport | None = None,
     ) -> None:
         """Initialize a new HTTP session.
 
         Args:
-            base_url: The API base URL.
-            transport: Optional HTTPX transport layer to use for HTTP requests.
+            base_url: Base URL for all requests.
+            verify_ssl: Whether to verify SSL certificates.
+            follow_redirects: Whether to follow HTTP redirects.
+            max_redirects: Maximum number of redirects to follow.
+            limits: Connection pooling limits.
+            timeout: Request timeout in seconds.
+            transport: Optional custom HTTPX transport.
         """
 
         super().__init__(base_url)
-        self._client = httpx.Client(base_url=self._base_url, timeout=timeout, transport=transport)
+        self._client = httpx.Client(
+            base_url=self._base_url,
+            verify=verify_ssl,
+            follow_redirects=follow_redirects,
+            max_redirects=max_redirects,
+            timeout=timeout,
+            limits=limits,
+            transport=transport,
+        )
 
     def send_request(
         self,
@@ -233,9 +254,24 @@ class AsyncHTTPClient(HTTPBase):
         self,
         base_url: str,
         *,
+        verify_ssl: bool = DEFAULT_VERIFY,
+        follow_redirects: bool = DEFAULT_FOLLOW,
+        max_redirects: int = DEFAULT_REDIRECTS,
         timeout: int | None = DEFAULT_TIMEOUT,
-        transport: httpx.BaseTransport | None = None
+        limits: httpx.Limits = DEFAULT_LIMITS,
+        transport: httpx.BaseTransport | None = None,
     ) -> None:
+        """Initialize a new HTTP session.
+
+        Args:
+            base_url: Base URL for all requests.
+            verify_ssl: Whether to verify SSL certificates.
+            follow_redirects: Whether to follow HTTP redirects.
+            max_redirects: Maximum number of redirects to follow.
+            limits: Connection pooling limits.
+            timeout: Request timeout in seconds.
+            transport: Optional custom HTTPX transport.
+        """
         """Initialize a new HTTP session.
 
         Args:
@@ -244,7 +280,15 @@ class AsyncHTTPClient(HTTPBase):
         """
 
         super().__init__(base_url)
-        self._client = httpx.AsyncClient(base_url=self._base_url, timeout=timeout, transport=transport)
+        self._client = httpx.AsyncClient(
+            base_url=self._base_url,
+            verify=verify_ssl,
+            follow_redirects=follow_redirects,
+            max_redirects=max_redirects,
+            timeout=timeout,
+            limits=limits,
+            transport=transport,
+        )
 
     async def send_request(
         self,
