@@ -13,7 +13,10 @@ jobs:
   publish-pypi:
     name: Python Distribution
     runs-on: ubuntu-latest
-    environment: publish
+
+    environment:
+      name: pypi
+      url: https://pypi.org/project/keystone-api-client/
 
     steps:
       - name: Set up Python
@@ -41,7 +44,10 @@ jobs:
   trigger-docs:
     name: Trigger Docs
     runs-on: ubuntu-latest
-    environment: publish
+
+    environment:
+      name: docs
+      url: https://github.com/Better-HPC/keystone-docs
 
     steps:
       - name: Update docs
