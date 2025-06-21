@@ -7,7 +7,6 @@ authentication, data retrieval, and data manipulation.
 
 from __future__ import annotations
 
-from functools import cached_property
 from typing import Union
 
 import httpx
@@ -20,13 +19,6 @@ class KeystoneClient(HTTPClient):
     """Client class for submitting requests to the Keystone API."""
 
     schema = Schema()
-
-    @cached_property
-    def api_version(self) -> str:
-        """Return the version number of the API server."""
-
-        response = self.http_get("version")
-        return response.text
 
     def login(self, username: str, password: str, timeout: int = DEFAULT_TIMEOUT) -> None:
         """Authenticate a new user session.
@@ -41,8 +33,8 @@ class KeystoneClient(HTTPClient):
         """
 
         login_url = self.schema.login.join_url(self.base_url)
-        response = self._client.post(login_url, json={'username': username, 'password': password}, timeout=timeout)
-        response.raise_for_status()
+        credentials = {'username': username, 'password': password}
+        self.http_post(login_url, json=credentials, timeout=timeout).raise_for_status()
 
     def logout(self, timeout: int = DEFAULT_TIMEOUT) -> None:
         """Logout the current user session.
@@ -52,8 +44,7 @@ class KeystoneClient(HTTPClient):
         """
 
         logout_url = self.schema.logout.join_url(self.base_url)
-        response = self.http_post(logout_url, timeout=timeout)
-        response.raise_for_status()
+        self.http_post(logout_url, timeout=timeout).raise_for_status()
 
     def is_authenticated(self, timeout: int = DEFAULT_TIMEOUT) -> bool:
         """Query the server for the current session's authentication status.
@@ -62,7 +53,7 @@ class KeystoneClient(HTTPClient):
             timeout: Seconds before the blacklist request times out.
         """
 
-        response = self._client.get(f'{self.base_url}/authentication/whoami/', timeout=timeout)
+        response = self.http_get(f'/authentication/whoami/', timeout=timeout)
         if response.status_code == 401:
             return False
 
@@ -120,7 +111,7 @@ class KeystoneClient(HTTPClient):
             """
 
             url = endpoint.join_url(self.base_url)
-            response = self.http_post(url, data=data)
+            response = self.http_post(url, json=data)
             response.raise_for_status()
             return response.json()
 
@@ -167,7 +158,6 @@ class KeystoneClient(HTTPClient):
                 return response.json()
 
             except httpx.HTTPError:
-                breakpoint()
                 if response.status_code == 404:
                     return None
 
@@ -190,7 +180,7 @@ class KeystoneClient(HTTPClient):
             """
 
             url = endpoint.join_url(self.base_url, pk)
-            response = self.http_patch(url, data=data)
+            response = self.http_patch(url, json=data)
             response.raise_for_status()
             return response.json()
 

@@ -5,7 +5,7 @@ from unittest import TestCase
 import httpx
 
 from keystone_client.http import HTTPClient
-from tests import utils
+from .. import utils
 
 
 class SendRequestMethod(TestCase):
@@ -22,15 +22,15 @@ class SendRequestMethod(TestCase):
         """Verify requests are sent to the normalized application URL."""
 
         response = self.client.send_request('get', 'v1/resource', params={'q': '1'})
-        data = response.json()
+        request_details = response.json()
 
-        self.assertEqual(data['url'], f'{self.base_url}/v1/resource/?q=1')
-        self.assertEqual(data['method'], 'GET')
+        self.assertEqual(request_details['url'], f'{self.base_url}/v1/resource/?q=1')
+        self.assertEqual(request_details['method'], 'GET')
 
     def test_includes_application_headers(self) -> None:
         """Verify requests include application headers."""
 
         response = self.client.send_request('get', 'v1/resource')
-        data = response.json()
+        request_details = response.json()
 
-        self.assertIn(HTTPClient.CID_HEADER.lower(), data['headers'])
+        self.assertIn(HTTPClient.CID_HEADER.lower(), request_details['headers'])

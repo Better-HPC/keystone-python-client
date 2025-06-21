@@ -5,7 +5,7 @@ from unittest import IsolatedAsyncioTestCase
 import httpx
 
 from keystone_client.http import AsyncHTTPClient
-from tests import utils
+from .. import utils
 
 
 class SendRequestMethodAsync(IsolatedAsyncioTestCase):
@@ -22,15 +22,15 @@ class SendRequestMethodAsync(IsolatedAsyncioTestCase):
         """Verify requests are sent to the normalized application URL."""
 
         response = await self.client.send_request('get', 'v1/resource', params={'q': '1'})
-        data = response.json()
+        request_details = response.json()
 
-        self.assertEqual(data['url'], f'{self.base_url}/v1/resource/?q=1')
-        self.assertEqual(data['method'], 'GET')
+        self.assertEqual(request_details['url'], f'{self.base_url}/v1/resource/?q=1')
+        self.assertEqual(request_details['method'], 'GET')
 
     async def test_includes_application_headers(self) -> None:
         """Verify requests include application headers."""
 
         response = await self.client.send_request('get', 'v1/resource')
-        data = response.json()
+        request_details = response.json()
 
-        self.assertIn(AsyncHTTPClient.CID_HEADER.lower(), data['headers'])
+        self.assertIn(AsyncHTTPClient.CID_HEADER.lower(), request_details['headers'])

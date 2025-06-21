@@ -98,7 +98,7 @@ class HTTPClient(HTTPBase):
         content: RequestContent | None = None,
         data: RequestData | None = None,
         files: RequestFiles | None = None,
-        json: dict | None = None,
+        json: RequestContent | None = None,
         params: QueryParamTypes | None = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
@@ -155,7 +155,7 @@ class HTTPClient(HTTPBase):
     def http_post(
         self,
         endpoint: str,
-        data: RequestData | None = None,
+        json: RequestData | None = None,
         files: RequestFiles | None = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
@@ -163,7 +163,7 @@ class HTTPClient(HTTPBase):
 
         Args:
             endpoint: API endpoint relative to the base URL.
-            data: JSON data or form data to include in the POST request.
+            json: JSON data to include in the request.
             files: Files to include in the request (for multipart/form-data).
             timeout: Seconds before the request times out.
 
@@ -171,12 +171,12 @@ class HTTPClient(HTTPBase):
             The HTTP Response.
         """
 
-        return self.send_request("post", endpoint, data=data, files=files, timeout=timeout)  # pragma: no cover
+        return self.send_request("post", endpoint, json=json, files=files, timeout=timeout)  # pragma: no cover
 
     def http_patch(
         self,
         endpoint: str,
-        data: RequestData | None = None,
+        json: RequestData | None = None,
         files: RequestFiles | None = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
@@ -184,7 +184,7 @@ class HTTPClient(HTTPBase):
 
         Args:
             endpoint: API endpoint relative to the base URL.
-            data: JSON data or form data to include in the PATCH request.
+            json: JSON data to include in the request.
             files: Files to include in the request (for multipart/form-data).
             timeout: Seconds before the request times out.
 
@@ -192,12 +192,12 @@ class HTTPClient(HTTPBase):
             The HTTP Response.
         """
 
-        return self.send_request("patch", endpoint, data=data, files=files, timeout=timeout)  # pragma: no cover
+        return self.send_request("patch", endpoint, json=json, files=files, timeout=timeout)  # pragma: no cover
 
     def http_put(
         self,
         endpoint: str,
-        data: RequestData | None = None,
+        json: RequestData | None = None,
         files: RequestFiles | None = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
@@ -205,7 +205,7 @@ class HTTPClient(HTTPBase):
 
         Args:
             endpoint: API endpoint relative to the base URL.
-            data: JSON data or form data to include in the PUT request.
+            json: JSON data to include in the request.
             files: Files to include in the request (for multipart/form-data).
             timeout: Seconds before the request times out.
 
@@ -213,7 +213,7 @@ class HTTPClient(HTTPBase):
             The HTTP Response.
         """
 
-        return self.send_request("put", endpoint, data=data, files=files, timeout=timeout)  # pragma: no cover
+        return self.send_request("put", endpoint, json=json, files=files, timeout=timeout)  # pragma: no cover
 
     def http_delete(self, endpoint: str, timeout: int = httpx.USE_CLIENT_DEFAULT) -> httpx.Response:
         """Send a DELETE request to an endpoint.
@@ -315,7 +315,7 @@ class AsyncHTTPClient(HTTPBase):
     async def http_post(
         self,
         endpoint: str,
-        data: RequestData | None = None,
+        json: RequestData | None = None,
         files: RequestFiles | None = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
@@ -323,7 +323,7 @@ class AsyncHTTPClient(HTTPBase):
 
         Args:
             endpoint: API endpoint relative to the base URL.
-            data: JSON data or form data to include in the POST request.
+            json: JSON data to include in the request.
             files: Files to include in the request (for multipart/form-data).
             timeout: Seconds before the request times out.
 
@@ -331,12 +331,12 @@ class AsyncHTTPClient(HTTPBase):
             The awaitable HTTP Response.
         """
 
-        return await self.send_request("post", endpoint, data=data, files=files, timeout=timeout)  # pragma: no cover
+        return await self.send_request("post", endpoint, json=json, files=files, timeout=timeout)  # pragma: no cover
 
     async def http_patch(
         self,
         endpoint: str,
-        data: RequestData | None = None,
+        json: RequestData | None = None,
         files: RequestFiles | None = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
@@ -344,7 +344,7 @@ class AsyncHTTPClient(HTTPBase):
 
         Args:
             endpoint: API endpoint relative to the base URL.
-            data: JSON data or form data to include in the PATCH request.
+            json: JSON data to include in the request.
             files: Files to include in the request (for multipart/form-data).
             timeout: Seconds before the request times out.
 
@@ -352,12 +352,12 @@ class AsyncHTTPClient(HTTPBase):
             The awaitable HTTP Response.
         """
 
-        return await self.send_request("patch", endpoint, data=data, files=files, timeout=timeout)  # pragma: no cover
+        return await self.send_request("patch", endpoint, json=json, files=files, timeout=timeout)  # pragma: no cover
 
     async def http_put(
         self,
         endpoint: str,
-        data: RequestData | None = None,
+        json: RequestData | None = None,
         files: RequestFiles | None = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
@@ -365,7 +365,7 @@ class AsyncHTTPClient(HTTPBase):
 
         Args:
             endpoint: API endpoint relative to the base URL.
-            data: JSON data or form data to include in the PUT request.
+            json: JSON data to include in the request.
             files: Files to include in the request (for multipart/form-data).
             timeout: Seconds before the request times out.
 
@@ -373,7 +373,7 @@ class AsyncHTTPClient(HTTPBase):
             The awaitable HTTP Response.
         """
 
-        return await self.send_request("put", endpoint, data=data, files=files, timeout=timeout)  # pragma: no cover
+        return await self.send_request("put", endpoint, json=json, files=files, timeout=timeout)  # pragma: no cover
 
     async def http_delete(self, endpoint: str, timeout: int = DEFAULT_TIMEOUT) -> httpx.Response:
         """Send an asynchronous DELETE request to an endpoint.
