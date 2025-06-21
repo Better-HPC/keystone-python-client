@@ -91,7 +91,7 @@ class HTTPClient(HTTPBase):
 
     def send_request(
         self,
-        method: HTTP_METHOD,
+        method: HttpMethod,
         endpoint: str,
         *,
         headers: dict = None,
@@ -251,7 +251,7 @@ class AsyncHTTPClient(HTTPBase):
 
     async def send_request(
         self,
-        method: HTTP_METHOD,
+        method: HttpMethod,
         endpoint: str,
         *,
         headers: dict = None,
