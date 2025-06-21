@@ -96,9 +96,8 @@ class HTTPClient(HTTPBase):
         *,
         headers: dict = None,
         content: RequestContent | None = None,
-        data: RequestData | None = None,
-        files: RequestFiles | None = None,
         json: RequestContent | None = None,
+        files: RequestFiles | None = None,
         params: QueryParamTypes | None = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
@@ -109,9 +108,8 @@ class HTTPClient(HTTPBase):
             endpoint: API endpoint relative to the base URL.
             headers: Extend application headers with custom values.
             content: Optional raw content to include in the request body.
-            data: Optional form-encoded data to include in the request body.
-            files: Optional file data to include in the request (for multipart/form-data).
-            json: Optional dictionary to encode as JSON and include in the request body.
+            json: Optional JSON data to include in the request body.
+            files: Optional file data to include in the request.
             params: Optional query parameters to include in the request URL.
             timeout: Seconds before the request times out.
 
@@ -126,9 +124,8 @@ class HTTPClient(HTTPBase):
             url=url,
             headers=application_headers,
             content=content,
-            data=data,
-            files=files,
             json=json,
+            files=files,
             params=params,
             timeout=timeout,
         )
@@ -163,8 +160,8 @@ class HTTPClient(HTTPBase):
 
         Args:
             endpoint: API endpoint relative to the base URL.
-            json: JSON data to include in the request.
-            files: Files to include in the request (for multipart/form-data).
+            json: JSON data to include in the request body.
+            files: Files data to include in the request.
             timeout: Seconds before the request times out.
 
         Returns:
@@ -184,8 +181,8 @@ class HTTPClient(HTTPBase):
 
         Args:
             endpoint: API endpoint relative to the base URL.
-            json: JSON data to include in the request.
-            files: Files to include in the request (for multipart/form-data).
+            json: JSON data to include in the request body.
+            files: Files data to include in the request.
             timeout: Seconds before the request times out.
 
         Returns:
@@ -205,8 +202,8 @@ class HTTPClient(HTTPBase):
 
         Args:
             endpoint: API endpoint relative to the base URL.
-            json: JSON data to include in the request.
-            files: Files to include in the request (for multipart/form-data).
+            json: JSON data to include in the request body.
+            files: Files data to include in the request.
             timeout: Seconds before the request times out.
 
         Returns:
@@ -256,9 +253,8 @@ class AsyncHTTPClient(HTTPBase):
         *,
         headers: dict = None,
         content: RequestContent | None = None,
-        data: RequestData | None = None,
-        files: RequestFiles | None = None,
         json: dict | None = None,
+        files: RequestFiles | None = None,
         params: QueryParamTypes | None = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
@@ -269,9 +265,8 @@ class AsyncHTTPClient(HTTPBase):
             endpoint: API endpoint relative to the base URL.
             headers: Extend application headers with custom values.
             content: Optional raw content to include in the request body.
-            data: Optional form-encoded data to include in the request body.
-            files: Optional file data to include in the request (for multipart/form-data).
-            json: Optional dictionary to encode as JSON and include in the request body.
+            json: Optional JSON data to include in the request body.
+            files: Optional file data to include in the request.
             params: Optional query parameters to include in the request URL.
             timeout: Seconds before the request times out.
 
@@ -286,9 +281,8 @@ class AsyncHTTPClient(HTTPBase):
             url=url,
             headers=application_headers,
             content=content,
-            data=data,
-            files=files,
             json=json,
+            files=files,
             params=params,
             timeout=timeout
         )
@@ -323,8 +317,8 @@ class AsyncHTTPClient(HTTPBase):
 
         Args:
             endpoint: API endpoint relative to the base URL.
-            json: JSON data to include in the request.
-            files: Files to include in the request (for multipart/form-data).
+            json: JSON data to include in the request body.
+            files: Files data to include in the request.
             timeout: Seconds before the request times out.
 
         Returns:
@@ -344,8 +338,8 @@ class AsyncHTTPClient(HTTPBase):
 
         Args:
             endpoint: API endpoint relative to the base URL.
-            json: JSON data to include in the request.
-            files: Files to include in the request (for multipart/form-data).
+            json: JSON data to include in the request body.
+            files: Files data to include in the request.
             timeout: Seconds before the request times out.
 
         Returns:
@@ -365,8 +359,8 @@ class AsyncHTTPClient(HTTPBase):
 
         Args:
             endpoint: API endpoint relative to the base URL.
-            json: JSON data to include in the request.
-            files: Files to include in the request (for multipart/form-data).
+            json: JSON data to include in the request body.
+            files: Files data to include in the request.
             timeout: Seconds before the request times out.
 
         Returns:
