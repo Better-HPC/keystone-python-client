@@ -15,6 +15,8 @@ import httpx
 from keystone_client.http import DEFAULT_TIMEOUT, HTTPClient
 from keystone_client.schema import Endpoint, Schema
 
+__all__ = ['KeystoneClient']
+
 
 class KeystoneClient(HTTPClient):
     """Client class for submitting requests to the Keystone API."""

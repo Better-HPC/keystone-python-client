@@ -5,7 +5,7 @@ from unittest import IsolatedAsyncioTestCase
 import httpx
 
 from keystone_client.http import AsyncHTTPClient
-from tests.unittests import utils
+from .. import utils
 
 
 class SendRequestMethodAsync(IsolatedAsyncioTestCase):
