@@ -1,5 +1,14 @@
+"""Lower level HTTP client interface with automatic header/cookie handling.
+
+The `http` module provides a consistent HTTP client interface for users
+needing to perform synchronous and asynchronous HTTP requests against the
+Keystone API. It offers streamlined support for common HTTP methods with
+automatic URL normalization, session management, and CSRF token handling.
+"""
+
 from __future__ import annotations
 
+import abc
 import uuid
 from typing import Literal
 from urllib.parse import urljoin, urlparse
@@ -22,6 +31,7 @@ class HTTPBase:
     _client: Client | AsyncClient
 
     def __init__(self, base_url: str) -> None:
+        """Normalize the API url and initialize a session-specific client ID."""
 
         self._cid = str(uuid.uuid4())
         self._base_url = self.normalize_url(base_url)
@@ -34,7 +44,14 @@ class HTTPBase:
 
     @staticmethod
     def normalize_url(url: str) -> str:
-        """Normalize a URL with an enforced trailing slash."""
+        """Normalize a URL with an enforced trailing slash.
+
+        Args:
+            url: The URL to normalize.
+
+        Returns:
+            A normalized URL with a trailing slash.
+        """
 
         parts = urlparse(url)
         return parts._replace(path=parts.path.rstrip("/") + "/").geturl()
@@ -49,11 +66,71 @@ class HTTPBase:
         return headers
 
 
-class HTTPClient(HTTPBase):
+class ClientInterface(abc.ABC):
+    """Abstract class used to enforce a common interface across HTTP client classes."""
+
+    @abc.abstractmethod
+    def send_request(self, method: HTTP_METHOD, endpoint: str, **kwargs) -> httpx.Response:
+        """Send an HTTP request."""
+
+    @abc.abstractmethod
+    def http_get(
+        self,
+        endpoint: str,
+        params: dict[str, any] | None = None,
+        timeout: int = DEFAULT_TIMEOUT,
+    ) -> httpx.Response:
+        """Send a GET request."""
+
+    @abc.abstractmethod
+    def http_post(
+        self,
+        endpoint: str,
+        data: dict[str, any] | None = None,
+        files: dict[str, any] | None = None,
+        timeout: int = DEFAULT_TIMEOUT,
+    ) -> httpx.Response:
+        """Send a POST request."""
+
+    @abc.abstractmethod
+    def http_put(
+        self,
+        endpoint: str,
+        data: dict[str, any] | None = None,
+        files: dict[str, any] | None = None,
+        timeout: int = DEFAULT_TIMEOUT,
+    ) -> httpx.Response:
+        """Send a PUT request."""
+
+    @abc.abstractmethod
+    def http_patch(
+        self,
+        endpoint: str,
+        data: dict[str, any] | None = None,
+        files: dict[str, any] | None = None,
+        timeout: int = DEFAULT_TIMEOUT,
+    ) -> httpx.Response:
+        """Send a PATCH request."""
+
+    @abc.abstractmethod
+    def http_delete(
+        self,
+        endpoint: str,
+        timeout: int = DEFAULT_TIMEOUT,
+    ) -> httpx.Response:
+        """Send a DELETE request."""
+
+
+class HTTPClient(ClientInterface, HTTPBase):
     """Synchronous HTTP Client."""
 
     def __init__(self, base_url: str, transport: BaseTransport | None = None) -> None:
-        """Initialize a new HTTP session."""
+        """Initialize a new HTTP session.
+
+        Args:
+            base_url: The API base URL.
+            transport: Optional HTTPX transport layer to use for HTTP requests.
+        """
 
         super().__init__(base_url)
         self._client = Client(base_url=self._base_url, transport=transport)
@@ -63,14 +140,14 @@ class HTTPClient(HTTPBase):
 
         Args:
             method: The HTTP method to use.
-            endpoint: The API endpoint to send a request to.
+            endpoint: API endpoint relative to the base URL.
             **kwargs: Any additional arguments accepted by `httpx.Client.request`.
 
         Returns:
             The HTTP response.
         """
 
-        url = urljoin(self.base_url, self.normalize_url(endpoint))
+        url = self.normalize_url(urljoin(self.base_url, endpoint))
         headers = self.get_application_headers()
         return self._client.request(method=method, url=url, headers=headers, **kwargs)
 
@@ -83,7 +160,7 @@ class HTTPClient(HTTPBase):
         """Send a GET request to an API endpoint.
 
         Args:
-            endpoint: API endpoint to send the request to.
+            endpoint: API endpoint relative to the base URL.
             params: Query parameters to include in the request.
             timeout: Seconds before the request times out.
 
@@ -103,7 +180,7 @@ class HTTPClient(HTTPBase):
         """Send a POST request to an API endpoint.
 
         Args:
-            endpoint: API endpoint to send the request to.
+            endpoint: API endpoint relative to the base URL.
             data: JSON data or form data to include in the POST request.
             files: Files to include in the request (for multipart/form-data).
             timeout: Seconds before the request times out.
@@ -124,7 +201,7 @@ class HTTPClient(HTTPBase):
         """Send a PATCH request to an API endpoint.
 
         Args:
-            endpoint: API endpoint to send the request to.
+            endpoint: API endpoint relative to the base URL.
             data: JSON data or form data to include in the PATCH request.
             files: Files to include in the request (for multipart/form-data).
             timeout: Seconds before the request times out.
@@ -145,7 +222,7 @@ class HTTPClient(HTTPBase):
         """Send a PUT request to an endpoint.
 
         Args:
-            endpoint: API endpoint to send the request to.
+            endpoint: API endpoint relative to the base URL.
             data: JSON data or form data to include in the PUT request.
             files: Files to include in the request (for multipart/form-data).
             timeout: Seconds before the request times out.
@@ -160,21 +237,26 @@ class HTTPClient(HTTPBase):
         """Send a DELETE request to an endpoint.
 
         Args:
-            endpoint: API endpoint to send the request to.
+            endpoint: API endpoint relative to the base URL.
             timeout: Seconds before the request times out.
 
         Returns:
-            The API response.
+            The HTTP response.
         """
 
         return self.send_request("delete", endpoint, timeout=timeout)
 
 
-class AsyncHTTPClient(HTTPBase):
+class AsyncHTTPClient(ClientInterface, HTTPBase):
     """Asynchronous HTTP Client."""
 
     def __init__(self, base_url: str, transport: AsyncBaseTransport | None = None) -> None:
-        """Initialize a new asynchronous HTTP session."""
+        """Initialize a new asynchronous HTTP session.
+
+        Args:
+            base_url: The API base URL.
+            transport: Optional HTTPX transport layer to use for HTTP requests.
+        """
 
         super().__init__(base_url)
         self._client = AsyncClient(base_url=self._base_url, transport=transport)
@@ -184,14 +266,14 @@ class AsyncHTTPClient(HTTPBase):
 
         Args:
             method: The HTTP method to use.
-            endpoint: The complete url to send the request to.
+            endpoint: API endpoint relative to the base URL.
             **kwargs: Any additional arguments accepted by `httpx.AsyncClient.request`.
 
         Returns:
             The awaitable HTTP response.
         """
 
-        url = urljoin(self.base_url, self.normalize_url(endpoint))
+        url = self.normalize_url(urljoin(self.base_url, endpoint))
         headers = self.get_application_headers()
         return await self._client.request(method=method, url=url, headers=headers, **kwargs)
 
@@ -204,7 +286,7 @@ class AsyncHTTPClient(HTTPBase):
         """Send an asynchronous GET request to an API endpoint.
 
         Args:
-            endpoint: API endpoint to send the request to.
+            endpoint: API endpoint relative to the base URL.
             params: Query parameters to include in the request.
             timeout: Seconds before the request times out.
 
@@ -224,7 +306,7 @@ class AsyncHTTPClient(HTTPBase):
         """Send an asynchronous POST request to an API endpoint.
 
         Args:
-            endpoint: API endpoint to send the request to.
+            endpoint: API endpoint relative to the base URL.
             data: JSON data or form data to include in the POST request.
             files: Files to include in the request (for multipart/form-data).
             timeout: Seconds before the request times out.
@@ -245,7 +327,7 @@ class AsyncHTTPClient(HTTPBase):
         """Send an asynchronous PATCH request to an API endpoint.
 
         Args:
-            endpoint: API endpoint to send the request to.
+            endpoint: API endpoint relative to the base URL.
             data: JSON data or form data to include in the PATCH request.
             files: Files to include in the request (for multipart/form-data).
             timeout: Seconds before the request times out.
@@ -266,7 +348,7 @@ class AsyncHTTPClient(HTTPBase):
         """Send an asynchronous PUT request to an endpoint.
 
         Args:
-            endpoint: API endpoint to send the request to.
+            endpoint: API endpoint relative to the base URL.
             data: JSON data or form data to include in the PUT request.
             files: Files to include in the request (for multipart/form-data).
             timeout: Seconds before the request times out.
@@ -281,11 +363,11 @@ class AsyncHTTPClient(HTTPBase):
         """Send an asynchronous DELETE request to an endpoint.
 
         Args:
-            endpoint: API endpoint to send the request to.
+            endpoint: API endpoint relative to the base URL.
             timeout: Seconds before the request times out.
 
         Returns:
-            The awaitable API response.
+            The awaitable HTTP response.
         """
 
         return await self.send_request("delete", endpoint, timeout=timeout)
