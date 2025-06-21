@@ -19,7 +19,7 @@ class LoginMethod(TestCase):
         self.password = "password456"
 
     def test_credentials_sent_to_endpoint(self) -> None:
-        """Verify user credentials are posted to the authentication endpoint."""
+        """Verify user credentials are posted to the login endpoint."""
 
         def handler(request: httpx.Request) -> httpx.Response:
             """Intercept and test HTTP requests."""
@@ -30,12 +30,13 @@ class LoginMethod(TestCase):
             self.assertEqual('POST', request.method)
             self.assertEqual(KeystoneClient.LOGIN_ENDPOINT, url_path)
             self.assertEqual({"username": self.username, "password": self.password}, payload)
+
             return httpx.Response(200)
 
         client = KeystoneClient(base_url=self.api_url, transport=httpx.MockTransport(handler))
         client.login(self.username, self.password)
 
-    def test_login_http_error(self) -> None:
+    def test_http_error(self) -> None:
         """Verify an error is raised for a non-200 response."""
 
         def handler(request: httpx.Request) -> httpx.Response:
@@ -46,4 +47,44 @@ class LoginMethod(TestCase):
         client = KeystoneClient(base_url=self.api_url, transport=httpx.MockTransport(handler))
         with self.assertRaises(httpx.HTTPStatusError) as raised_error:
             client.login("user", "pass")
-            self.assertEqual(raised_error.exception.response.status_code, 401)
+
+        self.assertEqual(401, raised_error.exception.response.status_code)
+
+
+class LogoutMethod(TestCase):
+    """Test the structure of API login requests."""
+
+    def setUp(self) -> None:
+        """Define common test variables."""
+
+        self.api_url = "https://api.example.com"
+
+    def test_credentials_sent_to_endpoint(self) -> None:
+        """Verify a POST request is made to the logout endpoint."""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            """Intercept and test HTTP requests."""
+
+            url_path = request.url.path.strip('/')
+
+            self.assertEqual('POST', request.method)
+            self.assertEqual(KeystoneClient.LOGOUT_ENDPOINT, url_path)
+
+            return httpx.Response(200)
+
+        client = KeystoneClient(base_url=self.api_url, transport=httpx.MockTransport(handler))
+        client.logout()
+
+    def test_http_error(self) -> None:
+        """Verify an error is raised for a non-200 response."""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            """Intercept HTTP requests and return a 400 error."""
+
+            return httpx.Response(400)
+
+        client = KeystoneClient(base_url=self.api_url, transport=httpx.MockTransport(handler))
+        with self.assertRaises(httpx.HTTPStatusError) as raised_error:
+            client.logout()
+
+        self.assertEqual(400, raised_error.exception.response.status_code)

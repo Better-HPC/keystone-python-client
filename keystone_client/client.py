@@ -20,8 +20,10 @@ class KeystoneClient(HTTPClient):
     """Client class for submitting requests to the Keystone API."""
 
     schema = Schema()
+
     LOGIN_ENDPOINT = Endpoint('authentication/login')
     LOGOUT_ENDPOINT = Endpoint('authentication/logout')
+    IDENTITY_ENDPOINT = Endpoint('authentication/whoami')
 
     def login(self, username: str, password: str, timeout: int = DEFAULT_TIMEOUT) -> None:
         """Authenticate a new user session.
@@ -37,7 +39,9 @@ class KeystoneClient(HTTPClient):
 
         login_url = self.normalize_url(urljoin(self.base_url, self.LOGIN_ENDPOINT))
         credentials = {'username': username, 'password': password}
-        self.http_post(login_url, json=credentials, timeout=timeout).raise_for_status()
+
+        response = self.http_post(login_url, json=credentials, timeout=timeout)
+        response.raise_for_status()
 
     def logout(self, timeout: int = DEFAULT_TIMEOUT) -> None:
         """Logout the current user session.
@@ -47,21 +51,26 @@ class KeystoneClient(HTTPClient):
         """
 
         logout_url = self.normalize_url(urljoin(self.base_url, self.LOGOUT_ENDPOINT))
-        self.http_post(logout_url, timeout=timeout).raise_for_status()
+        response = self.http_post(logout_url, timeout=timeout)
+        response.raise_for_status()
 
-    def is_authenticated(self, timeout: int = DEFAULT_TIMEOUT) -> bool:
-        """Query the server for the current session's authentication status.
+    def whoami(self, timeout: int = DEFAULT_TIMEOUT) -> dict:
+        """Return metadata for the currently authenticated user.
+
+        Returns an empty dictionary if the current session is not authenticated.
 
         Args:
             timeout: Seconds before the request times out.
         """
 
-        response = self.http_get(f'/authentication/whoami/', timeout=timeout)
+        identity_url = self.normalize_url(urljoin(self.base_url, self.IDENTITY_ENDPOINT))
+        response = self.http_get(identity_url, timeout=timeout)
+
         if response.status_code == 401:
-            return False
+            return {}
 
         response.raise_for_status()
-        return response.status_code == 200
+        return response.json()
 
     def __new__(cls, *args, **kwargs) -> KeystoneClient:
         """Dynamically create CRUD methods for each data endpoint in the API schema."""
