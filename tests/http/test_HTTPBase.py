@@ -40,7 +40,7 @@ class GetApplicationHeadersMethod(TestCase):
         self.http_base._client = MagicMock()
         self.http_base._client.cookies = {}
 
-    def test_cid_header_always_included(self) -> None:
+    def test_cid_header_included(self) -> None:
         """Verify the `X-KEYSTONE-CID` header is included."""
 
         headers = self.http_base.get_application_headers()
@@ -52,7 +52,7 @@ class GetApplicationHeadersMethod(TestCase):
         """Verify the CSRF token header is included if available."""
 
         csrf_token = 'dummy-token'
-        self.http_base._client.cookies = {HTTPBase._CSRF_COOKIE: csrf_token}
+        self.http_base._client.cookies = {HTTPBase.CSRF_COOKIE: csrf_token}
 
         headers = self.http_base.get_application_headers()
 
@@ -65,3 +65,22 @@ class GetApplicationHeadersMethod(TestCase):
         self.http_base._client.cookies = {}
         headers = self.http_base.get_application_headers()
         self.assertNotIn('X-CSRFToken', headers)
+
+    def test_header_overrides_add_new_header(self) -> None:
+        """Verify provided values are included in the returned headers."""
+
+        custom_value = 'test-value'
+        overrides = {'X-Test-Header': custom_value}
+        headers = self.http_base.get_application_headers(overrides)
+
+        self.assertIn('X-Test-Header', headers)
+        self.assertEqual(custom_value, headers['X-Test-Header'])
+
+    def test_header_overrides_replace_existing_header(self) -> None:
+        """Verify provided values overwrite application specific headers."""
+
+        custom_cid = 'custom-cid-value'
+        overrides = {HTTPBase.CID_HEADER: custom_cid}
+        headers = self.http_base.get_application_headers(overrides)
+
+        self.assertEqual(custom_cid, headers[HTTPBase.CID_HEADER])

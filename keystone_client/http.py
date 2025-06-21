@@ -22,9 +22,9 @@ DEFAULT_TIMEOUT = 15
 class HTTPBase:
     """Base class with shared HTTP constants and helpers."""
 
-    _CSRF_COOKIE = "csrftoken"
-    _CSRF_HEADER = "X-CSRFToken"
-    _CID_HEADER = "X-KEYSTONE-CID"
+    CSRF_COOKIE = "csrftoken"
+    CSRF_HEADER = "X-CSRFToken"
+    CID_HEADER = "X-KEYSTONE-CID"
 
     # HTTP client to be implemented by subclasses
     _client: httpx.Client | httpx.AsyncClient
@@ -59,9 +59,9 @@ class HTTPBase:
     def get_application_headers(self, overrides: dict | None = None) -> dict[str, str]:
         """Return application specific headers for the current session"""
 
-        headers = {self._CID_HEADER: self._cid}
-        if csrf_token := self._client.cookies.get(self._CSRF_COOKIE):
-            headers[self._CSRF_HEADER] = csrf_token
+        headers = {self.CID_HEADER: self._cid}
+        if csrf_token := self._client.cookies.get(self.CSRF_COOKIE):
+            headers[self.CSRF_HEADER] = csrf_token
 
         if overrides is not None:
             headers.update(overrides)
