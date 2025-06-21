@@ -5,7 +5,7 @@ from unittest import TestCase
 import httpx
 
 from keystone_client import KeystoneClient
-from .utils import API_HOST, API_PASSWORD, API_USER
+from tests.function_tests.utils import API_HOST, API_PASSWORD, API_USER
 
 
 class Create(TestCase):
