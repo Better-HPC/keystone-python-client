@@ -1,3 +1,5 @@
+"""Object definitions used for type hinting."""
+
 from typing import Literal
 
 from httpx._types import QueryParamTypes, RequestContent, RequestData, RequestFiles
