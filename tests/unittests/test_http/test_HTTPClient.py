@@ -5,7 +5,7 @@ from unittest import TestCase
 import httpx
 
 from keystone_client.http import HTTPClient
-from .. import utils
+from tests.unittests import utils
 
 
 class SendRequestMethod(TestCase):

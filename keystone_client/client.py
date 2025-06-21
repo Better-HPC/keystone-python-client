@@ -8,6 +8,7 @@ authentication, data retrieval, and data manipulation.
 from __future__ import annotations
 
 from typing import Union
+from urllib.parse import urljoin
 
 import httpx
 
@@ -19,6 +20,8 @@ class KeystoneClient(HTTPClient):
     """Client class for submitting requests to the Keystone API."""
 
     schema = Schema()
+    LOGIN_ENDPOINT = Endpoint('authentication/login')
+    LOGOUT_ENDPOINT = Endpoint('authentication/logout')
 
     def login(self, username: str, password: str, timeout: int = DEFAULT_TIMEOUT) -> None:
         """Authenticate a new user session.
@@ -32,7 +35,7 @@ class KeystoneClient(HTTPClient):
             requests.HTTPError: If the login request fails.
         """
 
-        login_url = self.schema.login.join_url(self.base_url)
+        login_url = self.normalize_url(urljoin(self.base_url, self.LOGIN_ENDPOINT))
         credentials = {'username': username, 'password': password}
         self.http_post(login_url, json=credentials, timeout=timeout).raise_for_status()
 
@@ -40,17 +43,17 @@ class KeystoneClient(HTTPClient):
         """Logout the current user session.
 
         Args:
-            timeout: Seconds before the blacklist request times out.
+            timeout: Seconds before the request times out.
         """
 
-        logout_url = self.schema.logout.join_url(self.base_url)
+        logout_url = self.normalize_url(urljoin(self.base_url, self.LOGOUT_ENDPOINT))
         self.http_post(logout_url, timeout=timeout).raise_for_status()
 
     def is_authenticated(self, timeout: int = DEFAULT_TIMEOUT) -> bool:
         """Query the server for the current session's authentication status.
 
         Args:
-            timeout: Seconds before the blacklist request times out.
+            timeout: Seconds before the request times out.
         """
 
         response = self.http_get(f'/authentication/whoami/', timeout=timeout)

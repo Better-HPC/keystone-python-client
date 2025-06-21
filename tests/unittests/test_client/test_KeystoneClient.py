@@ -24,8 +24,11 @@ class LoginMethod(TestCase):
         def handler(request: httpx.Request) -> httpx.Response:
             """Intercept and test HTTP requests."""
 
+            url_path = request.url.path.strip('/')
             payload = json.loads(request.content.decode())
+
             self.assertEqual('POST', request.method)
+            self.assertEqual(KeystoneClient.LOGIN_ENDPOINT, url_path)
             self.assertEqual({"username": self.username, "password": self.password}, payload)
             return httpx.Response(200)
 
