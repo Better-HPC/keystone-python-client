@@ -26,7 +26,7 @@ DEFAULT_LIMITS = httpx.Limits(max_connections=100, max_keepalive_connections=20)
 
 
 class HTTPBase(abc.ABC):
-    """Base class with shared HTTP constants and helpers."""
+    """Base HTTP class with shared HTTP constants and helpers."""
 
     CSRF_COOKIE = "csrftoken"
     CSRF_HEADER = "X-CSRFToken"

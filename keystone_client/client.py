@@ -8,7 +8,6 @@ authentication, data retrieval, and data manipulation.
 from __future__ import annotations
 
 from typing import Any, Dict, Optional, Union
-from urllib.parse import urljoin
 
 import httpx
 
@@ -18,14 +17,18 @@ from keystone_client.schema import Endpoint, Schema
 __all__ = ['KeystoneClient']
 
 
-class KeystoneClient(HTTPClient):
-    """Client class for submitting requests to the Keystone API."""
+class ClientBase:
+    """Base client class with shared application constants and helpers."""
 
     schema = Schema()
 
     LOGIN_ENDPOINT = Endpoint('authentication/login')
     LOGOUT_ENDPOINT = Endpoint('authentication/logout')
     IDENTITY_ENDPOINT = Endpoint('authentication/whoami')
+
+
+class KeystoneClient(ClientBase, HTTPClient):
+    """Client class for submitting synchronous requests to the Keystone API."""
 
     def login(self, username: str, password: str, timeout: int = DEFAULT_TIMEOUT) -> None:
         """Authenticate a new user session.
@@ -39,11 +42,11 @@ class KeystoneClient(HTTPClient):
             HTTPError: If the login request fails.
         """
 
-        login_url = self.normalize_url(urljoin(self.base_url, self.LOGIN_ENDPOINT))
-        credentials = {'username': username, 'password': password}
-
-        response = self.http_post(login_url, json=credentials, timeout=timeout)
-        response.raise_for_status()
+        self.http_post(
+            endpoint=self.LOGIN_ENDPOINT,
+            json={'username': username, 'password': password},
+            timeout=timeout
+        ).raise_for_status()
 
     def logout(self, timeout: int = DEFAULT_TIMEOUT) -> None:
         """Logout the current user session.
@@ -52,9 +55,10 @@ class KeystoneClient(HTTPClient):
             timeout: Seconds before the request times out.
         """
 
-        logout_url = self.normalize_url(urljoin(self.base_url, self.LOGOUT_ENDPOINT))
-        response = self.http_post(logout_url, timeout=timeout)
-        response.raise_for_status()
+        self.http_post(
+            endpoint=self.LOGOUT_ENDPOINT,
+            timeout=timeout
+        ).raise_for_status()
 
     def is_authenticated(self, timeout: int = DEFAULT_TIMEOUT) -> dict:
         """Return metadata for the currently authenticated user.
@@ -65,9 +69,7 @@ class KeystoneClient(HTTPClient):
             timeout: Seconds before the request times out.
         """
 
-        identity_url = self.normalize_url(urljoin(self.base_url, self.IDENTITY_ENDPOINT))
-        response = self.http_get(identity_url, timeout=timeout)
-
+        response = self.http_get(self.IDENTITY_ENDPOINT, timeout=timeout)
         if response.status_code == 401:
             return {}
 
