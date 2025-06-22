@@ -6,6 +6,15 @@ from unittest.mock import MagicMock
 from keystone_client.http import HTTPBase
 
 
+class DummyHTTPBase(HTTPBase):
+    """Concrete subclass of HTTPBase for testing."""
+
+    def _client_factory(self, **kwargs) -> MagicMock:
+        """Create a mock object as a stand in for an HTTP client."""
+
+        return MagicMock(cookies={})
+
+
 class NormalizeUrlMethod(TestCase):
     """Test the normalization of URL paths."""
 
@@ -35,10 +44,7 @@ class GetApplicationHeadersMethod(TestCase):
         """Create a HTTPBase instance with a mocked client."""
 
         self.base_url = 'https://test.domain.com/'
-        self.http_base = HTTPBase(self.base_url)
-
-        self.http_base._client = MagicMock()
-        self.http_base._client.cookies = {}
+        self.http_base = DummyHTTPBase(self.base_url)
 
     def test_cid_header_included(self) -> None:
         """Verify the `X-KEYSTONE-CID` header is included."""

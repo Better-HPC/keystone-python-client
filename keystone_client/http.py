@@ -6,6 +6,7 @@ API. It offers streamlined support for common HTTP methods with automatic
 URL normalization, session management, and CSRF token handling.
 """
 
+import abc
 import re
 import uuid
 from typing import Optional, Union
@@ -24,21 +25,51 @@ DEFAULT_FOLLOW = True
 DEFAULT_LIMITS = httpx.Limits(max_connections=100, max_keepalive_connections=20)
 
 
-class HTTPBase:
+class HTTPBase(abc.ABC):
     """Base class with shared HTTP constants and helpers."""
 
     CSRF_COOKIE = "csrftoken"
     CSRF_HEADER = "X-CSRFToken"
     CID_HEADER = "X-KEYSTONE-CID"
 
-    # HTTP client to be implemented by subclasses
-    _client: Union[httpx.Client, httpx.AsyncClient]
+    def __init__(
+        self,
+        base_url: str,
+        *,
+        verify_ssl: bool = DEFAULT_VERIFY,
+        follow_redirects: bool = DEFAULT_FOLLOW,
+        max_redirects: int = DEFAULT_REDIRECTS,
+        timeout: Optional[int] = DEFAULT_TIMEOUT,
+        limits: httpx.Limits = DEFAULT_LIMITS,
+        transport: Optional[httpx.BaseTransport] = None,
+    ) -> None:
+        """Initialize a new HTTP session.
 
-    def __init__(self, base_url: str) -> None:
-        """Normalize the API url and initialize a session-specific client ID."""
+        Args:
+            base_url: Base URL for all requests.
+            verify_ssl: Whether to verify SSL certificates.
+            follow_redirects: Whether to follow HTTP redirects.
+            max_redirects: Maximum number of redirects to follow.
+            limits: Connection pooling limits.
+            timeout: Request timeout in seconds.
+            transport: Optional custom HTTPX transport.
+        """
 
         self._cid = str(uuid.uuid4())
         self._base_url = self.normalize_url(base_url)
+        self._client = self._client_factory(
+            base_url=base_url,
+            verify=verify_ssl,
+            follow_redirects=follow_redirects,
+            max_redirects=max_redirects,
+            timeout=timeout,
+            limits=limits,
+            transport=transport,
+        )
+
+    @abc.abstractmethod
+    def _client_factory(self, **kwargs) -> Union[httpx.Client, httpx.AsyncClient]:
+        """Create a new HTTP client instance with the provided settings."""
 
     @property
     def base_url(self) -> str:
@@ -77,39 +108,10 @@ class HTTPBase:
 class HTTPClient(HTTPBase):
     """Synchronous HTTP Client."""
 
-    def __init__(
-        self,
-        base_url: str,
-        *,
-        verify_ssl: bool = DEFAULT_VERIFY,
-        follow_redirects: bool = DEFAULT_FOLLOW,
-        max_redirects: int = DEFAULT_REDIRECTS,
-        timeout: Optional[int] = DEFAULT_TIMEOUT,
-        limits: httpx.Limits = DEFAULT_LIMITS,
-        transport: Optional[httpx.BaseTransport] = None,
-    ) -> None:
-        """Initialize a new HTTP session.
+    def _client_factory(self, **kwargs) -> httpx.Client:
+        """Create a new HTTP client instance with the provided settings."""
 
-        Args:
-            base_url: Base URL for all requests.
-            verify_ssl: Whether to verify SSL certificates.
-            follow_redirects: Whether to follow HTTP redirects.
-            max_redirects: Maximum number of redirects to follow.
-            limits: Connection pooling limits.
-            timeout: Request timeout in seconds.
-            transport: Optional custom HTTPX transport.
-        """
-
-        super().__init__(base_url)
-        self._client = httpx.Client(
-            base_url=self._base_url,
-            verify=verify_ssl,
-            follow_redirects=follow_redirects,
-            max_redirects=max_redirects,
-            timeout=timeout,
-            limits=limits,
-            transport=transport,
-        )
+        return httpx.Client(**kwargs)
 
     def send_request(
         self,
@@ -248,39 +250,10 @@ class HTTPClient(HTTPBase):
 class AsyncHTTPClient(HTTPBase):
     """Asynchronous HTTP Client."""
 
-    def __init__(
-        self,
-        base_url: str,
-        *,
-        verify_ssl: bool = DEFAULT_VERIFY,
-        follow_redirects: bool = DEFAULT_FOLLOW,
-        max_redirects: int = DEFAULT_REDIRECTS,
-        timeout: Optional[int] = DEFAULT_TIMEOUT,
-        limits: httpx.Limits = DEFAULT_LIMITS,
-        transport: Optional[httpx.BaseTransport] = None,
-    ) -> None:
-        """Initialize a new HTTP session.
+    def _client_factory(self, **kwargs) -> httpx.AsyncClient:
+        """Create a new HTTP client instance with the provided settings."""
 
-        Args:
-            base_url: Base URL for all requests.
-            verify_ssl: Whether to verify SSL certificates.
-            follow_redirects: Whether to follow HTTP redirects.
-            max_redirects: Maximum number of redirects to follow.
-            limits: Connection pooling limits.
-            timeout: Request timeout in seconds.
-            transport: Optional custom HTTPX transport.
-        """
-
-        super().__init__(base_url)
-        self._client = httpx.AsyncClient(
-            base_url=self._base_url,
-            verify=verify_ssl,
-            follow_redirects=follow_redirects,
-            max_redirects=max_redirects,
-            timeout=timeout,
-            limits=limits,
-            transport=transport,
-        )
+        return httpx.AsyncClient(**kwargs)
 
     async def send_request(
         self,
