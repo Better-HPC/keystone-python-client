@@ -8,7 +8,6 @@ URL normalization, session management, and CSRF token handling.
 
 import re
 import uuid
-from abc import abstractmethod
 from typing import Optional, Union
 from urllib.parse import urljoin, urlparse
 
@@ -32,10 +31,8 @@ class HTTPBase:
     CSRF_HEADER = "X-CSRFToken"
     CID_HEADER = "X-KEYSTONE-CID"
 
-    @property
-    @abstractmethod
-    def _client(self) -> Union[httpx.Client, httpx.AsyncClient]:
-        pass
+    # HTTP client to be implemented by subclasses
+    _client: Union[httpx.Client, httpx.AsyncClient]
 
     def __init__(self, base_url: str) -> None:
         """Normalize the API url and initialize a session-specific client ID."""
