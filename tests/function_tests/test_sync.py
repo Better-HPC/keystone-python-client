@@ -8,6 +8,61 @@ from keystone_client import KeystoneClient
 from tests.function_tests.utils import API_HOST, API_PASSWORD, API_USER
 
 
+class Authentication(TestCase):
+    """Test logging in/out via the `login` and `logout` methods."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        """Instantiate a new API client instance."""
+
+        cls.client = KeystoneClient(API_HOST)
+
+    def test_login_logout(self) -> None:
+        """Verify users are successfully logged in/out when providing valid credentials."""
+
+        self.assertFalse(self.client.is_authenticated())
+
+        self.client.login(API_USER, API_PASSWORD)
+        self.assertTrue(self.client.is_authenticated())
+
+        self.client.logout()
+        self.assertFalse(self.client.is_authenticated())
+
+    def test_incorrect_credentials(self) -> None:
+        """Verify an error is raised when authenticating with incorrect credentials."""
+
+        with self.assertRaisesRegex(httpx.HTTPError, '400 Bad Request'):
+            self.client.login(API_USER, "This is not a valid password.")
+
+    def test_logout_unauthenticated(self) -> None:
+        """Verify the `logout` method exits silently when logging out an unauthenticated user."""
+
+        self.assertFalse(self.client.is_authenticated())
+        self.client.logout()
+        self.assertFalse(self.client.is_authenticated())
+
+
+class UserMetadata(TestCase):
+    """Test the fetching of user metadata via the `is_authenticated` method."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        """Instantiate a new API client instance."""
+
+        cls.client = KeystoneClient(API_HOST)
+
+    def test_unauthenticated_user(self) -> None:
+        """Verify an empty dictionary is returned for an unauthenticated user."""
+
+        self.assertEqual(dict(), self.client.is_authenticated())
+
+    def test_authenticated_user(self) -> None:
+        """Verify user metadata is returned for an authenticated user."""
+
+        self.client.login(API_USER, API_PASSWORD)
+        self.assertEqual(API_USER, self.client.is_authenticated()['username'])
+
+
 class Create(TestCase):
     """Test record creation via the `create_cluster` method."""
 

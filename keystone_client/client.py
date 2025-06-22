@@ -31,36 +31,18 @@ class ClientBase(abc.ABC):
         """Dynamically create CRUD methods for each data endpoint in the API schema."""
 
         new = super().__new__(cls)
-
-        new.create_allocation = new._create_factory(cls.schema.allocations)
-        new.retrieve_allocation = new._retrieve_factory(cls.schema.allocations)
-        new.update_allocation = new._update_factory(cls.schema.allocations)
-        new.delete_allocation = new._delete_factory(cls.schema.allocations)
-
-        new.create_cluster = new._create_factory(cls.schema.clusters)
-        new.retrieve_cluster = new._retrieve_factory(cls.schema.clusters)
-        new.update_cluster = new._update_factory(cls.schema.clusters)
-        new.delete_cluster = new._delete_factory(cls.schema.clusters)
-
-        new.create_request = new._create_factory(cls.schema.requests)
-        new.retrieve_request = new._retrieve_factory(cls.schema.requests)
-        new.update_request = new._update_factory(cls.schema.requests)
-        new.delete_request = new._delete_factory(cls.schema.requests)
-
-        new.create_team = new._create_factory(cls.schema.teams)
-        new.retrieve_team = new._retrieve_factory(cls.schema.teams)
-        new.update_team = new._update_factory(cls.schema.teams)
-        new.delete_team = new._delete_factory(cls.schema.teams)
-
-        new.create_membership = new._create_factory(cls.schema.memberships)
-        new.retrieve_membership = new._retrieve_factory(cls.schema.memberships)
-        new.update_membership = new._update_factory(cls.schema.memberships)
-        new.delete_membership = new._delete_factory(cls.schema.memberships)
-
-        new.create_user = new._create_factory(cls.schema.users)
-        new.retrieve_user = new._retrieve_factory(cls.schema.users)
-        new.update_user = new._update_factory(cls.schema.users)
-        new.delete_user = new._delete_factory(cls.schema.users)
+        for name, endpoint in {
+            'allocation': cls.schema.allocations,
+            'cluster': cls.schema.clusters,
+            'request': cls.schema.requests,
+            'team': cls.schema.teams,
+            'membership': cls.schema.memberships,
+            'user': cls.schema.users,
+        }.items():
+            setattr(new, f'create_{name}', new._create_factory(endpoint))
+            setattr(new, f'retrieve_{name}', new._retrieve_factory(endpoint))
+            setattr(new, f'update_{name}', new._update_factory(endpoint))
+            setattr(new, f'delete_{name}', new._delete_factory(endpoint))
 
         return new
 
