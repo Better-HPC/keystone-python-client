@@ -15,7 +15,7 @@ import httpx
 from keystone_client.http import AsyncHTTPClient, DEFAULT_TIMEOUT, HTTPClient
 from keystone_client.schema import Endpoint, Schema
 
-__all__ = ['KeystoneClient']
+__all__ = ['AsyncKeystoneClient', 'KeystoneClient']
 
 
 class ClientBase(abc.ABC):

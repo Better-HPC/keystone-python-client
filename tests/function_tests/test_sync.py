@@ -11,11 +11,10 @@ from tests.function_tests.utils import API_HOST, API_PASSWORD, API_USER
 class Authentication(TestCase):
     """Test logging in/out via the `login` and `logout` methods."""
 
-    @classmethod
-    def setUpClass(cls) -> None:
+    def setUp(self) -> None:
         """Instantiate a new API client instance."""
 
-        cls.client = KeystoneClient(API_HOST)
+        self.client = KeystoneClient(API_HOST)
 
     def test_login_logout(self) -> None:
         """Verify users are successfully logged in/out when providing valid credentials."""
@@ -41,15 +40,24 @@ class Authentication(TestCase):
         self.client.logout()
         self.assertFalse(self.client.is_authenticated())
 
+    def test_authentication_is_not_shared(self) -> None:
+        """Test user authentication is tied to specific instances."""
+
+        client1 = KeystoneClient(API_HOST)
+        client2 = KeystoneClient(API_HOST)
+
+        client1.login(API_USER, API_PASSWORD)
+        self.assertTrue(client1.is_authenticated())
+        self.assertFalse(client2.is_authenticated())
+
 
 class UserMetadata(TestCase):
     """Test the fetching of user metadata via the `is_authenticated` method."""
 
-    @classmethod
-    def setUpClass(cls) -> None:
+    def setUp(self) -> None:
         """Instantiate a new API client instance."""
 
-        cls.client = KeystoneClient(API_HOST)
+        self.client = KeystoneClient(API_HOST)
 
     def test_unauthenticated_user(self) -> None:
         """Verify an empty dictionary is returned for an unauthenticated user."""
@@ -60,24 +68,26 @@ class UserMetadata(TestCase):
         """Verify user metadata is returned for an authenticated user."""
 
         self.client.login(API_USER, API_PASSWORD)
-        self.assertEqual(API_USER, self.client.is_authenticated()['username'])
+        user_meta = self.client.is_authenticated()
+        self.assertEqual(API_USER, user_meta['username'])
 
 
 class Create(TestCase):
     """Test record creation via the `create_cluster` method."""
 
-    @classmethod
-    def setUpClass(cls) -> None:
+    def setUp(self) -> None:
         """Authenticate a new API client instance."""
 
-        cls.client = KeystoneClient(API_HOST)
-        cls.client.login(API_USER, API_PASSWORD)
+        self.client = KeystoneClient(API_HOST)
+        self.client.login(API_USER, API_PASSWORD)
 
     def tearDown(self) -> None:
         """Delete any test records."""
 
-        for cluster in self.client.http_get(f'allocations/clusters/', params={'name': 'Test-Cluster'}).json():
-            self.client.http_delete(f"allocations/clusters/{cluster['id']}/").raise_for_status()
+        cluster_list = self.client.http_get(f'allocations/clusters/', params={'name': 'Test-Cluster'})
+        for cluster in cluster_list.json():
+            delete = self.client.http_delete(f"allocations/clusters/{cluster['id']}/")
+            delete.raise_for_status()
 
     def test_record_is_created(self) -> None:
         """Test a record is created successfully."""
@@ -88,7 +98,8 @@ class Create(TestCase):
         )
 
         pk = new_record_data['id']
-        self.client.http_get(f'allocations/clusters/{pk}/').raise_for_status()
+        get_cluster = self.client.http_get(f'allocations/clusters/{pk}/')
+        get_cluster.raise_for_status()
 
     def test_record_data_matches_request(self) -> None:
         """Test the returned record data matches the request."""
@@ -109,15 +120,11 @@ class Create(TestCase):
 class Retrieve(TestCase):
     """Test record retrieval via the `retrieve_cluster` method."""
 
-    @classmethod
-    def setUpClass(cls) -> None:
-        """Authenticate a new API client instance."""
-
-        cls.client = KeystoneClient(API_HOST)
-        cls.client.login(API_USER, API_PASSWORD)
-
     def setUp(self) -> None:
         """Create records for testing."""
+
+        self.client = KeystoneClient(API_HOST)
+        self.client.login(API_USER, API_PASSWORD)
 
         self.test_cluster = self.client.create_cluster(
             name='Test-Cluster',
@@ -132,11 +139,12 @@ class Retrieve(TestCase):
     def tearDown(self) -> None:
         """Delete any test records."""
 
-        for cluster in self.client.http_get(f'allocations/clusters/', params={'name': 'Test-Cluster'}).json():
-            self.client.http_delete(f"allocations/clusters/{cluster['id']}/").raise_for_status()
+        cluster_list = self.client.http_get(
+            f'allocations/clusters/', params={'name__in': 'Test-Cluster,Other-Cluster'})
 
-        for cluster in self.client.http_get(f'allocations/clusters/', params={'name': 'Other-Cluster'}).json():
-            self.client.http_delete(f"allocations/clusters/{cluster['id']}/").raise_for_status()
+        for cluster in cluster_list.json():
+            delete = self.client.http_delete(f"allocations/clusters/{cluster['id']}/")
+            delete.raise_for_status()
 
     def test_retrieve_by_pk(self) -> None:
         """Test the retrieval of a specific record via its primary key."""
@@ -177,15 +185,11 @@ class Retrieve(TestCase):
 class Update(TestCase):
     """Test record updates via the `update_cluster` method."""
 
-    @classmethod
-    def setUpClass(cls) -> None:
-        """Authenticate a new API client instance."""
-
-        cls.client = KeystoneClient(API_HOST)
-        cls.client.login(API_USER, API_PASSWORD)
-
     def setUp(self) -> None:
         """Create records for testing."""
+
+        self.client = KeystoneClient(API_HOST)
+        self.client.login(API_USER, API_PASSWORD)
 
         self.test_cluster = self.client.create_cluster(
             name='Test-Cluster',
@@ -195,8 +199,10 @@ class Update(TestCase):
     def tearDown(self) -> None:
         """Delete any test records."""
 
-        for cluster in self.client.http_get(f'allocations/clusters/', params={'name': 'Test-Cluster'}).json():
-            self.client.http_delete(f"allocations/clusters/{cluster['id']}/").raise_for_status()
+        cluster_list = self.client.http_get(f'allocations/clusters/', params={'name': 'Test-Cluster'})
+        for cluster in cluster_list.json():
+            delete = self.client.http_delete(f"allocations/clusters/{cluster['id']}/").raise_for_status()
+            delete.raise_for_status()
 
     def test_update_record(self) -> None:
         """Test the record is updated successfully."""
@@ -237,15 +243,11 @@ class Update(TestCase):
 class Delete(TestCase):
     """Test record deletion using the `delete_cluster` method."""
 
-    @classmethod
-    def setUpClass(cls) -> None:
-        """Authenticate a new API client instance."""
-
-        cls.client = KeystoneClient(API_HOST)
-        cls.client.login(API_USER, API_PASSWORD)
-
     def setUp(self) -> None:
         """Create records for testing."""
+
+        self.client = KeystoneClient(API_HOST)
+        self.client.login(API_USER, API_PASSWORD)
 
         self.test_cluster = self.client.create_cluster(
             name='Test-Cluster',
@@ -255,7 +257,8 @@ class Delete(TestCase):
     def tearDown(self) -> None:
         """Delete any test records."""
 
-        for cluster in self.client.http_get(f'allocations/clusters/', params={'name': 'Test-Cluster'}).json():
+        cluster_list = self.client.http_get(f'allocations/clusters/', params={'name': 'Test-Cluster'})
+        for cluster in cluster_list.json():
             self.client.http_delete(f"allocations/clusters/{cluster['id']}/").raise_for_status()
 
     def test_delete_record(self) -> None:
