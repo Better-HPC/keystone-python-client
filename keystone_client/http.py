@@ -1,13 +1,14 @@
-"""Lower level HTTP client interface with automatic header/cookie handling.
+"""Lower level HTTP clients with automatic header/cookie handling.
 
-The `http` module provides a consistent HTTP client interface for users
-needing to perform synchronous and asynchronous HTTP requests against the
-Keystone API. It offers streamlined support for common HTTP methods with
-automatic URL normalization, session management, and CSRF token handling.
+The `http` module provides a lower-level interface for users needing
+to perform synchronous and asynchronous HTTP requests against the Keystone
+API. It offers streamlined support for common HTTP methods with automatic
+URL normalization, session management, and CSRF token handling.
 """
 
 import re
 import uuid
+from abc import abstractmethod
 from typing import Optional, Union
 from urllib.parse import urljoin, urlparse
 
@@ -31,8 +32,10 @@ class HTTPBase:
     CSRF_HEADER = "X-CSRFToken"
     CID_HEADER = "X-KEYSTONE-CID"
 
-    # HTTP client to be implemented by subclasses
-    _client: Union[httpx.Client, httpx.AsyncClient]
+    @property
+    @abstractmethod
+    def _client(self) -> Union[httpx.Client, httpx.AsyncClient]:
+        pass
 
     def __init__(self, base_url: str) -> None:
         """Normalize the API url and initialize a session-specific client ID."""
@@ -117,7 +120,6 @@ class HTTPClient(HTTPBase):
         endpoint: str,
         *,
         headers: dict = None,
-        content: Optional[RequestContent] = None,
         json: Optional[RequestContent] = None,
         files: Optional[RequestFiles] = None,
         params: Optional[QueryParamTypes] = None,
@@ -129,7 +131,6 @@ class HTTPClient(HTTPBase):
             method: The HTTP method to use.
             endpoint: API endpoint relative to the base URL.
             headers: Extend application headers with custom values.
-            content: Optional raw content to include in the request body.
             json: Optional JSON data to include in the request body.
             files: Optional file data to include in the request.
             params: Optional query parameters to include in the request URL.
@@ -145,7 +146,6 @@ class HTTPClient(HTTPBase):
             method=method,
             url=url,
             headers=application_headers,
-            content=content,
             json=json,
             files=files,
             params=params,
@@ -273,12 +273,6 @@ class AsyncHTTPClient(HTTPBase):
             timeout: Request timeout in seconds.
             transport: Optional custom HTTPX transport.
         """
-        """Initialize a new HTTP session.
-
-        Args:
-            base_url: The API base URL.
-            transport: Optional HTTPX transport layer to use for HTTP requests.
-        """
 
         super().__init__(base_url)
         self._client = httpx.AsyncClient(
@@ -297,7 +291,6 @@ class AsyncHTTPClient(HTTPBase):
         endpoint: str,
         *,
         headers: dict = None,
-        content: Optional[RequestContent] = None,
         json: Optional[dict] = None,
         files: Optional[RequestFiles] = None,
         params: Optional[QueryParamTypes] = None,
@@ -309,7 +302,6 @@ class AsyncHTTPClient(HTTPBase):
             method: The HTTP method to use.
             endpoint: API endpoint relative to the base URL.
             headers: Extend application headers with custom values.
-            content: Optional raw content to include in the request body.
             json: Optional JSON data to include in the request body.
             files: Optional file data to include in the request.
             params: Optional query parameters to include in the request URL.
@@ -325,7 +317,6 @@ class AsyncHTTPClient(HTTPBase):
             method=method,
             url=url,
             headers=application_headers,
-            content=content,
             json=json,
             files=files,
             params=params,

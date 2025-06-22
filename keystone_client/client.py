@@ -1,7 +1,7 @@
-"""Keystone API Client
+"""Keystone API client classes.
 
-This module provides a client class `KeystoneAPIClient` for interacting with the
-Keystone API. It streamlines communication with the API, providing methods for
+This module provides client classes for interacting with the Keystone API.
+It streamlines communication with the API, providing methods for
 authentication, data retrieval, and data manipulation.
 """
 
@@ -36,7 +36,7 @@ class KeystoneClient(HTTPClient):
             timeout: Seconds before the request times out.
 
         Raises:
-            requests.HTTPError: If the login request fails.
+            HTTPError: If the login request fails.
         """
 
         login_url = self.normalize_url(urljoin(self.base_url, self.LOGIN_ENDPOINT))
@@ -121,7 +121,7 @@ class KeystoneClient(HTTPClient):
                 **data: New record values.
 
             Returns:
-                A copy of the updated record.
+                A copy of the created record.
             """
 
             url = endpoint.join_url(self.base_url)
@@ -151,7 +151,7 @@ class KeystoneClient(HTTPClient):
                 pk: Optional primary key to fetch a specific record.
                 filters: Optional query parameters to include in the request.
                 search: Optionally search records for the given string.
-                order: Optional order returned values by the given parameter.
+                order: Optionally order returned values by the given parameter.
                 timeout: Seconds before the request times out.
 
             Returns:
