@@ -62,6 +62,77 @@ class ClientBase(abc.ABC):
     def _delete_factory(self, endpoint: Endpoint) -> callable:
         """Factory function for data deletion methods."""
 
+    @staticmethod
+    def _handle_create_response(response: httpx.Response) -> dict:
+        """Handle the HTTP response for a record creation request.
+
+        Args:
+            response: The HTTP response object.
+
+        Returns:
+            A copy of the created record.
+
+        Raises:
+            HTTPStatusError: If the request fails.
+        """
+        response.raise_for_status()
+        return response.json()
+
+    @staticmethod
+    def _handle_retrieve_response(response: httpx.Response) -> Optional[dict]:
+        """Handle the HTTP response for a record retrieval request.
+
+        Returns None if the record does not exist (HTTP 404).
+
+        Args:
+            response: The HTTP response object.
+
+        Returns:
+            The retrieved record or None.
+        """
+
+        try:
+            response.raise_for_status()
+            return response.json()
+
+        except httpx.HTTPError:
+            if response.status_code == 404:
+                return None
+
+            raise
+
+    @staticmethod
+    def _handle_update_response(response: httpx.Response) -> dict:
+        """Handle the HTTP response for a record update request.
+
+        Args:
+            response: The HTTP response object.
+
+        Returns:
+            A copy of the updated record.
+        """
+
+        response.raise_for_status()
+        return response.json()
+
+    @staticmethod
+    def _handle_delete_response(response: httpx.Response, raise_not_exists: bool) -> None:
+        """Handle the HTTP response for a record deletion request.
+
+        Args:
+            response: The HTTP response object.
+            raise_not_exists: Raise an error if the record does not exist.
+        """
+
+        try:
+            response.raise_for_status()
+
+        except httpx.HTTPError:
+            if response.status_code == 404 and not raise_not_exists:
+                return
+
+            raise
+
 
 class KeystoneClient(ClientBase, HTTPClient):
     """Client class for submitting synchronous requests to the Keystone API."""
@@ -115,7 +186,7 @@ class KeystoneClient(ClientBase, HTTPClient):
     def _create_factory(self, endpoint: Endpoint) -> callable:
         """Factory function for data creation methods."""
 
-        def create_record(**data) -> None:
+        def create_record(**data) -> Optional[dict]:
             """Create an API record.
 
             Args:
@@ -127,8 +198,7 @@ class KeystoneClient(ClientBase, HTTPClient):
 
             url = endpoint.join_url(self.base_url)
             response = self.http_post(url, json=data)
-            response.raise_for_status()
-            return response.json()
+            return self._handle_create_response(response)
 
         return create_record
 
@@ -167,16 +237,7 @@ class KeystoneClient(ClientBase, HTTPClient):
                     filters[param_name] = value
 
             response = self.http_get(url, params=filters, timeout=timeout)
-
-            try:
-                response.raise_for_status()
-                return response.json()
-
-            except httpx.HTTPError:
-                if response.status_code == 404:
-                    return None
-
-                raise
+            return self._handle_retrieve_response(response)
 
         return retrieve_record
 
@@ -196,8 +257,7 @@ class KeystoneClient(ClientBase, HTTPClient):
 
             url = endpoint.join_url(self.base_url, pk)
             response = self.http_patch(url, json=data)
-            response.raise_for_status()
-            return response.json()
+            return self._handle_update_response(response)
 
         return update_record
 
@@ -214,15 +274,7 @@ class KeystoneClient(ClientBase, HTTPClient):
 
             url = endpoint.join_url(self.base_url, pk)
             response = self.http_delete(url)
-
-            try:
-                response.raise_for_status()
-
-            except httpx.HTTPError:
-                if response.status_code == 404 and not raise_not_exists:
-                    return
-
-                raise
+            return self._handle_delete_response(response, raise_not_exists)
 
         return delete_record
 
@@ -283,7 +335,7 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
     def _create_factory(self, endpoint: Endpoint) -> callable:
         """Factory function for data creation methods."""
 
-        async def create_record(**data) -> None:
+        async def create_record(**data) -> Optional[dict]:
             """Create an API record.
 
             Args:
@@ -295,8 +347,7 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
 
             url = endpoint.join_url(self.base_url)
             response = await self.http_post(url, json=data)
-            response.raise_for_status()
-            return response.json()
+            return self._handle_create_response(response)
 
         return create_record
 
@@ -335,16 +386,7 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
                     filters[param_name] = value
 
             response = await self.http_get(url, params=filters, timeout=timeout)
-
-            try:
-                response.raise_for_status()
-                return response.json()
-
-            except httpx.HTTPError:
-                if response.status_code == 404:
-                    return None
-
-                raise
+            return self._handle_retrieve_response(response)
 
         return retrieve_record
 
@@ -364,8 +406,7 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
 
             url = endpoint.join_url(self.base_url, pk)
             response = await self.http_patch(url, json=data)
-            response.raise_for_status()
-            return response.json()
+            return self._handle_update_response(response)
 
         return update_record
 
@@ -382,14 +423,6 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
 
             url = endpoint.join_url(self.base_url, pk)
             response = await self.http_delete(url)
-
-            try:
-                response.raise_for_status()
-
-            except httpx.HTTPError:
-                if response.status_code == 404 and not raise_not_exists:
-                    return
-
-                raise
+            return self._handle_delete_response(response, raise_not_exists)
 
         return delete_record
