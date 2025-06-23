@@ -3,7 +3,7 @@
 import httpx
 
 
-def test_request_handler(request: httpx.Request) -> httpx.Response:
+def mock_request_handler(request: httpx.Request) -> httpx.Response:
     """An HTTP request handler that returns metadata about the incoming request."""
 
     return httpx.Response(

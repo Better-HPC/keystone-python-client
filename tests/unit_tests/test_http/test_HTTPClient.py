@@ -9,13 +9,13 @@ from tests.unit_tests import utils
 
 
 class SendRequestMethod(TestCase):
-    """Test the HTTPClient.send_request method."""
+    """Test HTTP requests issued by the `send_requests` method."""
 
     def setUp(self) -> None:
         """Create a new client instance using a dummy HTTP request handler."""
 
         self.base_url = 'https://test.api'
-        self.transport = httpx.MockTransport(utils.test_request_handler)
+        self.transport = httpx.MockTransport(utils.mock_request_handler)
         self.client = HTTPClient(self.base_url, transport=self.transport)
 
     def test_uses_normalized_url(self) -> None:

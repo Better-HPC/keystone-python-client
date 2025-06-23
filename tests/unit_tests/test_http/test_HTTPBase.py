@@ -38,7 +38,7 @@ class NormalizeUrlMethod(TestCase):
 
 
 class GetApplicationHeadersMethod(TestCase):
-    """Test the application headers returned for a session."""
+    """Test fetching a session's application headers."""
 
     def setUp(self) -> None:
         """Create a HTTPBase instance with a mocked client."""
