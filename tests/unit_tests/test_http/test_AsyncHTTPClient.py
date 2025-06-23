@@ -18,7 +18,7 @@ class SendRequestMethodAsync(IsolatedAsyncioTestCase):
         self.transport = httpx.MockTransport(utils.test_request_handler)
         self.client = AsyncHTTPClient(self.base_url, transport=self.transport)
 
-    async def test_normalized_url(self) -> None:
+    async def test_uses_normalized_url(self) -> None:
         """Verify requests are sent to the normalized application URL."""
 
         response = await self.client.send_request('get', 'v1/resource', params={'q': '1'})

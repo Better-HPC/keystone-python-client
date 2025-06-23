@@ -93,7 +93,7 @@ class HTTPBase(abc.ABC):
         return parts._replace(path=path).geturl()
 
     def get_application_headers(self, overrides: Union[dict, None] = None) -> dict[str, str]:
-        """Return application specific headers for the current session"""
+        """Return application-specific headers for the current session."""
 
         headers = {self.CID_HEADER: self._cid}
         if csrf_token := self._client.cookies.get(self.CSRF_COOKIE):
@@ -129,7 +129,7 @@ class HTTPClient(HTTPBase):
         Args:
             method: The HTTP method to use.
             endpoint: API endpoint relative to the base URL.
-            headers: Extend application headers with custom values.
+            headers: Extends application headers with custom values.
             json: Optional JSON data to include in the request body.
             files: Optional file data to include in the request.
             params: Optional query parameters to include in the request URL.
@@ -165,7 +165,7 @@ class HTTPClient(HTTPBase):
             timeout: Seconds before the request times out.
 
         Returns:
-            The HTTP Response.
+            The HTTP response.
         """
 
         return self.send_request("get", endpoint, params=params, timeout=timeout) 
@@ -182,11 +182,11 @@ class HTTPClient(HTTPBase):
         Args:
             endpoint: API endpoint relative to the base URL.
             json: JSON data to include in the request body.
-            files: Files data to include in the request.
+            files: File data to include in the request.
             timeout: Seconds before the request times out.
 
         Returns:
-            The HTTP Response.
+            The HTTP response.
         """
 
         return self.send_request("post", endpoint, json=json, files=files, timeout=timeout) 
@@ -203,11 +203,11 @@ class HTTPClient(HTTPBase):
         Args:
             endpoint: API endpoint relative to the base URL.
             json: JSON data to include in the request body.
-            files: Files data to include in the request.
+            files: File data to include in the request.
             timeout: Seconds before the request times out.
 
         Returns:
-            The HTTP Response.
+            The HTTP response.
         """
 
         return self.send_request("patch", endpoint, json=json, files=files, timeout=timeout) 
@@ -219,16 +219,16 @@ class HTTPClient(HTTPBase):
         files: Optional[RequestFiles] = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
-        """Send a PUT request to an endpoint.
+        """Send a PUT request to an API endpoint.
 
         Args:
             endpoint: API endpoint relative to the base URL.
             json: JSON data to include in the request body.
-            files: Files data to include in the request.
+            files: File data to include in the request.
             timeout: Seconds before the request times out.
 
         Returns:
-            The HTTP Response.
+            The HTTP response.
         """
 
         return self.send_request("put", endpoint, json=json, files=files, timeout=timeout) 
@@ -271,7 +271,7 @@ class AsyncHTTPClient(HTTPBase):
         Args:
             method: The HTTP method to use.
             endpoint: API endpoint relative to the base URL.
-            headers: Extend application headers with custom values.
+            headers: Extends application headers with custom values.
             json: Optional JSON data to include in the request body.
             files: Optional file data to include in the request.
             params: Optional query parameters to include in the request URL.
@@ -307,7 +307,7 @@ class AsyncHTTPClient(HTTPBase):
             timeout: Seconds before the request times out.
 
         Returns:
-            The awaitable HTTP Response.
+            The awaitable HTTP response.
         """
 
         return await self.send_request("get", endpoint, params=params, timeout=timeout) 
@@ -324,11 +324,11 @@ class AsyncHTTPClient(HTTPBase):
         Args:
             endpoint: API endpoint relative to the base URL.
             json: JSON data to include in the request body.
-            files: Files data to include in the request.
+            files: File data to include in the request.
             timeout: Seconds before the request times out.
 
         Returns:
-            The awaitable HTTP Response.
+            The awaitable HTTP response.
         """
 
         return await self.send_request("post", endpoint, json=json, files=files, timeout=timeout) 
@@ -345,11 +345,11 @@ class AsyncHTTPClient(HTTPBase):
         Args:
             endpoint: API endpoint relative to the base URL.
             json: JSON data to include in the request body.
-            files: Files data to include in the request.
+            files: File data to include in the request.
             timeout: Seconds before the request times out.
 
         Returns:
-            The awaitable HTTP Response.
+            The awaitable HTTP response.
         """
 
         return await self.send_request("patch", endpoint, json=json, files=files, timeout=timeout) 
@@ -361,21 +361,21 @@ class AsyncHTTPClient(HTTPBase):
         files: Optional[RequestFiles] = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
-        """Send an asynchronous PUT request to an endpoint.
+        """Send an asynchronous PUT request to an API endpoint.
 
         Args:
             endpoint: API endpoint relative to the base URL.
             json: JSON data to include in the request body.
-            files: Files data to include in the request.
+            files: File data to include in the request.
             timeout: Seconds before the request times out.
 
         Returns:
-            The awaitable HTTP Response.
+            The awaitable HTTP response.
         """
 
         return await self.send_request("put", endpoint, json=json, files=files, timeout=timeout) 
 
-    async def http_delete(self, endpoint: str, timeout: int = DEFAULT_TIMEOUT) -> httpx.Response:
+    async def http_delete(self, endpoint: str, timeout: int = httpx.USE_CLIENT_DEFAULT) -> httpx.Response:
         """Send an asynchronous DELETE request to an endpoint.
 
         Args:

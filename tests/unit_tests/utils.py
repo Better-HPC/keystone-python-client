@@ -4,7 +4,7 @@ import httpx
 
 
 def test_request_handler(request: httpx.Request) -> httpx.Response:
-    """HTTP request handler that returns metadata about the incoming request."""
+    """An HTTP request handler that returns metadata about the incoming request."""
 
     return httpx.Response(
         status_code=200,

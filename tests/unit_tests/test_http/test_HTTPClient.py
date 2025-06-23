@@ -18,7 +18,7 @@ class SendRequestMethod(TestCase):
         self.transport = httpx.MockTransport(utils.test_request_handler)
         self.client = HTTPClient(self.base_url, transport=self.transport)
 
-    def test_normalized_url(self) -> None:
+    def test_uses_normalized_url(self) -> None:
         """Verify requests are sent to the normalized application URL."""
 
         response = self.client.send_request('get', 'v1/resource', params={'q': '1'})

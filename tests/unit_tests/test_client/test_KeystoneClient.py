@@ -36,7 +36,7 @@ class LoginMethod(TestCase):
         client = KeystoneClient(base_url=self.api_url, transport=httpx.MockTransport(handler))
         client.login(self.username, self.password)
 
-    def test_http_error(self) -> None:
+    def test_http_error_is_raised(self) -> None:
         """Verify an error is raised for a non-200 response."""
 
         def handler(request: httpx.Request) -> httpx.Response:
@@ -73,7 +73,7 @@ class LogoutMethod(TestCase):
         client = KeystoneClient(base_url=self.api_url, transport=httpx.MockTransport(handler))
         client.logout()
 
-    def test_http_error(self) -> None:
+    def test_http_error_is_raised(self) -> None:
         """Verify an error is raised for a non-200 response."""
 
         def handler(request: httpx.Request) -> httpx.Response:
@@ -87,6 +87,7 @@ class LogoutMethod(TestCase):
 
 
 class IsAuthenticatedMethod(TestCase):
+    """Test the structure of requests to verify authentication status."""
 
     def setUp(self) -> None:
         """Define common test variables."""
@@ -124,7 +125,7 @@ class IsAuthenticatedMethod(TestCase):
         result = client.is_authenticated()
         self.assertEqual(result, {})
 
-    def test_http_error(self) -> None:
+    def test_http_error_is_raised(self) -> None:
         """Verify an error is raised for non-401, non-200 responses."""
 
         def handler(request: httpx.Request) -> httpx.Response:

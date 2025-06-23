@@ -5,11 +5,11 @@ from unittest import TestCase
 from keystone_client.schema import Endpoint
 
 
-class JoinUrl(TestCase):
-    """Tests for the `join_url` method."""
+class JoinUrlMethod(TestCase):
+    """Test the joining of URL parts via the `join_url` method."""
 
     def test_with_trailing_slash(self) -> None:
-        """Test `join_url` with a base URL that has a trailing slash."""
+        """Verify a base URL with a trailing slash is joined correctly."""
 
         endpoint = Endpoint("authentication/new")
         base_url = "https://api.example.com/"
@@ -17,7 +17,7 @@ class JoinUrl(TestCase):
         self.assertEqual(expected_result, endpoint.join_url(base_url))
 
     def test_without_trailing_slash(self) -> None:
-        """Test `join_url` with a base URL that does not have a trailing slash."""
+        """Verify a base URL with a trailing slash is joined correctly."""
 
         endpoint = Endpoint("authentication/new")
         base_url = "https://api.example.com"
@@ -25,7 +25,7 @@ class JoinUrl(TestCase):
         self.assertEqual(expected_result, endpoint.join_url(base_url))
 
     def test_with_endpoint_trailing_slash(self) -> None:
-        """Test `join_url` with an endpoint that has a trailing slash."""
+        """Verify an endpoint with a trailing slash is joined correctly."""
 
         endpoint = Endpoint("authentication/new/")
         base_url = "https://api.example.com"
@@ -33,7 +33,7 @@ class JoinUrl(TestCase):
         self.assertEqual(expected_result, endpoint.join_url(base_url))
 
     def test_without_endpoint_trailing_slash(self) -> None:
-        """Test `join_url` with an endpoint that does not have a trailing slash."""
+        """Verify an endpoint without a trailing slash is joined correctly."""
 
         endpoint = Endpoint("authentication/new")
         base_url = "https://api.example.com"
@@ -41,6 +41,8 @@ class JoinUrl(TestCase):
         self.assertEqual(expected_result, endpoint.join_url(base_url))
 
     def test_with_append_trailing_slash(self) -> None:
+        """Verify an append path with a trailing slash is joined correctly."""
+
         endpoint = Endpoint("authentication")
         base_url = "https://api.example.com"
         append_path = "new/"
@@ -48,6 +50,8 @@ class JoinUrl(TestCase):
         self.assertEqual(expected_result, endpoint.join_url(base_url, append_path))
 
     def test_without_append_trailing_slash(self) -> None:
+        """Verify an append path without a trailing slash is joined correctly."""
+
         endpoint = Endpoint("authentication")
         base_url = "https://api.example.com"
         append_path = "new"
@@ -55,7 +59,7 @@ class JoinUrl(TestCase):
         self.assertEqual(expected_result, endpoint.join_url(base_url, append_path))
 
     def test_with_mixed_trailing_slash_in_append(self) -> None:
-        """Test `join_url` with mixed trailing slashes in append arguments."""
+        """Verify mixed trailing slashes in append paths are handled correctly."""
 
         endpoint = Endpoint("authentication")
         base_url = "https://api.example.com"
@@ -65,7 +69,7 @@ class JoinUrl(TestCase):
         self.assertEqual(expected_result, endpoint.join_url(base_url, append_path1, append_path2))
 
     def test_int_append_argument(self) -> None:
-        """Test `join_url` with an `int` append argument."""
+        """Verify an integer append argument is joined correctly."""
 
         endpoint = Endpoint("authentication")
         base_url = "https://api.example.com"
@@ -74,7 +78,7 @@ class JoinUrl(TestCase):
         self.assertEqual(expected_result, endpoint.join_url(base_url, str(append_path)))
 
     def test_none_append_argument(self) -> None:
-        """Test `join_url` with a `None` append argument."""
+        """Verify a `None` append argument is ignored in joining."""
 
         endpoint = Endpoint("authentication")
         base_url = "https://api.example.com"

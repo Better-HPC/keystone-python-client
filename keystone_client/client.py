@@ -12,7 +12,7 @@ from typing import Any, Dict, Optional, Union
 
 import httpx
 
-from keystone_client.http import AsyncHTTPClient, DEFAULT_TIMEOUT, HTTPClient
+from keystone_client.http import AsyncHTTPClient, HTTPClient
 from keystone_client.schema import Endpoint, Schema
 
 __all__ = ['AsyncKeystoneClient', 'KeystoneClient']
@@ -63,18 +63,39 @@ class ClientBase(abc.ABC):
         """Factory function for data deletion methods."""
 
     @staticmethod
-    def _handle_create_response(response: httpx.Response) -> dict:
-        """Handle the HTTP response for a record creation request.
+    def _preprocess_filters(
+        filters: Optional[Dict[str, Any]],
+        search: Optional[str],
+        order: Optional[str]
+    ) -> Optional[Dict[str, Any]]:
+        """Inject _search and _order into query parameters."""
+
+        if search is None and order is None:
+            return filters
+
+        filters = filters.copy() if filters else {}
+        if search is not None:
+            filters['_search'] = search
+
+        if order is not None:
+            filters['_order'] = order
+
+        return filters
+
+    @staticmethod
+    def _handle_identity_response(response: httpx.Response) -> dict:
+        """Handle identity check responses, returning empty dict on 401.
 
         Args:
             response: The HTTP response object.
 
         Returns:
-            A copy of the created record.
-
-        Raises:
-            HTTPStatusError: If the request fails.
+            The response JSON on success or `None` if the request returned HTTP 401.
         """
+
+        if response.status_code == 401:
+            return {}
+
         response.raise_for_status()
         return response.json()
 
@@ -82,13 +103,11 @@ class ClientBase(abc.ABC):
     def _handle_retrieve_response(response: httpx.Response) -> Optional[dict]:
         """Handle the HTTP response for a record retrieval request.
 
-        Returns None if the record does not exist (HTTP 404).
-
         Args:
             response: The HTTP response object.
 
         Returns:
-            The retrieved record or None.
+            The response JSON or `None` if the request returned HTTP 404.
         """
 
         try:
@@ -102,14 +121,14 @@ class ClientBase(abc.ABC):
             raise
 
     @staticmethod
-    def _handle_update_response(response: httpx.Response) -> dict:
-        """Handle the HTTP response for a record update request.
+    def _handle_write_response(response: httpx.Response) -> dict:
+        """Handle the HTTP response for a record creation or update request.
 
         Args:
             response: The HTTP response object.
 
         Returns:
-            A copy of the updated record.
+            The response JSON.
         """
 
         response.raise_for_status()
@@ -137,7 +156,7 @@ class ClientBase(abc.ABC):
 class KeystoneClient(ClientBase, HTTPClient):
     """Client class for submitting synchronous requests to the Keystone API."""
 
-    def login(self, username: str, password: str, timeout: int = DEFAULT_TIMEOUT) -> None:
+    def login(self, username: str, password: str, timeout: int = httpx.USE_CLIENT_DEFAULT) -> None:
         """Authenticate a new user session.
 
         Args:
@@ -155,8 +174,8 @@ class KeystoneClient(ClientBase, HTTPClient):
             timeout=timeout
         ).raise_for_status()
 
-    def logout(self, timeout: int = DEFAULT_TIMEOUT) -> None:
-        """Logout the current user session.
+    def logout(self, timeout: int = httpx.USE_CLIENT_DEFAULT) -> None:
+        """Log out the current user session.
 
         Args:
             timeout: Seconds before the request times out.
@@ -167,7 +186,7 @@ class KeystoneClient(ClientBase, HTTPClient):
             timeout=timeout
         ).raise_for_status()
 
-    def is_authenticated(self, timeout: int = DEFAULT_TIMEOUT) -> dict:
+    def is_authenticated(self, timeout: int = httpx.USE_CLIENT_DEFAULT) -> dict:
         """Return metadata for the currently authenticated user.
 
         Returns an empty dictionary if the current session is not authenticated.
@@ -177,16 +196,12 @@ class KeystoneClient(ClientBase, HTTPClient):
         """
 
         response = self.http_get(self.IDENTITY_ENDPOINT, timeout=timeout)
-        if response.status_code == 401:
-            return {}
-
-        response.raise_for_status()
-        return response.json()
+        return self._handle_identity_response(response)
 
     def _create_factory(self, endpoint: Endpoint) -> callable:
         """Factory function for data creation methods."""
 
-        def create_record(**data) -> Optional[dict]:
+        def create_record(**data) -> dict:
             """Create an API record.
 
             Args:
@@ -198,7 +213,7 @@ class KeystoneClient(ClientBase, HTTPClient):
 
             url = endpoint.join_url(self.base_url)
             response = self.http_post(url, json=data)
-            return self._handle_create_response(response)
+            return self._handle_write_response(response)
 
         return create_record
 
@@ -210,7 +225,7 @@ class KeystoneClient(ClientBase, HTTPClient):
             filters: Optional[Dict[str, Any]] = None,
             search: Optional[str] = None,
             order: Optional[str] = None,
-            timeout: int = DEFAULT_TIMEOUT
+            timeout: int = httpx.USE_CLIENT_DEFAULT
         ) -> Union[None, dict, list[dict]]:
             """Retrieve one or more API records.
 
@@ -226,16 +241,11 @@ class KeystoneClient(ClientBase, HTTPClient):
                 timeout: Seconds before the request times out.
 
             Returns:
-                The data record(s) or None.
+                The data record(s) or `None`.
             """
 
             url = endpoint.join_url(self.base_url, pk)
-
-            for param_name, value in zip(('_search', '_order'), (search, order)):
-                if value is not None:
-                    filters = filters or {}
-                    filters[param_name] = value
-
+            filters = self._preprocess_filters(filters, search, order)
             response = self.http_get(url, params=filters, timeout=timeout)
             return self._handle_retrieve_response(response)
 
@@ -257,7 +267,7 @@ class KeystoneClient(ClientBase, HTTPClient):
 
             url = endpoint.join_url(self.base_url, pk)
             response = self.http_patch(url, json=data)
-            return self._handle_update_response(response)
+            return self._handle_write_response(response)
 
         return update_record
 
@@ -282,7 +292,7 @@ class KeystoneClient(ClientBase, HTTPClient):
 class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
     """Client class for submitting asynchronous requests to the Keystone API."""
 
-    async def login(self, username: str, password: str, timeout: int = DEFAULT_TIMEOUT) -> None:
+    async def login(self, username: str, password: str, timeout: int = httpx.USE_CLIENT_DEFAULT) -> None:
         """Authenticate a new user session.
 
         Args:
@@ -302,8 +312,8 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
 
         response.raise_for_status()
 
-    async def logout(self, timeout: int = DEFAULT_TIMEOUT) -> None:
-        """Logout the current user session.
+    async def logout(self, timeout: int = httpx.USE_CLIENT_DEFAULT) -> None:
+        """Log out the current user session.
 
         Args:
             timeout: Seconds before the request times out.
@@ -316,7 +326,7 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
 
         response.raise_for_status()
 
-    async def is_authenticated(self, timeout: int = DEFAULT_TIMEOUT) -> dict:
+    async def is_authenticated(self, timeout: int = httpx.USE_CLIENT_DEFAULT) -> dict:
         """Return metadata for the currently authenticated user.
 
         Returns an empty dictionary if the current session is not authenticated.
@@ -326,16 +336,12 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
         """
 
         response = await self.http_get(self.IDENTITY_ENDPOINT, timeout=timeout)
-        if response.status_code == 401:
-            return {}
-
-        response.raise_for_status()
-        return response.json()
+        return self._handle_identity_response(response)
 
     def _create_factory(self, endpoint: Endpoint) -> callable:
         """Factory function for data creation methods."""
 
-        async def create_record(**data) -> Optional[dict]:
+        async def create_record(**data) -> dict:
             """Create an API record.
 
             Args:
@@ -347,7 +353,7 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
 
             url = endpoint.join_url(self.base_url)
             response = await self.http_post(url, json=data)
-            return self._handle_create_response(response)
+            return self._handle_write_response(response)
 
         return create_record
 
@@ -359,7 +365,7 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
             filters: Optional[Dict[str, Any]] = None,
             search: Optional[str] = None,
             order: Optional[str] = None,
-            timeout: int = DEFAULT_TIMEOUT
+            timeout: int = httpx.USE_CLIENT_DEFAULT
         ) -> Union[None, dict, list[dict]]:
             """Retrieve one or more API records.
 
@@ -375,16 +381,11 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
                 timeout: Seconds before the request times out.
 
             Returns:
-                The data record(s) or None.
+                The data record(s) or `None`.
             """
 
             url = endpoint.join_url(self.base_url, pk)
-
-            for param_name, value in zip(('_search', '_order'), (search, order)):
-                if value is not None:
-                    filters = filters or {}
-                    filters[param_name] = value
-
+            filters = self._preprocess_filters(filters, search, order)
             response = await self.http_get(url, params=filters, timeout=timeout)
             return self._handle_retrieve_response(response)
 
@@ -406,7 +407,7 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
 
             url = endpoint.join_url(self.base_url, pk)
             response = await self.http_patch(url, json=data)
-            return self._handle_update_response(response)
+            return self._handle_write_response(response)
 
         return update_record
 
