@@ -247,6 +247,7 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
             json={'username': username, 'password': password},
             timeout=timeout
         )
+
         response.raise_for_status()
 
     async def logout(self, timeout: int = DEFAULT_TIMEOUT) -> None:
@@ -260,6 +261,7 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
             endpoint=self.LOGOUT_ENDPOINT,
             timeout=timeout
         )
+
         response.raise_for_status()
 
     async def is_authenticated(self, timeout: int = DEFAULT_TIMEOUT) -> dict:

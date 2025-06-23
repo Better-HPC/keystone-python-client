@@ -80,8 +80,14 @@ class Create(TestCase):
 
         self.client = KeystoneClient(API_HOST)
         self.client.login(API_USER, API_PASSWORD)
+        self._clear_old_records()
 
     def tearDown(self) -> None:
+        """Delete any test records."""
+
+        self._clear_old_records()
+
+    def _clear_old_records(self) -> None:
         """Delete any test records."""
 
         cluster_list = self.client.http_get(f'allocations/clusters/', params={'name': 'Test-Cluster'})
@@ -126,6 +132,8 @@ class Retrieve(TestCase):
         self.client = KeystoneClient(API_HOST)
         self.client.login(API_USER, API_PASSWORD)
 
+        self._clear_old_records()
+
         self.test_cluster = self.client.create_cluster(
             name='Test-Cluster',
             description='Cluster created for retrieval testing purposes.'
@@ -137,6 +145,11 @@ class Retrieve(TestCase):
         )
 
     def tearDown(self) -> None:
+        """Delete any test records."""
+
+        self._clear_old_records()
+
+    def _clear_old_records(self) -> None:
         """Delete any test records."""
 
         cluster_list = self.client.http_get(
@@ -191,12 +204,18 @@ class Update(TestCase):
         self.client = KeystoneClient(API_HOST)
         self.client.login(API_USER, API_PASSWORD)
 
+        self._clear_old_records()
         self.test_cluster = self.client.create_cluster(
             name='Test-Cluster',
             description='Cluster created for update testing purposes.'
         )
 
     def tearDown(self) -> None:
+        """Delete any test records."""
+
+        self._clear_old_records()
+
+    def _clear_old_records(self) -> None:
         """Delete any test records."""
 
         cluster_list = self.client.http_get(f'allocations/clusters/', params={'name': 'Test-Cluster'})
@@ -249,6 +268,7 @@ class Delete(TestCase):
         self.client = KeystoneClient(API_HOST)
         self.client.login(API_USER, API_PASSWORD)
 
+        self._clear_old_records()
         self.test_cluster = self.client.create_cluster(
             name='Test-Cluster',
             description='Cluster created for delete testing purposes.'
@@ -257,9 +277,15 @@ class Delete(TestCase):
     def tearDown(self) -> None:
         """Delete any test records."""
 
+        self._clear_old_records()
+
+    def _clear_old_records(self) -> None:
+        """Delete any test records."""
+
         cluster_list = self.client.http_get(f'allocations/clusters/', params={'name': 'Test-Cluster'})
         for cluster in cluster_list.json():
-            self.client.http_delete(f"allocations/clusters/{cluster['id']}/").raise_for_status()
+            response = self.client.http_delete(f"allocations/clusters/{cluster['id']}/")
+            response.raise_for_status()
 
     def test_delete_record(self) -> None:
         """Test a record is deleted successfully."""

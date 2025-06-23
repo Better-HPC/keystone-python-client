@@ -80,8 +80,14 @@ class Create(IsolatedAsyncioTestCase):
 
         self.client = AsyncKeystoneClient(API_HOST)
         await self.client.login(API_USER, API_PASSWORD)
+        await self._clear_old_records()
 
     async def asyncTearDown(self) -> None:
+        """Delete any test records."""
+
+        await self._clear_old_records()
+
+    async def _clear_old_records(self) -> None:
         """Delete any test records."""
 
         cluster_list = await self.client.http_get(f'allocations/clusters/', params={'name': 'Test-Cluster'})
@@ -126,6 +132,8 @@ class Retrieve(IsolatedAsyncioTestCase):
         self.client = AsyncKeystoneClient(API_HOST)
         await self.client.login(API_USER, API_PASSWORD)
 
+        await self._clear_old_records()
+
         self.test_cluster = await self.client.create_cluster(
             name='Test-Cluster',
             description='Cluster created for retrieval testing purposes.'
@@ -137,6 +145,11 @@ class Retrieve(IsolatedAsyncioTestCase):
         )
 
     async def asyncTearDown(self) -> None:
+        """Delete any test records."""
+
+        await self._clear_old_records()
+
+    async def _clear_old_records(self) -> None:
         """Delete any test records."""
 
         cluster_list = await self.client.http_get(
@@ -191,17 +204,23 @@ class Update(IsolatedAsyncioTestCase):
         self.client = AsyncKeystoneClient(API_HOST)
         await self.client.login(API_USER, API_PASSWORD)
 
+        await self._clear_old_records()
         self.test_cluster = await self.client.create_cluster(
             name='Test-Cluster',
             description='Cluster created for update testing purposes.'
         )
 
-    async def tearDown(self) -> None:
+    async def asyncTearDown(self) -> None:
+        """Delete any test records."""
+
+        await self._clear_old_records()
+
+    async def _clear_old_records(self) -> None:
         """Delete any test records."""
 
         cluster_list = await self.client.http_get(f'allocations/clusters/', params={'name': 'Test-Cluster'})
         for cluster in cluster_list.json():
-            delete = await self.client.http_delete(f"allocations/clusters/{cluster['id']}/").raise_for_status()
+            delete = await self.client.http_delete(f"allocations/clusters/{cluster['id']}/")
             delete.raise_for_status()
 
     async def test_update_record(self) -> None:
@@ -249,17 +268,24 @@ class Delete(IsolatedAsyncioTestCase):
         self.client = AsyncKeystoneClient(API_HOST)
         await self.client.login(API_USER, API_PASSWORD)
 
+        await self._clear_old_records()
         self.test_cluster = await self.client.create_cluster(
             name='Test-Cluster',
             description='Cluster created for delete testing purposes.'
         )
 
-    async def test_update_record(self) -> None:
+    async def asyncTearDown(self) -> None:
+        """Delete any test records."""
+
+        await self._clear_old_records()
+
+    async def _clear_old_records(self) -> None:
         """Delete any test records."""
 
         cluster_list = await self.client.http_get(f'allocations/clusters/', params={'name': 'Test-Cluster'})
         for cluster in cluster_list.json():
-            self.client.http_delete(f"allocations/clusters/{cluster['id']}/").raise_for_status()
+            response = await self.client.http_delete(f"allocations/clusters/{cluster['id']}/")
+            response.raise_for_status()
 
     async def test_delete_record(self) -> None:
         """Test a record is deleted successfully."""

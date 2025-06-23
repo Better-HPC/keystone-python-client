@@ -168,7 +168,7 @@ class HTTPClient(HTTPBase):
             The HTTP Response.
         """
 
-        return self.send_request("get", endpoint, params=params, timeout=timeout)  # pragma: no cover
+        return self.send_request("get", endpoint, params=params, timeout=timeout) 
 
     def http_post(
         self,
@@ -189,7 +189,7 @@ class HTTPClient(HTTPBase):
             The HTTP Response.
         """
 
-        return self.send_request("post", endpoint, json=json, files=files, timeout=timeout)  # pragma: no cover
+        return self.send_request("post", endpoint, json=json, files=files, timeout=timeout) 
 
     def http_patch(
         self,
@@ -210,7 +210,7 @@ class HTTPClient(HTTPBase):
             The HTTP Response.
         """
 
-        return self.send_request("patch", endpoint, json=json, files=files, timeout=timeout)  # pragma: no cover
+        return self.send_request("patch", endpoint, json=json, files=files, timeout=timeout) 
 
     def http_put(
         self,
@@ -231,7 +231,7 @@ class HTTPClient(HTTPBase):
             The HTTP Response.
         """
 
-        return self.send_request("put", endpoint, json=json, files=files, timeout=timeout)  # pragma: no cover
+        return self.send_request("put", endpoint, json=json, files=files, timeout=timeout) 
 
     def http_delete(self, endpoint: str, timeout: int = httpx.USE_CLIENT_DEFAULT) -> httpx.Response:
         """Send a DELETE request to an endpoint.
@@ -244,7 +244,7 @@ class HTTPClient(HTTPBase):
             The HTTP response.
         """
 
-        return self.send_request("delete", endpoint, timeout=timeout)  # pragma: no cover
+        return self.send_request("delete", endpoint, timeout=timeout) 
 
 
 class AsyncHTTPClient(HTTPBase):
@@ -310,7 +310,7 @@ class AsyncHTTPClient(HTTPBase):
             The awaitable HTTP Response.
         """
 
-        return await self.send_request("get", endpoint, params=params, timeout=timeout)  # pragma: no cover
+        return await self.send_request("get", endpoint, params=params, timeout=timeout) 
 
     async def http_post(
         self,
@@ -331,7 +331,7 @@ class AsyncHTTPClient(HTTPBase):
             The awaitable HTTP Response.
         """
 
-        return await self.send_request("post", endpoint, json=json, files=files, timeout=timeout)  # pragma: no cover
+        return await self.send_request("post", endpoint, json=json, files=files, timeout=timeout) 
 
     async def http_patch(
         self,
@@ -352,7 +352,7 @@ class AsyncHTTPClient(HTTPBase):
             The awaitable HTTP Response.
         """
 
-        return await self.send_request("patch", endpoint, json=json, files=files, timeout=timeout)  # pragma: no cover
+        return await self.send_request("patch", endpoint, json=json, files=files, timeout=timeout) 
 
     async def http_put(
         self,
@@ -373,7 +373,7 @@ class AsyncHTTPClient(HTTPBase):
             The awaitable HTTP Response.
         """
 
-        return await self.send_request("put", endpoint, json=json, files=files, timeout=timeout)  # pragma: no cover
+        return await self.send_request("put", endpoint, json=json, files=files, timeout=timeout) 
 
     async def http_delete(self, endpoint: str, timeout: int = DEFAULT_TIMEOUT) -> httpx.Response:
         """Send an asynchronous DELETE request to an endpoint.
@@ -386,4 +386,4 @@ class AsyncHTTPClient(HTTPBase):
             The awaitable HTTP response.
         """
 
-        return await self.send_request("delete", endpoint, timeout=timeout)  # pragma: no cover
+        return await self.send_request("delete", endpoint, timeout=timeout) 
