@@ -1,84 +1,219 @@
-"""Keystone API Client
+"""Keystone API client classes.
 
-This module provides a client class `KeystoneAPIClient` for interacting with the
-Keystone API. It streamlines communication with the API, providing methods for
+This module provides client classes for interacting with the Keystone API.
+It streamlines communication with the API, providing methods for
 authentication, data retrieval, and data manipulation.
 """
 
 from __future__ import annotations
 
-from functools import cached_property
-from typing import Union
+import abc
+from typing import Any, Dict, Optional, Union
 
-import requests
+import httpx
 
-from keystone_client.http import DEFAULT_TIMEOUT, HTTPClient
-from keystone_client.schema import Endpoint
+from keystone_client.http import AsyncHTTPClient, HTTPClient
+from keystone_client.schema import Endpoint, Schema
+
+__all__ = ['AsyncKeystoneClient', 'KeystoneClient']
 
 
-class KeystoneClient(HTTPClient):
-    """Client class for submitting requests to the Keystone API."""
+class ClientBase(abc.ABC):
+    """Base client class with shared application constants and helpers."""
 
-    @cached_property
-    def api_version(self) -> str:
-        """Return the version number of the API server."""
+    schema = Schema()
 
-        response = self.http_get("version")
-        return response.text
+    LOGIN_ENDPOINT = Endpoint('authentication/login')
+    LOGOUT_ENDPOINT = Endpoint('authentication/logout')
+    IDENTITY_ENDPOINT = Endpoint('authentication/whoami')
 
-    def __new__(cls, *args, **kwargs) -> KeystoneClient:
+    def __new__(cls, *args, **kwargs):
         """Dynamically create CRUD methods for each data endpoint in the API schema."""
 
-        new: KeystoneClient = super().__new__(cls)
-
-        new.create_allocation = new._create_factory(cls.schema.allocations)
-        new.retrieve_allocation = new._retrieve_factory(cls.schema.allocations)
-        new.update_allocation = new._update_factory(cls.schema.allocations)
-        new.delete_allocation = new._delete_factory(cls.schema.allocations)
-
-        new.create_cluster = new._create_factory(cls.schema.clusters)
-        new.retrieve_cluster = new._retrieve_factory(cls.schema.clusters)
-        new.update_cluster = new._update_factory(cls.schema.clusters)
-        new.delete_cluster = new._delete_factory(cls.schema.clusters)
-
-        new.create_request = new._create_factory(cls.schema.requests)
-        new.retrieve_request = new._retrieve_factory(cls.schema.requests)
-        new.update_request = new._update_factory(cls.schema.requests)
-        new.delete_request = new._delete_factory(cls.schema.requests)
-
-        new.create_team = new._create_factory(cls.schema.teams)
-        new.retrieve_team = new._retrieve_factory(cls.schema.teams)
-        new.update_team = new._update_factory(cls.schema.teams)
-        new.delete_team = new._delete_factory(cls.schema.teams)
-
-        new.create_membership = new._create_factory(cls.schema.memberships)
-        new.retrieve_membership = new._retrieve_factory(cls.schema.memberships)
-        new.update_membership = new._update_factory(cls.schema.memberships)
-        new.delete_membership = new._delete_factory(cls.schema.memberships)
-
-        new.create_user = new._create_factory(cls.schema.users)
-        new.retrieve_user = new._retrieve_factory(cls.schema.users)
-        new.update_user = new._update_factory(cls.schema.users)
-        new.delete_user = new._delete_factory(cls.schema.users)
+        new = super().__new__(cls)
+        for name, endpoint in {
+            'allocation': cls.schema.allocations,
+            'cluster': cls.schema.clusters,
+            'request': cls.schema.requests,
+            'team': cls.schema.teams,
+            'membership': cls.schema.memberships,
+            'user': cls.schema.users,
+        }.items():
+            setattr(new, f'create_{name}', new._create_factory(endpoint))
+            setattr(new, f'retrieve_{name}', new._retrieve_factory(endpoint))
+            setattr(new, f'update_{name}', new._update_factory(endpoint))
+            setattr(new, f'delete_{name}', new._delete_factory(endpoint))
 
         return new
+
+    @abc.abstractmethod
+    def _create_factory(self, endpoint: Endpoint) -> callable:
+        """Factory function for data creation methods."""
+
+    @abc.abstractmethod
+    def _retrieve_factory(self, endpoint: Endpoint) -> callable:
+        """Factory function for data retrieval methods."""
+
+    @abc.abstractmethod
+    def _update_factory(self, endpoint: Endpoint) -> callable:
+        """Factory function for data update methods."""
+
+    @abc.abstractmethod
+    def _delete_factory(self, endpoint: Endpoint) -> callable:
+        """Factory function for data deletion methods."""
+
+    @staticmethod
+    def _preprocess_filters(
+        filters: Optional[Dict[str, Any]],
+        search: Optional[str],
+        order: Optional[str]
+    ) -> Optional[Dict[str, Any]]:
+        """Inject _search and _order into query parameters."""
+
+        if search is None and order is None:
+            return filters
+
+        filters = filters.copy() if filters else {}
+        if search is not None:
+            filters['_search'] = search
+
+        if order is not None:
+            filters['_order'] = order
+
+        return filters
+
+    @staticmethod
+    def _handle_identity_response(response: httpx.Response) -> dict:
+        """Handle identity check responses, returning empty dict on 401.
+
+        Args:
+            response: The HTTP response object.
+
+        Returns:
+            The response JSON on success or `None` if the request returned HTTP 401.
+        """
+
+        if response.status_code == 401:
+            return {}
+
+        response.raise_for_status()
+        return response.json()
+
+    @staticmethod
+    def _handle_retrieve_response(response: httpx.Response) -> Optional[dict]:
+        """Handle the HTTP response for a record retrieval request.
+
+        Args:
+            response: The HTTP response object.
+
+        Returns:
+            The response JSON or `None` if the request returned HTTP 404.
+        """
+
+        try:
+            response.raise_for_status()
+            return response.json()
+
+        except httpx.HTTPError:
+            if response.status_code == 404:
+                return None
+
+            raise
+
+    @staticmethod
+    def _handle_write_response(response: httpx.Response) -> dict:
+        """Handle the HTTP response for a record creation or update request.
+
+        Args:
+            response: The HTTP response object.
+
+        Returns:
+            The response JSON.
+        """
+
+        response.raise_for_status()
+        return response.json()
+
+    @staticmethod
+    def _handle_delete_response(response: httpx.Response, raise_not_exists: bool) -> None:
+        """Handle the HTTP response for a record deletion request.
+
+        Args:
+            response: The HTTP response object.
+            raise_not_exists: Raise an error if the record does not exist.
+        """
+
+        try:
+            response.raise_for_status()
+
+        except httpx.HTTPError:
+            if response.status_code == 404 and not raise_not_exists:
+                return
+
+            raise
+
+
+class KeystoneClient(ClientBase, HTTPClient):
+    """Client class for submitting synchronous requests to the Keystone API."""
+
+    def login(self, username: str, password: str, timeout: int = httpx.USE_CLIENT_DEFAULT) -> None:
+        """Authenticate a new user session.
+
+        Args:
+            username: The authentication username.
+            password: The authentication password.
+            timeout: Seconds before the request times out.
+
+        Raises:
+            HTTPError: If the login request fails.
+        """
+
+        self.http_post(
+            endpoint=self.LOGIN_ENDPOINT,
+            json={'username': username, 'password': password},
+            timeout=timeout
+        ).raise_for_status()
+
+    def logout(self, timeout: int = httpx.USE_CLIENT_DEFAULT) -> None:
+        """Log out the current user session.
+
+        Args:
+            timeout: Seconds before the request times out.
+        """
+
+        self.http_post(
+            endpoint=self.LOGOUT_ENDPOINT,
+            timeout=timeout
+        ).raise_for_status()
+
+    def is_authenticated(self, timeout: int = httpx.USE_CLIENT_DEFAULT) -> dict:
+        """Return metadata for the currently authenticated user.
+
+        Returns an empty dictionary if the current session is not authenticated.
+
+        Args:
+            timeout: Seconds before the request times out.
+        """
+
+        response = self.http_get(self.IDENTITY_ENDPOINT, timeout=timeout)
+        return self._handle_identity_response(response)
 
     def _create_factory(self, endpoint: Endpoint) -> callable:
         """Factory function for data creation methods."""
 
-        def create_record(**data) -> None:
+        def create_record(**data) -> dict:
             """Create an API record.
 
             Args:
                 **data: New record values.
 
             Returns:
-                A copy of the updated record.
+                A copy of the created record.
             """
 
-            url = endpoint.join_url(self.url)
-            response = self.http_post(url, data=data)
-            return response.json()
+            url = endpoint.join_url(self.base_url)
+            response = self.http_post(url, json=data)
+            return self._handle_write_response(response)
 
         return create_record
 
@@ -86,11 +221,11 @@ class KeystoneClient(HTTPClient):
         """Factory function for data retrieval methods."""
 
         def retrieve_record(
-            pk: int | None = None,
-            filters: dict | None = None,
-            search: str | None = None,
-            order: str | None = None,
-            timeout=DEFAULT_TIMEOUT
+            pk: Optional[int] = None,
+            filters: Optional[Dict[str, Any]] = None,
+            search: Optional[str] = None,
+            order: Optional[str] = None,
+            timeout: int = httpx.USE_CLIENT_DEFAULT
         ) -> Union[None, dict, list[dict]]:
             """Retrieve one or more API records.
 
@@ -102,36 +237,24 @@ class KeystoneClient(HTTPClient):
                 pk: Optional primary key to fetch a specific record.
                 filters: Optional query parameters to include in the request.
                 search: Optionally search records for the given string.
-                order: Optional order returned values by the given parameter.
+                order: Optionally order returned values by the given parameter.
                 timeout: Seconds before the request times out.
 
             Returns:
-                The data record(s) or None.
+                The data record(s) or `None`.
             """
 
-            url = endpoint.join_url(self.url, pk)
-
-            for param_name, value in zip(('_search', '_order'), (search, order)):
-                if value is not None:
-                    filters = filters or {}
-                    filters[param_name] = value
-
-            try:
-                response = self.http_get(url, params=filters, timeout=timeout)
-                return response.json()
-
-            except requests.HTTPError as exception:
-                if exception.response.status_code == 404:
-                    return None
-
-                raise
+            url = endpoint.join_url(self.base_url, pk)
+            filters = self._preprocess_filters(filters, search, order)
+            response = self.http_get(url, params=filters, timeout=timeout)
+            return self._handle_retrieve_response(response)
 
         return retrieve_record
 
     def _update_factory(self, endpoint: Endpoint) -> callable:
         """Factory function for data update methods."""
 
-        def update_record(pk: int, data) -> dict:
+        def update_record(pk: int, data: dict) -> dict:
             """Update an API record.
 
             Args:
@@ -142,9 +265,9 @@ class KeystoneClient(HTTPClient):
                 A copy of the updated record.
             """
 
-            url = endpoint.join_url(self.url, pk)
-            response = self.http_patch(url, data=data)
-            return response.json()
+            url = endpoint.join_url(self.base_url, pk)
+            response = self.http_patch(url, json=data)
+            return self._handle_write_response(response)
 
         return update_record
 
@@ -159,15 +282,148 @@ class KeystoneClient(HTTPClient):
                 raise_not_exists: Raise an error if the record does not exist.
             """
 
-            url = endpoint.join_url(self.url, pk)
+            url = endpoint.join_url(self.base_url, pk)
+            response = self.http_delete(url)
+            return self._handle_delete_response(response, raise_not_exists)
 
-            try:
-                self.http_delete(url)
+        return delete_record
 
-            except requests.HTTPError as exception:
-                if exception.response.status_code == 404 and not raise_not_exists:
-                    return
 
-                raise
+class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
+    """Client class for submitting asynchronous requests to the Keystone API."""
+
+    async def login(self, username: str, password: str, timeout: int = httpx.USE_CLIENT_DEFAULT) -> None:
+        """Authenticate a new user session.
+
+        Args:
+            username: The authentication username.
+            password: The authentication password.
+            timeout: Seconds before the request times out.
+
+        Raises:
+            HTTPError: If the login request fails.
+        """
+
+        response = await self.http_post(
+            endpoint=self.LOGIN_ENDPOINT,
+            json={'username': username, 'password': password},
+            timeout=timeout
+        )
+
+        response.raise_for_status()
+
+    async def logout(self, timeout: int = httpx.USE_CLIENT_DEFAULT) -> None:
+        """Log out the current user session.
+
+        Args:
+            timeout: Seconds before the request times out.
+        """
+
+        response = await self.http_post(
+            endpoint=self.LOGOUT_ENDPOINT,
+            timeout=timeout
+        )
+
+        response.raise_for_status()
+
+    async def is_authenticated(self, timeout: int = httpx.USE_CLIENT_DEFAULT) -> dict:
+        """Return metadata for the currently authenticated user.
+
+        Returns an empty dictionary if the current session is not authenticated.
+
+        Args:
+            timeout: Seconds before the request times out.
+        """
+
+        response = await self.http_get(self.IDENTITY_ENDPOINT, timeout=timeout)
+        return self._handle_identity_response(response)
+
+    def _create_factory(self, endpoint: Endpoint) -> callable:
+        """Factory function for data creation methods."""
+
+        async def create_record(**data) -> dict:
+            """Create an API record.
+
+            Args:
+                **data: New record values.
+
+            Returns:
+                A copy of the created record.
+            """
+
+            url = endpoint.join_url(self.base_url)
+            response = await self.http_post(url, json=data)
+            return self._handle_write_response(response)
+
+        return create_record
+
+    def _retrieve_factory(self, endpoint: Endpoint) -> callable:
+        """Factory function for data retrieval methods."""
+
+        async def retrieve_record(
+            pk: Optional[int] = None,
+            filters: Optional[Dict[str, Any]] = None,
+            search: Optional[str] = None,
+            order: Optional[str] = None,
+            timeout: int = httpx.USE_CLIENT_DEFAULT
+        ) -> Union[None, dict, list[dict]]:
+            """Retrieve one or more API records.
+
+            A single record is returned when specifying a primary key, otherwise the returned
+            object is a list of records. In either case, the return value is `None` when no data
+            is available for the query.
+
+            Args:
+                pk: Optional primary key to fetch a specific record.
+                filters: Optional query parameters to include in the request.
+                search: Optionally search records for the given string.
+                order: Optionally order returned values by the given parameter.
+                timeout: Seconds before the request times out.
+
+            Returns:
+                The data record(s) or `None`.
+            """
+
+            url = endpoint.join_url(self.base_url, pk)
+            filters = self._preprocess_filters(filters, search, order)
+            response = await self.http_get(url, params=filters, timeout=timeout)
+            return self._handle_retrieve_response(response)
+
+        return retrieve_record
+
+    def _update_factory(self, endpoint: Endpoint) -> callable:
+        """Factory function for data update methods."""
+
+        async def update_record(pk: int, data: dict) -> dict:
+            """Update an API record.
+
+            Args:
+                pk: Primary key of the record to update.
+                data: New record values.
+
+            Returns:
+                A copy of the updated record.
+            """
+
+            url = endpoint.join_url(self.base_url, pk)
+            response = await self.http_patch(url, json=data)
+            return self._handle_write_response(response)
+
+        return update_record
+
+    def _delete_factory(self, endpoint: Endpoint) -> callable:
+        """Factory function for data deletion methods."""
+
+        async def delete_record(pk: int, raise_not_exists: bool = False) -> None:
+            """Delete an API record.
+
+            Args:
+                pk: Primary key of the record to delete.
+                raise_not_exists: Raise an error if the record does not exist.
+            """
+
+            url = endpoint.join_url(self.base_url, pk)
+            response = await self.http_delete(url)
+            return self._handle_delete_response(response, raise_not_exists)
 
         return delete_record

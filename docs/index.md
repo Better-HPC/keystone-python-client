@@ -34,9 +34,9 @@ The `login` and `logout` methods are used to handle user authentication.
 Once authenticated, the client will automatically manage the resulting user credentials.
 
 ```python
-client.login(username="username", password="password") # (1)!
-assert client.is_authenticated # (2)!
-client.logout() # (3)!
+client.login(username="username", password="password")  # (1)!
+assert client.is_authenticated  # (2)!
+client.logout()  # (3)!
 ```
 
 1. Authenticate a new user session.

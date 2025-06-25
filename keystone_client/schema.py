@@ -32,9 +32,6 @@ class Endpoint(str):
 class Schema:
     """Schema defining the complete set of API endpoints."""
 
-    login = Endpoint('authentication/login')
-    logout = Endpoint('authentication/logout')
-
     allocations: Endpoint = Endpoint("allocations/allocations")
     clusters: Endpoint = Endpoint("allocations/clusters")
     requests: Endpoint = Endpoint("allocations/requests")
