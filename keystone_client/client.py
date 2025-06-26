@@ -11,6 +11,7 @@ import abc
 from typing import Any, Dict, Optional, Union
 
 import httpx
+from httpx._types import RequestData, RequestFiles
 
 from keystone_client.http import AsyncHTTPClient, HTTPClient
 from keystone_client.schema import Endpoint, Schema
@@ -201,18 +202,19 @@ class KeystoneClient(ClientBase, HTTPClient):
     def _create_factory(self, endpoint: Endpoint) -> callable:
         """Factory function for data creation methods."""
 
-        def create_record(**data) -> dict:
-            """Create an API record.
+        def create_record(data: Optional[RequestData] = None, files: Optional[RequestFiles] = None) -> dict:
+            """Create a new API record.
 
             Args:
-                **data: New record values.
+                data: New record values.
+                files: Multipart file data.
 
             Returns:
                 A copy of the created record.
             """
 
             url = endpoint.join_url(self.base_url)
-            response = self.http_post(url, json=data)
+            response = self.http_post(url, json=data, files=files)
             return self._handle_write_response(response)
 
         return create_record
@@ -254,19 +256,24 @@ class KeystoneClient(ClientBase, HTTPClient):
     def _update_factory(self, endpoint: Endpoint) -> callable:
         """Factory function for data update methods."""
 
-        def update_record(pk: int, data: dict) -> dict:
-            """Update an API record.
+        def update_record(
+            pk: int,
+            data: Optional[RequestData] = None,
+            files: Optional[RequestFiles] = None
+        ) -> dict:
+            """Update partial values for an existing API record.
 
             Args:
                 pk: Primary key of the record to update.
                 data: New record values.
+                files: Multipart file data.
 
             Returns:
                 A copy of the updated record.
             """
 
             url = endpoint.join_url(self.base_url, pk)
-            response = self.http_patch(url, json=data)
+            response = self.http_patch(url, json=data, files=files)
             return self._handle_write_response(response)
 
         return update_record
@@ -341,18 +348,19 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
     def _create_factory(self, endpoint: Endpoint) -> callable:
         """Factory function for data creation methods."""
 
-        async def create_record(**data) -> dict:
-            """Create an API record.
+        async def create_record(data: Optional[RequestData] = None, files: Optional[RequestFiles] = None) -> dict:
+            """Create a new API record.
 
             Args:
-                **data: New record values.
+                data: New record values.
+                files: Multipart file data.
 
             Returns:
                 A copy of the created record.
             """
 
             url = endpoint.join_url(self.base_url)
-            response = await self.http_post(url, json=data)
+            response = await self.http_post(url, json=data, files=files)
             return self._handle_write_response(response)
 
         return create_record
@@ -394,19 +402,24 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
     def _update_factory(self, endpoint: Endpoint) -> callable:
         """Factory function for data update methods."""
 
-        async def update_record(pk: int, data: dict) -> dict:
-            """Update an API record.
+        async def update_record(
+            pk: int,
+            data: Optional[RequestData] = None,
+            files: Optional[RequestFiles] = None
+        ) -> dict:
+            """Update partial values for an existing API record.
 
             Args:
                 pk: Primary key of the record to update.
                 data: New record values.
+                files: Multipart file data.
 
             Returns:
                 A copy of the updated record.
             """
 
             url = endpoint.join_url(self.base_url, pk)
-            response = await self.http_patch(url, json=data)
+            response = await self.http_patch(url, json=data, files=files)
             return self._handle_write_response(response)
 
         return update_record
