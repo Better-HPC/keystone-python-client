@@ -98,10 +98,10 @@ class Create(IsolatedAsyncioTestCase):
     async def test_record_is_created(self) -> None:
         """Test a record is created successfully."""
 
-        new_record_data = await self.client.create_cluster(
-            name='Test-Cluster',
-            description='Cluster created for testing purposes.'
-        )
+        new_record_data = await self.client.create_cluster({
+            'name': 'Test-Cluster',
+            'description': 'Cluster created for testing purposes.'
+        })
 
         pk = new_record_data['id']
         get_cluster = await self.client.http_get(f'allocations/clusters/{pk}/')
@@ -111,7 +111,7 @@ class Create(IsolatedAsyncioTestCase):
         """Test the returned record data matches the request."""
 
         expected_data = {'name': 'Test-Cluster', 'description': 'Cluster created for testing purposes.'}
-        new_record_data = await self.client.create_cluster(**expected_data)
+        new_record_data = await self.client.create_cluster(expected_data)
 
         self.assertEqual(expected_data['name'], new_record_data['name'])
         self.assertEqual(expected_data['description'], new_record_data['description'])
@@ -134,15 +134,15 @@ class Retrieve(IsolatedAsyncioTestCase):
 
         await self._clear_old_records()
 
-        self.test_cluster = await self.client.create_cluster(
-            name='Test-Cluster',
-            description='Cluster created for retrieval testing purposes.'
-        )
+        self.test_cluster = await self.client.create_cluster({
+            'name': 'Test-Cluster',
+            'description': 'Cluster created for retrieval testing purposes.'
+        })
 
-        self.other_cluster = await self.client.create_cluster(
-            name='Other-Cluster',
-            description='Another cluster created for testing purposes.'
-        )
+        self.other_cluster = await self.client.create_cluster({
+            'name': 'Other-Cluster',
+            'description': 'Another cluster created for testing purposes.'
+        })
 
     async def asyncTearDown(self) -> None:
         """Delete any test records."""
@@ -205,10 +205,10 @@ class Update(IsolatedAsyncioTestCase):
         await self.client.login(API_USER, API_PASSWORD)
 
         await self._clear_old_records()
-        self.test_cluster = await self.client.create_cluster(
-            name='Test-Cluster',
-            description='Cluster created for update testing purposes.'
-        )
+        self.test_cluster = await self.client.create_cluster({
+            'name': 'Test-Cluster',
+            'description': 'Cluster created for update testing purposes.'
+        })
 
     async def asyncTearDown(self) -> None:
         """Delete any test records."""
@@ -269,10 +269,10 @@ class Delete(IsolatedAsyncioTestCase):
         await self.client.login(API_USER, API_PASSWORD)
 
         await self._clear_old_records()
-        self.test_cluster = await self.client.create_cluster(
-            name='Test-Cluster',
-            description='Cluster created for delete testing purposes.'
-        )
+        self.test_cluster = await self.client.create_cluster({
+            'name': 'Test-Cluster',
+            'description': 'Cluster created for delete testing purposes.'
+        })
 
     async def asyncTearDown(self) -> None:
         """Delete any test records."""
