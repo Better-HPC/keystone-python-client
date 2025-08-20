@@ -6,13 +6,17 @@ API. It offers streamlined support for common HTTP methods with automatic
 URL normalization, session management, and CSRF token handling.
 """
 
+from __future__ import annotations
+
 import abc
+import asyncio
 import re
 import uuid
 from typing import Optional, Union
 from urllib.parse import urljoin, urlparse
 
 import httpx
+from tornado.httpclient import HTTPClient
 
 from .types import *
 
@@ -108,10 +112,13 @@ class HTTPBase(abc.ABC):
 class HTTPClient(HTTPBase):
     """Synchronous HTTP Client."""
 
-    def __enter__(self):
+    def __enter__(self) -> HTTPClient:
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        self.close()
+
+    def __del__(self) -> None:
         self.close()
 
     def _client_factory(self, **kwargs) -> httpx.Client:
@@ -266,6 +273,14 @@ class AsyncHTTPClient(HTTPBase):
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.close()
+
+    def __del__(self):
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(self._client.aclose())
+        except RuntimeError:
+            # No running loop; can't close asynchronously
+            pass
 
     def _client_factory(self, **kwargs) -> httpx.AsyncClient:
         """Create a new HTTP client instance with the provided settings."""
