@@ -206,7 +206,7 @@ class Retrieve(IsolatedAsyncioTestCase):
         """Test an error is raised when record retrieval fails."""
 
         # Use an unauthenticated client session on an endpoint requiring authentication
-        async with  await AsyncKeystoneClient(API_HOST) as client:
+        async with AsyncKeystoneClient(API_HOST) as client:
             with self.assertRaises(httpx.HTTPError):
                 client.retrieve_cluster()
 
