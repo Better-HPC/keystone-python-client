@@ -77,6 +77,12 @@ class HTTPBase(abc.ABC):
 
         return self._base_url
 
+    @property
+    def cid(self) -> str:
+        """Return the current session's correlation ID."""
+
+        return self._cid
+
     @staticmethod
     def normalize_url(url: str) -> str:
         """Normalize a URL with an enforced trailing slash.
