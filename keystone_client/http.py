@@ -7,7 +7,6 @@ URL normalization, session management, and CSRF token handling.
 """
 
 import abc
-import asyncio
 import re
 import uuid
 from typing import Optional, Union
