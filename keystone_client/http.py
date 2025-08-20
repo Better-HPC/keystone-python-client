@@ -6,8 +6,6 @@ API. It offers streamlined support for common HTTP methods with automatic
 URL normalization, session management, and CSRF token handling.
 """
 
-from __future__ import annotations
-
 import abc
 import asyncio
 import re
@@ -16,7 +14,6 @@ from typing import Optional, Union
 from urllib.parse import urljoin, urlparse
 
 import httpx
-from tornado.httpclient import HTTPClient
 
 from .types import *
 
@@ -112,7 +109,7 @@ class HTTPBase(abc.ABC):
 class HTTPClient(HTTPBase):
     """Synchronous HTTP Client."""
 
-    def __enter__(self) -> HTTPClient:
+    def __enter__(self) -> 'HTTPClient':
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
@@ -268,13 +265,13 @@ class HTTPClient(HTTPBase):
 class AsyncHTTPClient(HTTPBase):
     """Asynchronous HTTP Client."""
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> 'AsyncHTTPClient':
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
 
-    def __del__(self):
+    def __del__(self) -> None:
         try:
             loop = asyncio.get_running_loop()
             loop.create_task(self._client.aclose())
