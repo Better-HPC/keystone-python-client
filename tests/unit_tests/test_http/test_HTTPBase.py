@@ -1,5 +1,6 @@
 """Unit tests for the `HTTPBase` class."""
 
+import uuid
 from unittest import TestCase
 from unittest.mock import MagicMock
 
@@ -13,6 +14,32 @@ class DummyHTTPBase(HTTPBase):
         """Create a mock object as a stand in for an HTTP client."""
 
         return MagicMock(cookies={})
+
+
+class BaseUrlProperty(TestCase):
+    """Test the `base_url` property returns the correct value."""
+
+    def test_returns_normalized_url(self) -> None:
+        """Verify the `base_url` property returns the normalized URL."""
+
+        http_base = DummyHTTPBase('https://example.com//')
+        expected_url = 'https://example.com/'
+        self.assertEqual(expected_url, http_base.base_url)
+
+
+class CidProperty(TestCase):
+    """Test the `cid` property returns a UUID value."""
+
+    def test_returns_valid_uuid(self) -> None:
+        """Verify the `cid` property returns a valid UUID."""
+
+        http_base = DummyHTTPBase('https://example.com/')
+
+        try:
+            uuid.UUID(http_base.cid, version=4)
+
+        except ValueError:
+            self.fail(f"cid '{http_base.cid}' is not a valid UUID4")
 
 
 class NormalizeUrlMethod(TestCase):

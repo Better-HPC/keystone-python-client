@@ -81,7 +81,7 @@ class HTTPBase(abc.ABC):
     def cid(self) -> str:
         """Return the current session's correlation ID."""
 
-        return self.cid
+        return self._cid
 
     @staticmethod
     def normalize_url(url: str) -> str:
