@@ -108,10 +108,21 @@ class HTTPBase(abc.ABC):
 class HTTPClient(HTTPBase):
     """Synchronous HTTP Client."""
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
     def _client_factory(self, **kwargs) -> httpx.Client:
         """Create a new HTTP client instance with the provided settings."""
 
         return httpx.Client(**kwargs)
+
+    def close(self) -> None:
+        """Close any open server connections."""
+
+        self._client.close()
 
     def send_request(
         self,
@@ -250,10 +261,21 @@ class HTTPClient(HTTPBase):
 class AsyncHTTPClient(HTTPBase):
     """Asynchronous HTTP Client."""
 
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
+
     def _client_factory(self, **kwargs) -> httpx.AsyncClient:
         """Create a new HTTP client instance with the provided settings."""
 
         return httpx.AsyncClient(**kwargs)
+
+    async def close(self) -> None:
+        """Close any open server connections."""
+
+        await self._client.aclose()
 
     async def send_request(
         self,
