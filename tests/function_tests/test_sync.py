@@ -16,6 +16,11 @@ class Authentication(TestCase):
 
         self.client = KeystoneClient(API_HOST)
 
+    def tearDown(self) -> None:
+        """Close any open server connections."""
+
+        self.client.close()
+
     def test_login_logout(self) -> None:
         """Verify users are successfully logged in/out when providing valid credentials."""
 
@@ -50,6 +55,9 @@ class Authentication(TestCase):
         self.assertTrue(client1.is_authenticated())
         self.assertFalse(client2.is_authenticated())
 
+        client1.close()
+        client2.close()
+
 
 class UserMetadata(TestCase):
     """Test the fetching of user metadata via the `is_authenticated` method."""
@@ -58,6 +66,11 @@ class UserMetadata(TestCase):
         """Instantiate a new API client instance."""
 
         self.client = KeystoneClient(API_HOST)
+
+    def tearDown(self) -> None:
+        """Close any open server connections."""
+
+        self.client.close()
 
     def test_unauthenticated_user(self) -> None:
         """Verify an empty dictionary is returned for an unauthenticated user."""
@@ -86,6 +99,7 @@ class Create(TestCase):
         """Delete any test records."""
 
         self._clear_old_records()
+        self.client.close()
 
     def _clear_old_records(self) -> None:
         """Delete any test records."""
@@ -148,6 +162,7 @@ class Retrieve(TestCase):
         """Delete any test records."""
 
         self._clear_old_records()
+        self.client.close()
 
     def _clear_old_records(self) -> None:
         """Delete any test records."""
@@ -191,8 +206,8 @@ class Retrieve(TestCase):
         """Test an error is raised when record retrieval fails."""
 
         # Use an unauthenticated client session on an endpoint requiring authentication
-        with self.assertRaises(httpx.HTTPError):
-            KeystoneClient(API_HOST).retrieve_cluster()
+        with self.assertRaises(httpx.HTTPError), KeystoneClient(API_HOST) as client:
+            client.retrieve_cluster()
 
 
 class Update(TestCase):
@@ -214,6 +229,7 @@ class Update(TestCase):
         """Delete any test records."""
 
         self._clear_old_records()
+        self.client.close()
 
     def _clear_old_records(self) -> None:
         """Delete any test records."""
@@ -278,6 +294,7 @@ class Delete(TestCase):
         """Delete any test records."""
 
         self._clear_old_records()
+        self.client.close()
 
     def _clear_old_records(self) -> None:
         """Delete any test records."""

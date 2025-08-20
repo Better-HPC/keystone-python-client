@@ -16,6 +16,11 @@ class Authentication(IsolatedAsyncioTestCase):
 
         self.client = AsyncKeystoneClient(API_HOST)
 
+    async def asyncTearDown(self) -> None:
+        """Close any open server connections."""
+
+        await self.client.close()
+
     async def test_login_logout(self) -> None:
         """Verify users are successfully logged in/out when providing valid credentials."""
 
@@ -50,6 +55,9 @@ class Authentication(IsolatedAsyncioTestCase):
         self.assertTrue(await client1.is_authenticated())
         self.assertFalse(await client2.is_authenticated())
 
+        await client1.close()
+        await client2.close()
+
 
 class UserMetadata(IsolatedAsyncioTestCase):
     """Test the fetching of user metadata via the `is_authenticated` method."""
@@ -58,6 +66,11 @@ class UserMetadata(IsolatedAsyncioTestCase):
         """Instantiate a new API client instance."""
 
         self.client = AsyncKeystoneClient(API_HOST)
+
+    async def asyncTearDown(self) -> None:
+        """Close any open server connections."""
+
+        await self.client.close()
 
     async def test_unauthenticated_user(self) -> None:
         """Verify an empty dictionary is returned for an unauthenticated user."""
@@ -83,9 +96,10 @@ class Create(IsolatedAsyncioTestCase):
         await self._clear_old_records()
 
     async def asyncTearDown(self) -> None:
-        """Delete any test records."""
+        """Close any open server connections."""
 
         await self._clear_old_records()
+        await self.client.close()
 
     async def _clear_old_records(self) -> None:
         """Delete any test records."""
@@ -148,6 +162,7 @@ class Retrieve(IsolatedAsyncioTestCase):
         """Delete any test records."""
 
         await self._clear_old_records()
+        await self.client.close()
 
     async def _clear_old_records(self) -> None:
         """Delete any test records."""
@@ -191,8 +206,9 @@ class Retrieve(IsolatedAsyncioTestCase):
         """Test an error is raised when record retrieval fails."""
 
         # Use an unauthenticated client session on an endpoint requiring authentication
-        with self.assertRaises(httpx.HTTPError):
-            await AsyncKeystoneClient(API_HOST).retrieve_cluster()
+        async with  await AsyncKeystoneClient(API_HOST) as client:
+            with self.assertRaises(httpx.HTTPError):
+                client.retrieve_cluster()
 
 
 class Update(IsolatedAsyncioTestCase):
@@ -214,6 +230,7 @@ class Update(IsolatedAsyncioTestCase):
         """Delete any test records."""
 
         await self._clear_old_records()
+        await self.client.close()
 
     async def _clear_old_records(self) -> None:
         """Delete any test records."""
@@ -278,6 +295,7 @@ class Delete(IsolatedAsyncioTestCase):
         """Delete any test records."""
 
         await self._clear_old_records()
+        await self.client.close()
 
     async def _clear_old_records(self) -> None:
         """Delete any test records."""
