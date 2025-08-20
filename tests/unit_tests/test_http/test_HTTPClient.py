@@ -1,11 +1,41 @@
 """Unit tests for the `HTTPClient` class."""
 
 from unittest import TestCase
+from unittest.mock import MagicMock, patch
 
 import httpx
 
 from keystone_client.http import HTTPClient
 from tests.unit_tests import utils
+
+
+@patch("httpx.Client")
+class CloseMethod(TestCase):
+    """Test the termination of open connections."""
+
+    def test_close_on_function_call(self, mock_httpx_class: MagicMock) -> None:
+        """Verify any open sessions are closed when calling the `close` method."""
+
+        client = HTTPClient(base_url="https://example.com")
+        client.close()
+
+        mock_httpx_class.return_value.close.assert_called_once()
+
+    def test_close_on_exit(self, mock_httpx_class: MagicMock) -> None:
+        """Verify any open sessions are closed when exiting a context manager."""
+
+        with  HTTPClient(base_url="https://example.com") as client:
+            pass
+
+        mock_httpx_class.return_value.close.assert_called_once()
+
+    def test_close_on_delete(self, mock_httpx_class: MagicMock) -> None:
+        """Verify any open sessions are closed when deleting an instance."""
+
+        client = HTTPClient(base_url="https://example.com")
+        del client
+
+        mock_httpx_class.return_value.close.assert_called_once()
 
 
 class SendRequestMethod(TestCase):

@@ -7,6 +7,7 @@ URL normalization, session management, and CSRF token handling.
 """
 
 import abc
+import asyncio
 import re
 import uuid
 from typing import Optional, Union
@@ -108,10 +109,24 @@ class HTTPBase(abc.ABC):
 class HTTPClient(HTTPBase):
     """Synchronous HTTP Client."""
 
+    def __enter__(self) -> 'HTTPClient':
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        self.close()
+
+    def __del__(self) -> None:
+        self.close()
+
     def _client_factory(self, **kwargs) -> httpx.Client:
         """Create a new HTTP client instance with the provided settings."""
 
         return httpx.Client(**kwargs)
+
+    def close(self) -> None:
+        """Close any open server connections."""
+
+        self._client.close()
 
     def send_request(
         self,
@@ -250,10 +265,29 @@ class HTTPClient(HTTPBase):
 class AsyncHTTPClient(HTTPBase):
     """Asynchronous HTTP Client."""
 
+    async def __aenter__(self) -> 'AsyncHTTPClient':
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        await self.close()
+
+    def __del__(self) -> None:
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(self._client.aclose())
+        except RuntimeError:
+            # No running loop; can't close asynchronously
+            pass
+
     def _client_factory(self, **kwargs) -> httpx.AsyncClient:
         """Create a new HTTP client instance with the provided settings."""
 
         return httpx.AsyncClient(**kwargs)
+
+    async def close(self) -> None:
+        """Close any open server connections."""
+
+        await self._client.aclose()
 
     async def send_request(
         self,

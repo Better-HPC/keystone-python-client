@@ -11,6 +11,7 @@ import abc
 from typing import Any, Dict, Optional, Union
 
 import httpx
+from httpx import HTTPStatusError
 from httpx._types import RequestData, RequestFiles
 
 from keystone_client.http import AsyncHTTPClient, HTTPClient
@@ -182,10 +183,17 @@ class KeystoneClient(ClientBase, HTTPClient):
             timeout: Seconds before the request times out.
         """
 
-        self.http_post(
+        response = self.http_post(
             endpoint=self.LOGOUT_ENDPOINT,
             timeout=timeout
-        ).raise_for_status()
+        )
+
+        try:
+            response.raise_for_status()
+
+        except HTTPStatusError as exception:
+            if exception.response.status_code != 401:
+                raise
 
     def is_authenticated(self, timeout: int = httpx.USE_CLIENT_DEFAULT) -> dict:
         """Return metadata for the currently authenticated user.
@@ -331,7 +339,12 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
             timeout=timeout
         )
 
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+
+        except HTTPStatusError as exception:
+            if exception.response.status_code != 401:
+                raise
 
     async def is_authenticated(self, timeout: int = httpx.USE_CLIENT_DEFAULT) -> dict:
         """Return metadata for the currently authenticated user.
