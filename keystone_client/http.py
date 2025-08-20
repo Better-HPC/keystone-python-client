@@ -7,7 +7,6 @@ URL normalization, session management, and CSRF token handling.
 """
 
 import abc
-import asyncio
 import re
 import uuid
 from typing import Optional, Union
@@ -113,9 +112,6 @@ class HTTPClient(HTTPBase):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        self.close()
-
-    def __del__(self) -> None:
         self.close()
 
     def _client_factory(self, **kwargs) -> httpx.Client:
@@ -270,14 +266,6 @@ class AsyncHTTPClient(HTTPBase):
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
-
-    def __del__(self) -> None:
-        try:
-            loop = asyncio.get_running_loop()
-            loop.create_task(self._client.aclose())
-        except RuntimeError:
-            # No running loop; can't close asynchronously
-            pass
 
     def _client_factory(self, **kwargs) -> httpx.AsyncClient:
         """Create a new HTTP client instance with the provided settings."""

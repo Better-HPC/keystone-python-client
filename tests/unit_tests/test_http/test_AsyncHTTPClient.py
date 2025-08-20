@@ -33,16 +33,6 @@ class CloseMethodAsync(IsolatedAsyncioTestCase):
 
         mock_httpx_class.return_value.aclose.assert_called_once()
 
-    async def test_close_on_delete(self, mock_httpx_class: MagicMock) -> None:
-        """Verify any open sessions are closed when deleting an instance."""
-
-        mock_httpx_class.return_value.aclose = AsyncMock()
-
-        client = AsyncHTTPClient(base_url="https://example.com")
-        del client
-
-        mock_httpx_class.return_value.aclose.assert_called_once()
-
 
 class SendRequestMethodAsync(IsolatedAsyncioTestCase):
     """Test HTTP requests issued by the `send_requests` method."""

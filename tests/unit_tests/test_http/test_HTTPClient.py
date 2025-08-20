@@ -29,14 +29,6 @@ class CloseMethod(TestCase):
 
         mock_httpx_class.return_value.close.assert_called_once()
 
-    def test_close_on_delete(self, mock_httpx_class: MagicMock) -> None:
-        """Verify any open sessions are closed when deleting an instance."""
-
-        client = HTTPClient(base_url="https://example.com")
-        del client
-
-        mock_httpx_class.return_value.close.assert_called_once()
-
 
 class SendRequestMethod(TestCase):
     """Test HTTP requests issued by the `send_requests` method."""
