@@ -208,7 +208,7 @@ class Retrieve(IsolatedAsyncioTestCase):
         # Use an unauthenticated client session on an endpoint requiring authentication
         async with AsyncKeystoneClient(API_HOST) as client:
             with self.assertRaises(httpx.HTTPError):
-                client.retrieve_cluster()
+                await client.retrieve_cluster()
 
 
 class Update(IsolatedAsyncioTestCase):
