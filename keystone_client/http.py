@@ -128,7 +128,7 @@ class HTTPClient(HTTPBase):
     def _client_factory(self, **kwargs) -> httpx.Client:
         """Create a new HTTP client instance with the provided settings."""
 
-        self._log.info(f"Initialized HTTP session ({kwargs})")
+        self._log.info(f"Initializing a new HTTP session")
         return httpx.Client(**kwargs)
 
     def close(self) -> None:
@@ -285,7 +285,7 @@ class AsyncHTTPClient(HTTPBase):
     def _client_factory(self, **kwargs) -> httpx.AsyncClient:
         """Create a new HTTP client instance with the provided settings."""
 
-        self._log.info(f"Initializing asynchronous HTTP session ({kwargs})")
+        self._log.info(f"Initializing a new asynchronous HTTP session")
         return httpx.AsyncClient(**kwargs)
 
     async def close(self) -> None:
