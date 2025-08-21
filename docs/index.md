@@ -283,3 +283,35 @@ The `raise_not_exists` argument can be used to raise an exception instead.
     ```python
     await aclient.delete_cluster(pk=1, raise_not_exists=True)
     ```
+
+## Application Logging
+
+API clients automatically log all requests with the Python logging framework. 
+Log records are written to the `kclient` logger and include the application specific values listed below. 
+
+| Field Name | Description                                                                          |
+|------------|--------------------------------------------------------------------------------------|
+| `cid`      | Logging identifier for the associated Keystone client session.                       |
+| `baseurl`  | Base URL of the API server.                                                          |
+| `method`   | HTTP request method, or an empty string if not applicable.                           |
+| `endpoint` | API endpoint, or an empty string if not applicable.                                  |
+| `url`      | Full API URL, including base URL and endpoint, or an empty string if not applicable. |
+
+
+The `kclient` logger is automatically configured during import and context values are accessible in the
+standard Python fashion.
+
+```python
+import logging
+import keystone_client
+
+handler = logging.StreamHandler()
+handler.setFormatter(
+    logging.Formatter('%(cid)s - %(method)s - %(baseurl)s - %(endpoint)s - %(url)s - %(message)s')
+)
+
+log = logging.getLogger('kclient')
+log.addHandler(handler)
+
+log.info('Logging info')
+```
