@@ -1,11 +1,9 @@
 """Keystone API client classes.
 
-This module provides client classes for interacting with the Keystone API.
-It streamlines communication with the API, providing methods for
+The `client` module provides client classes for interacting with the Keystone
+API. It streamlines communication with the API, providing methods for
 authentication, data retrieval, and data manipulation.
 """
-
-from __future__ import annotations
 
 import abc
 from typing import Any, Dict, Optional, Union

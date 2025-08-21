@@ -7,6 +7,7 @@ URL normalization, session management, and CSRF token handling.
 """
 
 import abc
+import logging
 import re
 import uuid
 from typing import Optional, Union
@@ -23,6 +24,8 @@ DEFAULT_REDIRECTS = 10
 DEFAULT_VERIFY = True
 DEFAULT_FOLLOW = True
 DEFAULT_LIMITS = httpx.Limits(max_connections=100, max_keepalive_connections=20)
+
+logger = logging.getLogger('kclient')
 
 
 class HTTPBase(abc.ABC):
@@ -57,6 +60,8 @@ class HTTPBase(abc.ABC):
 
         self._cid = str(uuid.uuid4())
         self._base_url = self.normalize_url(base_url)
+        self._log = logging.LoggerAdapter(logger, extra={"cid": self._cid, "baseurl": self._base_url})
+
         self._client = self._client_factory(
             base_url=self._base_url,
             verify=verify_ssl,
@@ -123,11 +128,13 @@ class HTTPClient(HTTPBase):
     def _client_factory(self, **kwargs) -> httpx.Client:
         """Create a new HTTP client instance with the provided settings."""
 
+        self._log.info(f"Initialized HTTP session ({kwargs})")
         return httpx.Client(**kwargs)
 
     def close(self) -> None:
         """Close any open server connections."""
 
+        self._log.info("Closing HTTP session")
         self._client.close()
 
     def send_request(
@@ -157,6 +164,8 @@ class HTTPClient(HTTPBase):
         """
 
         url = self.normalize_url(urljoin(self.base_url, endpoint))
+        self._log.info(f"Sending HTTP request", extra={"method": method, "endpoint": endpoint, "url": url})
+
         application_headers = self.get_application_headers(headers)
         return self._client.request(
             method=method,
@@ -276,11 +285,13 @@ class AsyncHTTPClient(HTTPBase):
     def _client_factory(self, **kwargs) -> httpx.AsyncClient:
         """Create a new HTTP client instance with the provided settings."""
 
+        self._log.info(f"Initializing asynchronous HTTP session ({kwargs})")
         return httpx.AsyncClient(**kwargs)
 
     async def close(self) -> None:
         """Close any open server connections."""
 
+        self._log.info("Closing asynchronous HTTP session")
         await self._client.aclose()
 
     async def send_request(
@@ -310,6 +321,8 @@ class AsyncHTTPClient(HTTPBase):
         """
 
         url = self.normalize_url(urljoin(self.base_url, endpoint))
+        self._log.info(f"Sending asynchronous HTTP request", extra={"method": method, "endpoint": endpoint, "url": url})
+
         application_headers = self.get_application_headers(headers)
         return await self._client.request(
             method=method,
