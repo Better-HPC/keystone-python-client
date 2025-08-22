@@ -286,8 +286,8 @@ The `raise_not_exists` argument can be used to raise an exception instead.
 
 ## Application Logging
 
-API clients automatically log all requests with the Python logging framework. 
-Log records are written to the `kclient` logger and include the application specific values listed below. 
+API clients automatically log all requests to the `kclient` log handler. 
+In addition to the standard default values, `kclient` logs include the application specific values listed below. 
 
 | Field Name | Description                                                                          |
 |------------|--------------------------------------------------------------------------------------|
@@ -299,7 +299,7 @@ Log records are written to the `kclient` logger and include the application spec
 
 
 The `kclient` logger is automatically registered when importing the `keystone_client` package.
-Formatting, filtering, and persisting log values are left to the user.
+Formatting, filtering, and persisting log values is left to the user.
 For example:
 
 ```python
