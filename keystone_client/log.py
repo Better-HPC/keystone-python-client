@@ -15,8 +15,7 @@ class DefaultContextAdapter(logging.LoggerAdapter):
     def process(self, msg: str, kwargs: dict) -> tuple[str, dict]:
         """Merge default values into context values passed directly into log calls."""
 
-        kwargs.setdefault('extra', {})
-        kwargs["extra"].update(self.extra)
+        kwargs["extra"] = {**self.extra, **kwargs.get("extra", {})}
         return msg, kwargs
 
 
@@ -31,8 +30,12 @@ class ContextFilter(logging.Filter):
         - url
     """
 
+    required_attr = ("cid", "baseurl", "method", "endpoint", "url")
+
     def filter(self, record: logging.LogRecord) -> True:
         """Ensure a log record has all required contextual attributes.
+
+        Any missing contextual attributes are set to an empty string.
 
         Args:
             record: The log record to process.
@@ -41,7 +44,7 @@ class ContextFilter(logging.Filter):
            Always returns `True`.
         """
 
-        for attr in ("cid", "baseurl", "method", "endpoint", "url"):
+        for attr in self.required_attr:
             if not hasattr(record, attr):
                 setattr(record, attr, "")
 

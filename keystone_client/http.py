@@ -10,21 +10,21 @@ import abc
 import logging
 import re
 import uuid
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 from urllib.parse import urljoin, urlparse
 
 import httpx
+from httpx._types import QueryParamTypes, RequestContent, RequestData, RequestFiles
 
 from .log import DefaultContextAdapter
-from .types import *
-
-__all__ = ['AsyncHTTPClient', 'HTTPClient']
 
 DEFAULT_TIMEOUT = 15
 DEFAULT_REDIRECTS = 10
 DEFAULT_VERIFY = True
 DEFAULT_FOLLOW = True
 DEFAULT_LIMITS = httpx.Limits(max_connections=100, max_keepalive_connections=20)
+
+HttpMethod = Literal["get", "post", "put", "patch", "delete"]
 
 logger = logging.getLogger('kclient')
 
