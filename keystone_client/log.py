@@ -9,6 +9,17 @@ for direct import.
 import logging
 
 
+class DefaultContextAdapter(logging.LoggerAdapter):
+    """Logging adapter used to inject default context values into a logger instance."""
+
+    def process(self, msg: str, kwargs: dict) -> tuple[str, dict]:
+        """Merge default values into context values passed directly into log calls."""
+
+        kwargs.setdefault('extra', {})
+        kwargs["extra"].update(self.extra)
+        return msg, kwargs
+
+
 class ContextFilter(logging.Filter):
     """Logging filter used to ensure standard application values exist for all log records.
 
@@ -20,7 +31,7 @@ class ContextFilter(logging.Filter):
         - url
     """
 
-    def filter(self, record) -> True:
+    def filter(self, record: logging.LogRecord) -> True:
         """Ensure a log record has all required contextual attributes.
 
         Args:

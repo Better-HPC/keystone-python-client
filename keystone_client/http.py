@@ -15,6 +15,7 @@ from urllib.parse import urljoin, urlparse
 
 import httpx
 
+from .log import DefaultContextAdapter
 from .types import *
 
 __all__ = ['AsyncHTTPClient', 'HTTPClient']
@@ -60,7 +61,7 @@ class HTTPBase(abc.ABC):
 
         self._cid = str(uuid.uuid4())
         self._base_url = self.normalize_url(base_url)
-        self._log = logging.LoggerAdapter(logger, extra={"cid": self._cid, "baseurl": self._base_url})
+        self._log = DefaultContextAdapter(logger, extra={"cid": self._cid, "baseurl": self._base_url})
 
         self._client = self._client_factory(
             base_url=self._base_url,

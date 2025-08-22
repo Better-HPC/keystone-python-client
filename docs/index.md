@@ -298,8 +298,9 @@ Log records are written to the `kclient` logger and include the application spec
 | `url`      | Full API URL, including base URL and endpoint, or an empty string if not applicable. |
 
 
-The `kclient` logger is automatically configured during import and context values are accessible in the
-standard Python fashion.
+The `kclient` logger is automatically registered when importing the `keystone_client` package.
+Formatting, filtering, and persisting log values are left to the user.
+For example:
 
 ```python
 import logging
@@ -307,11 +308,8 @@ import keystone_client
 
 handler = logging.StreamHandler()
 handler.setFormatter(
-    logging.Formatter('%(cid)s - %(method)s - %(baseurl)s - %(endpoint)s - %(url)s - %(message)s')
+    logging.Formatter('%(cid)s - %(baseurl)s - %(method)s - %(endpoint)s - %(message)s')
 )
 
-log = logging.getLogger('kclient')
-log.addHandler(handler)
-
-log.info('Logging info')
+logging.getLogger('kclient').addHandler(handler)
 ```
