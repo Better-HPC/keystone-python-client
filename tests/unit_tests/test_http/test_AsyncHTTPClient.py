@@ -1,4 +1,5 @@
 """Unit tests for the `AsyncHTTPClient` method."""
+
 import logging
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
