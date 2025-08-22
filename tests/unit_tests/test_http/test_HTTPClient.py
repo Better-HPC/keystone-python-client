@@ -1,7 +1,9 @@
 """Unit tests for the `HTTPClient` class."""
 
+import logging
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
+from urllib.parse import urljoin
 
 import httpx
 
@@ -56,3 +58,23 @@ class SendRequestMethod(TestCase):
         request_details = response.json()
 
         self.assertIn(HTTPClient.CID_HEADER.lower(), request_details['headers'])
+
+    def test_logs_request(self) -> None:
+        """Verify that sending a request produces a properly populated log record."""
+
+        expected_method = 'get'
+        expected_endpoint = '/v1/resource'
+        expected_url = self.client.normalize_url(urljoin(self.base_url, 'v1/resource'))
+
+        with self.assertLogs("kclient", level="INFO") as log_watcher:
+            self.client.send_request(expected_method, expected_endpoint)
+
+        self.assertEqual(len(log_watcher.records), 1)
+
+        record = log_watcher.records[0]
+        self.assertEqual(logging.INFO, record.levelno)
+        self.assertEqual(self.client.cid, record.cid)
+        self.assertEqual(self.client.base_url, record.baseurl)
+        self.assertEqual(expected_method, record.method)
+        self.assertEqual(expected_endpoint, record.endpoint)
+        self.assertEqual(expected_url, record.url)
