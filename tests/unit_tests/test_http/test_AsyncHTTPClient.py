@@ -1,7 +1,9 @@
 """Unit tests for the `AsyncHTTPClient` method."""
 
+import logging
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
+from urllib.parse import urljoin
 
 import httpx
 
@@ -60,3 +62,23 @@ class SendRequestMethodAsync(IsolatedAsyncioTestCase):
         request_details = response.json()
 
         self.assertIn(AsyncHTTPClient.CID_HEADER.lower(), request_details['headers'])
+
+    async def test_logs_request(self) -> None:
+        """Verify that sending a request produces a properly populated log record."""
+
+        expected_method = 'get'
+        expected_endpoint = '/v1/resource'
+        expected_url = self.client.normalize_url(urljoin(self.base_url, 'v1/resource'))
+
+        with self.assertLogs("kclient", level="INFO") as log_watcher:
+            await self.client.send_request(expected_method, expected_endpoint)
+
+        self.assertEqual(len(log_watcher.records), 1)
+
+        record = log_watcher.records[0]
+        self.assertEqual(logging.INFO, record.levelno)
+        self.assertEqual(self.client.cid, record.cid)
+        self.assertEqual(self.client.base_url, record.baseurl)
+        self.assertEqual(expected_method, record.method)
+        self.assertEqual(expected_endpoint, record.endpoint)
+        self.assertEqual(expected_url, record.url)
