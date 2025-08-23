@@ -129,7 +129,7 @@ class HTTPClient(HTTPBase):
     def _client_factory(self, **kwargs) -> httpx.Client:
         """Create a new HTTP client instance with the provided settings."""
 
-        self._log.info(f"Initializing a new HTTP session")
+        self._log.info("Initializing a new HTTP session")
         return httpx.Client(**kwargs)
 
     def close(self) -> None:
@@ -165,7 +165,7 @@ class HTTPClient(HTTPBase):
         """
 
         url = self.normalize_url(urljoin(self.base_url, endpoint))
-        self._log.info(f"Sending HTTP request", extra={"method": method, "endpoint": endpoint, "url": url})
+        self._log.info("Sending HTTP request", extra={"method": method, "endpoint": endpoint, "url": url})
 
         application_headers = self.get_application_headers(headers)
         return self._client.request(
@@ -286,7 +286,7 @@ class AsyncHTTPClient(HTTPBase):
     def _client_factory(self, **kwargs) -> httpx.AsyncClient:
         """Create a new HTTP client instance with the provided settings."""
 
-        self._log.info(f"Initializing a new asynchronous HTTP session")
+        self._log.info("Initializing a new asynchronous HTTP session")
         return httpx.AsyncClient(**kwargs)
 
     async def close(self) -> None:
@@ -322,7 +322,7 @@ class AsyncHTTPClient(HTTPBase):
         """
 
         url = self.normalize_url(urljoin(self.base_url, endpoint))
-        self._log.info(f"Sending asynchronous HTTP request", extra={"method": method, "endpoint": endpoint, "url": url})
+        self._log.info("Sending asynchronous HTTP request", extra={"method": method, "endpoint": endpoint, "url": url})
 
         application_headers = self.get_application_headers(headers)
         return await self._client.request(
