@@ -49,6 +49,18 @@ class ClientBase(abc.ABC):
         return new
 
     @abc.abstractmethod
+    def login(self, username: str, password: str, timeout: int) -> None:
+        """Authenticate a user session."""
+
+    @abc.abstractmethod
+    def logout(self) -> None:
+        """Terminate the current user session."""
+
+    @abc.abstractmethod
+    def is_authenticated(self) -> dict | None:
+        """Return metadata for the currently authenticated user."""
+
+    @abc.abstractmethod
     def _create_factory(self, endpoint: Endpoint) -> callable:
         """Factory function for data creation methods."""
 
@@ -85,7 +97,7 @@ class ClientBase(abc.ABC):
         return filters
 
     @staticmethod
-    def _handle_identity_response(response: httpx.Response) -> dict:
+    def _handle_identity_response(response: httpx.Response) -> dict | None:
         """Handle identity check responses, returning empty dict on 401.
 
         Args:
@@ -96,7 +108,7 @@ class ClientBase(abc.ABC):
         """
 
         if response.status_code == 401:
-            return {}
+            return None
 
         response.raise_for_status()
         return response.json()
@@ -195,7 +207,7 @@ class KeystoneClient(ClientBase, HTTPClient):
             if exception.response.status_code != 401:
                 raise
 
-    def is_authenticated(self, timeout: int = httpx.USE_CLIENT_DEFAULT) -> dict:
+    def is_authenticated(self, timeout: int = httpx.USE_CLIENT_DEFAULT) -> dict | None:
         """Return metadata for the currently authenticated user.
 
         Returns an empty dictionary if the current session is not authenticated.
@@ -346,7 +358,7 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
             if exception.response.status_code != 401:
                 raise
 
-    async def is_authenticated(self, timeout: int = httpx.USE_CLIENT_DEFAULT) -> dict:
+    async def is_authenticated(self, timeout: int = httpx.USE_CLIENT_DEFAULT) -> dict | None:
         """Return metadata for the currently authenticated user.
 
         Returns an empty dictionary if the current session is not authenticated.
