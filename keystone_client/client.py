@@ -45,6 +45,18 @@ class ClientBase(abc.ABC):
         return new
 
     @abc.abstractmethod
+    def login(self, username: str, password: str, timeout: int) -> None:
+        """Authenticate a user session."""
+
+    @abc.abstractmethod
+    def logout(self) -> None:
+        """Terminate the current user session."""
+
+    @abc.abstractmethod
+    def is_authenticated(self) -> dict:
+        """Return metadata for the currently authenticated user."""
+
+    @abc.abstractmethod
     def _create_factory(self, endpoint: Endpoint) -> callable:
         """Factory function for data creation methods."""
 
@@ -88,11 +100,11 @@ class ClientBase(abc.ABC):
             response: The HTTP response object.
 
         Returns:
-            The response JSON on success or `None` if the request returned HTTP 401.
+            The response JSON on success or an empty dictionary if the request returned HTTP 401.
         """
 
         if response.status_code == 401:
-            return {}
+            return dict()
 
         response.raise_for_status()
         return response.json()
@@ -112,7 +124,7 @@ class ClientBase(abc.ABC):
             response.raise_for_status()
             return response.json()
 
-        except httpx.HTTPError:
+        except httpx.HTTPStatusError:
             if response.status_code == 404:
                 return None
 
