@@ -203,10 +203,10 @@ class KeystoneClient(ClientBase, HTTPClient):
             if exception.response.status_code != 401:
                 raise
 
-    def is_authenticated(self, timeout: int = httpx.USE_CLIENT_DEFAULT) -> dict | None:
+    def is_authenticated(self, timeout: int = httpx.USE_CLIENT_DEFAULT) -> dict:
         """Return metadata for the currently authenticated user.
 
-        Returns `None` if the current session is not authenticated.
+        Returns an emtpy dictionary if the current session is not authenticated.
 
         Args:
             timeout: Seconds before the request times out.
