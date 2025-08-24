@@ -53,7 +53,7 @@ class ClientBase(abc.ABC):
         """Terminate the current user session."""
 
     @abc.abstractmethod
-    def is_authenticated(self) -> dict | None:
+    def is_authenticated(self) -> dict:
         """Return metadata for the currently authenticated user."""
 
     @abc.abstractmethod
