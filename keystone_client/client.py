@@ -128,7 +128,7 @@ class ClientBase(abc.ABC):
             response.raise_for_status()
             return response.json()
 
-        except httpx.HTTPError:
+        except httpx.HTTPStatusError:
             if response.status_code == 404:
                 return None
 
