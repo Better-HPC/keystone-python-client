@@ -113,8 +113,8 @@ class IsAuthenticatedMethod(IsolatedAsyncioTestCase):
         result = await client.is_authenticated()
         self.assertEqual(result, expected_data)
 
-    async def test_unauthenticated_returns_none(self) -> None:
-        """Verify `None` is returned for 401 response."""
+    async def test_unauthenticated_response(self) -> None:
+        """Verify an empty dictionary is returned for 401 response."""
 
         def handler(request: httpx.Request) -> httpx.Response:
             """Intercept HTTP requests and return 401 Unauthorized."""
@@ -123,7 +123,7 @@ class IsAuthenticatedMethod(IsolatedAsyncioTestCase):
 
         client = AsyncKeystoneClient(base_url=self.api_url, transport=httpx.MockTransport(handler))
         result = await client.is_authenticated()
-        self.assertIsNone(result)
+        self.assertEqual(result, {})
 
     async def test_http_error_is_raised(self) -> None:
         """Verify an error is raised for non-401, non-200 responses."""

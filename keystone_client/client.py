@@ -93,18 +93,18 @@ class ClientBase(abc.ABC):
         return filters
 
     @staticmethod
-    def _handle_identity_response(response: httpx.Response) -> dict | None:
+    def _handle_identity_response(response: httpx.Response) -> dict:
         """Handle identity check responses, returning empty dict on 401.
 
         Args:
             response: The HTTP response object.
 
         Returns:
-            The response JSON on success or `None` if the request returned HTTP 401.
+            The response JSON on success or an empty dictionary if the request returned HTTP 401.
         """
 
         if response.status_code == 401:
-            return None
+            return dict()
 
         response.raise_for_status()
         return response.json()
@@ -354,10 +354,10 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
             if exception.response.status_code != 401:
                 raise
 
-    async def is_authenticated(self, timeout: int = httpx.USE_CLIENT_DEFAULT) -> dict | None:
+    async def is_authenticated(self, timeout: int = httpx.USE_CLIENT_DEFAULT) -> dict:
         """Return metadata for the currently authenticated user.
 
-        Returns `None` if the current session is not authenticated.
+        Returns an emtpy dictionary if the current session is not authenticated.
 
         Args:
             timeout: Seconds before the request times out.
