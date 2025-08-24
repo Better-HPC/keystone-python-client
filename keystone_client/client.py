@@ -210,7 +210,7 @@ class KeystoneClient(ClientBase, HTTPClient):
     def is_authenticated(self, timeout: int = httpx.USE_CLIENT_DEFAULT) -> dict | None:
         """Return metadata for the currently authenticated user.
 
-        Returns an empty dictionary if the current session is not authenticated.
+        Returns `None` if the current session is not authenticated.
 
         Args:
             timeout: Seconds before the request times out.
@@ -361,7 +361,7 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
     async def is_authenticated(self, timeout: int = httpx.USE_CLIENT_DEFAULT) -> dict | None:
         """Return metadata for the currently authenticated user.
 
-        Returns an empty dictionary if the current session is not authenticated.
+        Returns `None` if the current session is not authenticated.
 
         Args:
             timeout: Seconds before the request times out.
