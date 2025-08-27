@@ -2,13 +2,34 @@
 
 import uuid
 from unittest import TestCase
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from keystone_client.http import HTTPBase
 
 
 class DummyHTTPBase(HTTPBase):
     """Concrete subclass of HTTPBase for testing."""
+
+    def send_request(self, *args, **kwargs) -> None:
+        """Method required by abstract parent for sending HTTP requests."""
+
+    def http_get(self, *args, **kwargs) -> None:
+        """Method required by abstract parent for sending GET requests."""
+
+    def http_post(self, *args, **kwargs) -> None:
+        """Method required by abstract parent for sending POST requests."""
+
+    def http_patch(self, *args, **kwargs) -> None:
+        """Method required by abstract parent for sending PATCH requests."""
+
+    def http_put(self, *args, **kwargs) -> None:
+        """Method required by abstract parent for sending PUT requests."""
+
+    def http_delete(self, *args, **kwargs) -> None:
+        """Method required by abstract parent for sending DELETE requests."""
+
+    def close(self) -> None:
+        """Method required by abstract parent for cleaning up open resources."""
 
     def _client_factory(self, **kwargs) -> MagicMock:
         """Create a mock object as a stand in for an HTTP client."""
@@ -117,3 +138,14 @@ class GetApplicationHeadersMethod(TestCase):
         headers = self.http_base.get_application_headers(overrides)
 
         self.assertEqual(custom_cid, headers[HTTPBase.CID_HEADER])
+
+
+class CloseAtExit(TestCase):
+    """Test resource cleanup at application exit."""
+
+    @patch('atexit.register')
+    def test_close_registered_with_atexit(self, mock_atexit_register: MagicMock) -> None:
+        """Verify the `close` method is registered with `atexit` on initialization."""
+
+        client = DummyHTTPBase('https://example.com/')
+        mock_atexit_register.assert_called_once_with(client.close)
