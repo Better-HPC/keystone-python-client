@@ -76,14 +76,6 @@ class HTTPBase(abc.ABC):
 
         atexit.register(self.close)
 
-    @abc.abstractmethod
-    def _client_factory(self, **kwargs) -> Union[httpx.Client, httpx.AsyncClient]:
-        """Create a new HTTP client instance with the provided settings."""
-
-    @abc.abstractmethod
-    def close(self) -> None:
-        """Close any open server connections."""
-
     @property
     def base_url(self) -> str:
         """Return the normalized server URL."""
@@ -122,6 +114,75 @@ class HTTPBase(abc.ABC):
             headers.update(overrides)
 
         return headers
+
+    @abc.abstractmethod
+    def _client_factory(self, **kwargs) -> Union[httpx.Client, httpx.AsyncClient]:
+        """Create a new HTTP client instance with the provided settings."""
+
+    @abc.abstractmethod
+    def close(self) -> None:
+        """Close any open server connections."""
+
+    @abc.abstractmethod
+    def send_request(
+        self,
+        method: HttpMethod,
+        endpoint: str,
+        *,
+        headers: Optional[dict] = None,
+        json: Optional[RequestContent] = None,
+        files: Optional[RequestFiles] = None,
+        params: Optional[QueryParamTypes] = None,
+        timeout: int = httpx.USE_CLIENT_DEFAULT,
+    ) -> httpx.Response:
+        """Send an HTTP request (sync or async depending on the implementation)."""
+
+    @abc.abstractmethod
+    def http_get(
+        self,
+        endpoint: str,
+        params: Optional[QueryParamTypes] = None,
+        timeout: int = httpx.USE_CLIENT_DEFAULT,
+    ) -> httpx.Response:
+        """Send a GET request."""
+
+    @abc.abstractmethod
+    def http_post(
+        self,
+        endpoint: str,
+        json: Optional[RequestData] = None,
+        files: Optional[RequestFiles] = None,
+        timeout: int = httpx.USE_CLIENT_DEFAULT,
+    ) -> httpx.Response:
+        """Send a POST request."""
+
+    @abc.abstractmethod
+    def http_patch(
+        self,
+        endpoint: str,
+        json: Optional[RequestData] = None,
+        files: Optional[RequestFiles] = None,
+        timeout: int = httpx.USE_CLIENT_DEFAULT,
+    ) -> httpx.Response:
+        """Send a PATCH request."""
+
+    @abc.abstractmethod
+    def http_put(
+        self,
+        endpoint: str,
+        json: Optional[RequestData] = None,
+        files: Optional[RequestFiles] = None,
+        timeout: int = httpx.USE_CLIENT_DEFAULT,
+    ) -> httpx.Response:
+        """Send a PUT request."""
+
+    @abc.abstractmethod
+    def http_delete(
+        self,
+        endpoint: str,
+        timeout: int = httpx.USE_CLIENT_DEFAULT,
+    ) -> httpx.Response:
+        """Send a DELETE request."""
 
 
 class HTTPClient(HTTPBase):
