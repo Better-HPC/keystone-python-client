@@ -10,6 +10,24 @@ from keystone_client.http import HTTPBase
 class DummyHTTPBase(HTTPBase):
     """Concrete subclass of HTTPBase for testing."""
 
+    def send_request(self, *args, **kwargs) -> None:
+        """Method required by abstract parent for sending HTTP requests."""
+
+    def http_get(self, *args, **kwargs) -> None:
+        """Method required by abstract parent for sending GET requests."""
+
+    def http_post(self, *args, **kwargs) -> None:
+        """Method required by abstract parent for sending POST requests."""
+
+    def http_patch(self, *args, **kwargs) -> None:
+        """Method required by abstract parent for sending PATCH requests."""
+
+    def http_put(self, *args, **kwargs) -> None:
+        """Method required by abstract parent for sending PUT requests."""
+
+    def http_delete(self, *args, **kwargs) -> None:
+        """Method required by abstract parent for sending DELETE requests."""
+
     def close(self) -> None:
         """Method required by abstract parent for cleaning up open resources."""
 
