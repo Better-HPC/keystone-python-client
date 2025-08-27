@@ -7,6 +7,7 @@ URL normalization, session management, and CSRF token handling.
 """
 
 import abc
+import atexit
 import logging
 import re
 import uuid
@@ -73,9 +74,15 @@ class HTTPBase(abc.ABC):
             transport=transport,
         )
 
+        atexit.register(self.close)
+
     @abc.abstractmethod
     def _client_factory(self, **kwargs) -> Union[httpx.Client, httpx.AsyncClient]:
         """Create a new HTTP client instance with the provided settings."""
+
+    @abc.abstractmethod
+    def close(self) -> None:
+        """Close any open server connections."""
 
     @property
     def base_url(self) -> str:
