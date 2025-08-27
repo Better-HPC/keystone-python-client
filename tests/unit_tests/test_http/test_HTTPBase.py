@@ -10,6 +10,9 @@ from keystone_client.http import HTTPBase
 class DummyHTTPBase(HTTPBase):
     """Concrete subclass of HTTPBase for testing."""
 
+    def close(self) -> None:
+        """Method required by abstract parent for cleaning up open resources."""
+
     def _client_factory(self, **kwargs) -> MagicMock:
         """Create a mock object as a stand in for an HTTP client."""
 
