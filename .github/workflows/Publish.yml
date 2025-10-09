@@ -36,10 +36,14 @@ jobs:
           path: dist
 
       - name: Publish package
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: cloudsmith-io/action@master
         with:
-          print-hash: true
-          attestations: false
+          api-key: ${{ secrets.CLOUDSMITH_API_KEY }}
+          command: "push"
+          format: "python"
+          owner: "better-hpc"
+          repo: "keystone-api"
+          file: "dist/keystone_api_client-${{ inputs.version }}.tar.gz"
 
   trigger-docs:
     name: Trigger Docs
