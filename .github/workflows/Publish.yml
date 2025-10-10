@@ -42,7 +42,7 @@ jobs:
           command: "push"
           format: "python"
           owner: "better-hpc"
-          repo: "keystone-python-client"
+          repo: "keystone-api-client"
           file: "dist/keystone_api_client-${{ inputs.version }}.tar.gz"
 
   trigger-docs:
