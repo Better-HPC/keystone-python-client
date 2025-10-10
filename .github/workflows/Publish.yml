@@ -10,7 +10,7 @@ on:
         type: string
 
 jobs:
-  publish-pypi:
+  publish-dist:
     name: Python Distribution
     runs-on: ubuntu-latest
 
