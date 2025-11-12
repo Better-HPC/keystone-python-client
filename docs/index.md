@@ -12,6 +12,14 @@ The client automates user authentication and data parsing, freeing developers to
 
 The Python client is hosted on PyPI and can be installed in the standard fashion.
 
+!!! note "Version Compatibility"
+
+    The API client version should match the major and minor version of the upstream API server.
+    For example, if the API version is `2.3.x`, the compatible client version is `2.3.y`.
+    Using a mismatched client version may still function, but compatibility is not guaranteed and may
+    result in inconsistent behavior.
+
+
 ```bash
 pip install keystone-api-client
 ```
