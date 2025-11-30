@@ -1,6 +1,5 @@
 """Schema objects used to define available API endpoints."""
 
-from dataclasses import dataclass
 from os import path
 
 
@@ -26,15 +25,3 @@ class Endpoint(str):
             url = path.join(url, str(partial_path))
 
         return url.rstrip('/') + '/'
-
-
-@dataclass
-class Schema:
-    """Schema defining the complete set of API endpoints."""
-
-    allocations: Endpoint = Endpoint("allocations/allocations")
-    clusters: Endpoint = Endpoint("allocations/clusters")
-    requests: Endpoint = Endpoint("allocations/requests")
-    teams: Endpoint = Endpoint("users/teams")
-    memberships: Endpoint = Endpoint("users/memberships")
-    users: Endpoint = Endpoint("users/users")

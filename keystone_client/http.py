@@ -74,6 +74,7 @@ class HTTPBase(abc.ABC):
             transport=transport,
         )
 
+        # Close open connections at program exit
         atexit.register(self.close)
 
     @property

@@ -6,43 +6,72 @@ authentication, data retrieval, and data manipulation.
 """
 
 import abc
-from typing import Any, Dict, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
 
 import httpx
 from httpx import HTTPStatusError
 from httpx._types import RequestData, RequestFiles
 
 from keystone_client.http import AsyncHTTPClient, HTTPClient
-from keystone_client.schema import Endpoint, Schema
+from keystone_client.schema import Endpoint
 
 
 class ClientBase(abc.ABC):
-    """Base client class with shared application constants and helpers."""
-
-    schema = Schema()
+    """Base client class used to enforce common client interfaces."""
 
     LOGIN_ENDPOINT = Endpoint('authentication/login')
     LOGOUT_ENDPOINT = Endpoint('authentication/logout')
     IDENTITY_ENDPOINT = Endpoint('authentication/whoami')
 
-    def __new__(cls, *args, **kwargs):
+    def __init__(self, base_url: str, **kwargs):
         """Dynamically create CRUD methods for each data endpoint in the API schema."""
 
-        new = super().__new__(cls)
-        for name, endpoint in {
-            'allocation': cls.schema.allocations,
-            'cluster': cls.schema.clusters,
-            'request': cls.schema.requests,
-            'team': cls.schema.teams,
-            'membership': cls.schema.memberships,
-            'user': cls.schema.users,
-        }.items():
-            setattr(new, f'create_{name}', new._create_factory(endpoint))
-            setattr(new, f'retrieve_{name}', new._retrieve_factory(endpoint))
-            setattr(new, f'update_{name}', new._update_factory(endpoint))
-            setattr(new, f'delete_{name}', new._delete_factory(endpoint))
+        super().__init__(base_url, **kwargs)
 
-        return new
+        try:
+            schema = self.http_get('openapi/json/').json()
+            self._initialize_crud_methods(schema)
+
+        except Exception as e:
+            raise RuntimeError("Could not fetch API schema from remote server.") from e
+
+    def _initialize_crud_methods(self, schema: dict) -> None:
+        """Add CRUD methods to the parent instance based on an OpenAPI schema.
+
+        Creates instance methods for each OpenAPI operation that declares an
+        `operationId` with an action prefix (`list`, `retrieve`, `create`,
+        `update`, or `delete`). The appropriate factory is selected by prefix
+        and the resulting callable is bound to the client instance using the
+        `operationId` name.
+        """
+
+        for path, ops in schema.get("paths", {}).items():
+            for method, spec in ops.items():
+                if not (op_id := spec.get("operationId")):
+                    continue
+
+                action = op_id.split("_", 1)[0]  # list, retrieve, create, update, delete
+                endpoint = Endpoint(path)
+
+                if action == "list":
+                    func = self._list_factory(endpoint)
+
+                elif action == "retrieve":
+                    func = self._retrieve_factory(endpoint)
+
+                elif action == "create":
+                    func = self._create_factory(endpoint)
+
+                elif action == "update":
+                    func = self._update_factory(endpoint)
+
+                elif action == "delete":
+                    func = self._delete_factory(endpoint)
+
+                else:
+                    continue
+
+                setattr(self, op_id, func)
 
     @abc.abstractmethod
     def login(self, username: str, password: str, timeout: int) -> None:
@@ -57,19 +86,23 @@ class ClientBase(abc.ABC):
         """Return metadata for the currently authenticated user."""
 
     @abc.abstractmethod
-    def _create_factory(self, endpoint: Endpoint) -> callable:
+    def _list_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data creation methods."""
 
     @abc.abstractmethod
-    def _retrieve_factory(self, endpoint: Endpoint) -> callable:
+    def _create_factory(self, endpoint: Endpoint) -> Callable:
+        """Factory function for data creation methods."""
+
+    @abc.abstractmethod
+    def _retrieve_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data retrieval methods."""
 
     @abc.abstractmethod
-    def _update_factory(self, endpoint: Endpoint) -> callable:
+    def _update_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data update methods."""
 
     @abc.abstractmethod
-    def _delete_factory(self, endpoint: Endpoint) -> callable:
+    def _delete_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data deletion methods."""
 
     @staticmethod
@@ -215,7 +248,7 @@ class KeystoneClient(ClientBase, HTTPClient):
         response = self.http_get(self.IDENTITY_ENDPOINT, timeout=timeout)
         return self._handle_identity_response(response)
 
-    def _create_factory(self, endpoint: Endpoint) -> callable:
+    def _create_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data creation methods."""
 
         def create_record(data: Optional[RequestData] = None, files: Optional[RequestFiles] = None) -> dict:
@@ -235,7 +268,7 @@ class KeystoneClient(ClientBase, HTTPClient):
 
         return create_record
 
-    def _retrieve_factory(self, endpoint: Endpoint) -> callable:
+    def _retrieve_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data retrieval methods."""
 
         def retrieve_record(
@@ -269,7 +302,7 @@ class KeystoneClient(ClientBase, HTTPClient):
 
         return retrieve_record
 
-    def _update_factory(self, endpoint: Endpoint) -> callable:
+    def _update_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data update methods."""
 
         def update_record(
@@ -294,7 +327,7 @@ class KeystoneClient(ClientBase, HTTPClient):
 
         return update_record
 
-    def _delete_factory(self, endpoint: Endpoint) -> callable:
+    def _delete_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data deletion methods."""
 
         def delete_record(pk: int, raise_not_exists: bool = False) -> None:
@@ -366,7 +399,7 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
         response = await self.http_get(self.IDENTITY_ENDPOINT, timeout=timeout)
         return self._handle_identity_response(response)
 
-    def _create_factory(self, endpoint: Endpoint) -> callable:
+    def _create_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data creation methods."""
 
         async def create_record(data: Optional[RequestData] = None, files: Optional[RequestFiles] = None) -> dict:
@@ -386,7 +419,7 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
 
         return create_record
 
-    def _retrieve_factory(self, endpoint: Endpoint) -> callable:
+    def _retrieve_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data retrieval methods."""
 
         async def retrieve_record(
@@ -420,7 +453,7 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
 
         return retrieve_record
 
-    def _update_factory(self, endpoint: Endpoint) -> callable:
+    def _update_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data update methods."""
 
         async def update_record(
@@ -445,7 +478,7 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
 
         return update_record
 
-    def _delete_factory(self, endpoint: Endpoint) -> callable:
+    def _delete_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data deletion methods."""
 
         async def delete_record(pk: int, raise_not_exists: bool = False) -> None:
