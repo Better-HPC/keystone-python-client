@@ -1,1 +1,6 @@
 site_name: Keystone Python Client
+nav:
+  - index.md
+  - session.md
+  - requests.md
+  - logging.md
