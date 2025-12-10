@@ -1,7 +1,7 @@
 # Making API Requests
 
-Client classes (`KyestoneClient` and `AsyncKeystoneClient`) include a set of high-level interfaces for interacting the API.
-These interfaces include generic HTTP methods for low-level access in addition to resource-specific CRUD helpers for common workflows.
+Client classes (`KeystoneClient` and `AsyncKeystoneClient`) provide a high-level interface for interacting the API.
+This includes methods for generic HTTP requests in addition to resource-specific CRUD helpers for common workflows.
 All requests automatically include any active authentication or session metadata.
 
 ## Generic HTTP Requests
