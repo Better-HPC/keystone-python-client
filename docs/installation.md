@@ -1,9 +1,10 @@
-# Introduction
+# Install and Setup
 
-Keystone provides a Python client for streamlining interactions with the application's REST API.
-The client automates user authentication and data parsing, freeing developers to focus on their core application logic.
+The Keystone platform includes an official Python client that simplifies integration with the application's REST API.
+It handles authentication, request execution, and response parsing, allowing developers to concentrate on application
+logic rather than API mechanics.
 
-The Python client is hosted on PyPI and can be installed in the standard fashion.
+The client is published on PyPI and can be installed in the standard fashion.
 
 ```bash
 pip install keystone-api-client
