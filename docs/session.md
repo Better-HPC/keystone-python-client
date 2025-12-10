@@ -1,9 +1,12 @@
 # Starting a Session
 
+Interacting with the Keystone API begins by creating a client session. 
+Session objects encapsulate the connection state, authentication details, and request configuration, allowing the
+client to efficiently reuse connections and manage resources across multiple API calls.
+
 ## Instantiating a Client
 
 The client package provides support for synchronous and asynchronous API calls.
-In both cases, requests are pooled across a shared session, reducing HTTP overhead.
 The following example instantiates a new session for a locally running server on port `8000`.
 Creating the session with a context manager ensures open connections are automatically closed when no longer in use.
 
@@ -46,29 +49,6 @@ the likelihood of resource leaks and unclosed connections.
     aclient = AsyncKeystoneClient(url="http://localhost:8000"):
     # Your asynchronous code here
     await aclient.close()
-    ```
-
-Client sessions will automatically manage any relevant session tokens.
-This includes assigning a unique correlation ID (CID) used to track requests across Keystone application logs.
-CID values are suitable for inclusion in log messages, passing to downstream services, or correlating requests
-for debugging and performance monitoring.
-
-=== "Synchronous"
-
-    ```python
-    from keystone_client import KeystoneClient
-    
-    with KeystoneClient(url="http://localhost:8000") as client:
-        print(client.cid)
-    ```
-
-=== "Asynchronous"
-
-    ```python
-    from keystone_client import AsyncKeystoneClient
-    
-    async with AsyncKeystoneClient(url="http://localhost:8000") as aclient:
-        print(aclient.cid)
     ```
 
 ## Authenticating a Session
