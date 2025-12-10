@@ -1,5 +1,9 @@
 # Making API Requests
 
+Client classes (`KyestoneClient` and `AsyncKeystoneClient`) include a set of high-level interfaces for interacting the API.
+These interfaces include generic HTTP methods for low-level access in addition to resource-specific CRUD helpers for common workflows.
+All requests automatically include any active authentication or session metadata.
+
 ## Generic HTTP Requests
 
 Client classes provide dedicated methods for each HTTP request type supported by the API.
@@ -15,7 +19,7 @@ Any relevant session/authentication tokens are included automatically when submi
 
 Request/response logic is handled using the `httpx` library.
 API responses are returned as `httpx.Response` objects which encapsulate the response data and status code.
-Users are encouraged to familiarize themselves with the `httpx.Response` object and it's methods for parsing response
+Users are encouraged to familiarize themselves with the `httpx` library and it's methods for parsing response
 data and related metadata.
 A simple example is provided below.
 
@@ -47,7 +51,7 @@ A simple example is provided below.
 
 ## CRUD Operations
 
-Dedicated methods are provided for create, retrieve, update, and delete (CRUD) operations for each API resource.
+Dedicated methods are provided for create, retrieve, update, and delete (CRUD) operations against each API resource.
 These methods simplify data manipulation by automatically handling the request and response logic.
 
 CRUD methods adhere to the following naming scheme:
