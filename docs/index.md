@@ -1,16 +1,17 @@
-# Install and Setup
+# Keystone Python Client
 
 The Keystone platform includes an official Python client that simplifies integration with the application's REST API.
 It handles authentication, request execution, and response parsing, allowing developers to concentrate on application
 logic rather than API mechanics.
 
-The client is published on PyPI and can be installed in the standard fashion.
+The client is published on the BHPC package registry and can be installed in the standard fashion.
 
-```bash
-pip install keystone-api-client
+```sh
+BHPC_REPO="https://dl.cloudsmith.io/public/better-hpc/keystone/python/simple/"
+pip install --extra-index-url=$BHPC_REPO keystone-api-client
 ```
 
-!!! note "Version Compatibility"
+!!! danger "Version Compatibility"
 
     The API client version should match the major and minor version of the upstream API server.
     For example, if the API version is `2.3.x`, the compatible client version is `2.3.y`.
