@@ -6,7 +6,7 @@ authentication, data retrieval, and data manipulation.
 """
 
 import abc
-from typing import Any, Dict, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
 
 import httpx
 from httpx import HTTPStatusError
@@ -215,7 +215,7 @@ class KeystoneClient(ClientBase, HTTPClient):
         response = self.http_get(self.IDENTITY_ENDPOINT, timeout=timeout)
         return self._handle_identity_response(response)
 
-    def _create_factory(self, endpoint: Endpoint) -> callable:
+    def _create_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data creation methods."""
 
         def create_record(data: Optional[RequestData] = None, files: Optional[RequestFiles] = None) -> dict:
@@ -235,7 +235,7 @@ class KeystoneClient(ClientBase, HTTPClient):
 
         return create_record
 
-    def _retrieve_factory(self, endpoint: Endpoint) -> callable:
+    def _retrieve_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data retrieval methods."""
 
         def retrieve_record(
@@ -269,7 +269,7 @@ class KeystoneClient(ClientBase, HTTPClient):
 
         return retrieve_record
 
-    def _update_factory(self, endpoint: Endpoint) -> callable:
+    def _update_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data update methods."""
 
         def update_record(
@@ -294,7 +294,7 @@ class KeystoneClient(ClientBase, HTTPClient):
 
         return update_record
 
-    def _delete_factory(self, endpoint: Endpoint) -> callable:
+    def _delete_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data deletion methods."""
 
         def delete_record(pk: int, raise_not_exists: bool = False) -> None:
@@ -366,7 +366,7 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
         response = await self.http_get(self.IDENTITY_ENDPOINT, timeout=timeout)
         return self._handle_identity_response(response)
 
-    def _create_factory(self, endpoint: Endpoint) -> callable:
+    def _create_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data creation methods."""
 
         async def create_record(data: Optional[RequestData] = None, files: Optional[RequestFiles] = None) -> dict:
@@ -386,7 +386,7 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
 
         return create_record
 
-    def _retrieve_factory(self, endpoint: Endpoint) -> callable:
+    def _retrieve_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data retrieval methods."""
 
         async def retrieve_record(
@@ -420,7 +420,7 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
 
         return retrieve_record
 
-    def _update_factory(self, endpoint: Endpoint) -> callable:
+    def _update_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data update methods."""
 
         async def update_record(
@@ -445,7 +445,7 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
 
         return update_record
 
-    def _delete_factory(self, endpoint: Endpoint) -> callable:
+    def _delete_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data deletion methods."""
 
         async def delete_record(pk: int, raise_not_exists: bool = False) -> None:
