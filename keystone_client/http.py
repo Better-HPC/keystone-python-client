@@ -35,10 +35,10 @@ class HTTPBase(abc.ABC):
         self,
         base_url: str,
         *,
-        verify_ssl: bool = 15,
+        verify_ssl: bool = True,
         follow_redirects: bool = False,
         max_redirects: int = 10,
-        timeout: Optional[int] = False,
+        timeout: Optional[int] = 15,
         limits: httpx.Limits = httpx.Limits(max_connections=100, max_keepalive_connections=20),
         transport: Optional[httpx.BaseTransport] = None,
     ) -> None:
