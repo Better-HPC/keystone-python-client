@@ -19,12 +19,6 @@ from httpx._types import QueryParamTypes, RequestContent, RequestData, RequestFi
 
 from .log import DefaultContextAdapter
 
-DEFAULT_TIMEOUT = 15
-DEFAULT_REDIRECTS = 10
-DEFAULT_VERIFY = True
-DEFAULT_FOLLOW = True
-DEFAULT_LIMITS = httpx.Limits(max_connections=100, max_keepalive_connections=20)
-
 HttpMethod = Literal["get", "post", "put", "patch", "delete"]
 
 logger = logging.getLogger('kclient')
@@ -41,11 +35,11 @@ class HTTPBase(abc.ABC):
         self,
         base_url: str,
         *,
-        verify_ssl: bool = DEFAULT_VERIFY,
-        follow_redirects: bool = DEFAULT_FOLLOW,
-        max_redirects: int = DEFAULT_REDIRECTS,
-        timeout: Optional[int] = DEFAULT_TIMEOUT,
-        limits: httpx.Limits = DEFAULT_LIMITS,
+        verify_ssl: bool = True,
+        follow_redirects: bool = False,
+        max_redirects: int = 10,
+        timeout: Optional[int] = 15,
+        limits: httpx.Limits = httpx.Limits(max_connections=100, max_keepalive_connections=20),
         transport: Optional[httpx.BaseTransport] = None,
     ) -> None:
         """Initialize a new HTTP session.

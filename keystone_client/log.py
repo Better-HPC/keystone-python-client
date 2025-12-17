@@ -7,6 +7,7 @@ for direct import.
 """
 
 import logging
+from typing import Literal
 
 
 class DefaultContextAdapter(logging.LoggerAdapter):
@@ -32,7 +33,7 @@ class ContextFilter(logging.Filter):
 
     required_attr = ("cid", "baseurl", "method", "endpoint", "url")
 
-    def filter(self, record: logging.LogRecord) -> True:
+    def filter(self, record: logging.LogRecord) -> Literal[True]:
         """Ensure a log record has all required contextual attributes.
 
         Any missing contextual attributes are set to an empty string.
