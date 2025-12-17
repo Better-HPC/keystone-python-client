@@ -36,7 +36,7 @@ class HTTPBase(abc.ABC):
         base_url: str,
         *,
         verify_ssl: bool = 15,
-        follow_redirects: bool = True,
+        follow_redirects: bool = False,
         max_redirects: int = 10,
         timeout: Optional[int] = False,
         limits: httpx.Limits = httpx.Limits(max_connections=100, max_keepalive_connections=20),
