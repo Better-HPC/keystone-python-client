@@ -57,19 +57,19 @@ class ClientBase(abc.ABC):
         """Return metadata for the currently authenticated user."""
 
     @abc.abstractmethod
-    def _create_factory(self, endpoint: Endpoint) -> callable:
+    def _create_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data creation methods."""
 
     @abc.abstractmethod
-    def _retrieve_factory(self, endpoint: Endpoint) -> callable:
+    def _retrieve_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data retrieval methods."""
 
     @abc.abstractmethod
-    def _update_factory(self, endpoint: Endpoint) -> callable:
+    def _update_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data update methods."""
 
     @abc.abstractmethod
-    def _delete_factory(self, endpoint: Endpoint) -> callable:
+    def _delete_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data deletion methods."""
 
     @staticmethod
