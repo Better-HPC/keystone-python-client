@@ -1,6 +1,6 @@
 # Keystone Python Client
 
-Keystone includes an official Python client designed to simplify integration with the platform's [REST API](../keystone-api).
+Keystone includes an official Python client designed to simplify integration with the platform's [REST API](../../keystone-api/).
 It handles authentication, request execution, and response parsing, allowing developers to concentrate on application
 logic rather than API mechanics.
 
