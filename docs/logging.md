@@ -1,9 +1,8 @@
 # Application Logging
 
-The Keystone Python Client includes a dedicated logger named `kclient`, which is automatically registered on package
-import. The logger provides full compatibility with the standard Python `logging` module, including support for custom
-handlers, formatters, and filters.
-The logger can be accessed and customized in the standard fashion, demonstrated below.
+The `kclient` Python logger is automatically registered on package import. 
+It provides full compatibility with the standard Python `logging` module and can be accessed and customized in the 
+standard fashion.
 
 ```python
 import logging
@@ -32,8 +31,7 @@ These fields are passed to all log messages and may be accessed via custom forma
 
 ## Session IDs
 
-Each client session is assigned a unique correlation ID (CID) that accompanies all emitted log records and requests.
-This identifier provides a reference value for correlating client and API logs across multiple endpoints and services.
+Each client session is assigned a unique correlation ID (CID) that accompanies all emitted log records.
 CID values are accessible as logging fields or directly from an active client session, demonstrated below:
 
 === "Synchronous"
