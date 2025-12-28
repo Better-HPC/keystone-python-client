@@ -1,6 +1,5 @@
 site_name: Keystone Python Client
 nav:
   - Introduction: index.md
-  - session.md
-  - requests.md
+  - started.md
   - logging.md
