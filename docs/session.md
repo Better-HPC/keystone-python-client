@@ -1,8 +1,13 @@
 # Starting a Session
 
 Interacting with the Keystone API begins by creating a client session. 
+<<<<<<< Updated upstream
 Session objects encapsulate the connection state and request configuration, allowing the
 client to efficiently reuse connections and manage resources across multiple API calls.
+=======
+Session objects encapsulate the connection state, authentication details, and request configuration, allowing the
+client to efficiently reuse connections across multiple API calls.
+>>>>>>> Stashed changes
 
 ## Instantiating a Client
 

@@ -1,14 +1,9 @@
 # Application Logging
 
-The Keystone Python client exposes a dedicated logger (`kclient`) that records structured request metadata using the
-standard Python logging framework. The logger is registered automatically when the package is imported and can be
-configured like any other Python logger.
-
-## Logger Configuration
-
-Custom handlers, formatters, and filters may be attached directly to the kclient logger.
-Because the logger behaves like any standard Python logger, you can control output destinations, define
-message structures, adjust verbosity, and apply filtering based on logged metadata.
+The Keystone Python Client includes a dedicated logger named `kclient`, which is automatically registered on package
+import. The logger provides full compatibility with the standard Python `logging` module, including support for custom
+handlers, formatters, and filters.
+The logger can be accessed and customized in the standard fashion, demonstrated below.
 
 ```python
 import logging
@@ -22,7 +17,10 @@ handler.setFormatter(
 logging.getLogger('kclient').addHandler(handler)
 ```
 
-In addition to the standard Python logging attributes, the `kclient` logger includes the following package-specific fields:
+## Custom Logging Fields
+
+In addition to Python's built-in message fields, the `kclient` logger also exposes the following package-specific values.
+These fields are passed to all log messages and may be accessed via custom formatters or filters.
 
 | Field Name | Description                                                                |
 |------------|----------------------------------------------------------------------------|
@@ -34,10 +32,9 @@ In addition to the standard Python logging attributes, the `kclient` logger incl
 
 ## Session IDs
 
-Each client session is assigned a unique correlation ID (CID) that accompanies all emitted log records.
-This identifier provides a reference value for correlating client and API logs across multiple endpoints and requests.
-CID values are suitable for inclusion in log messages, passing to downstream services, or correlating requests
-for debugging and performance monitoring.
+Each client session is assigned a unique correlation ID (CID) that accompanies all emitted log records and requests.
+This identifier provides a reference value for correlating client and API logs across multiple endpoints and services.
+CID values are accessible as logging fields or directly from an active client session, demonstrated below:
 
 === "Synchronous"
 
