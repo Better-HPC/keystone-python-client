@@ -6,7 +6,7 @@ authentication, data retrieval, and data manipulation.
 """
 
 import abc
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable
 
 import httpx
 from httpx import HTTPStatusError
@@ -74,10 +74,10 @@ class ClientBase(abc.ABC):
 
     @staticmethod
     def _preprocess_filters(
-        filters: Optional[Dict[str, Any]],
-        search: Optional[str],
-        order: Optional[str]
-    ) -> Optional[Dict[str, Any]]:
+        filters: dict[str, Any] | None,
+        search: str | None,
+        order: str | None
+    ) -> dict[str, Any] | None:
         """Inject _search and _order into query parameters."""
 
         if search is None and order is None:
@@ -110,7 +110,7 @@ class ClientBase(abc.ABC):
         return response.json()
 
     @staticmethod
-    def _handle_retrieve_response(response: httpx.Response) -> Optional[dict]:
+    def _handle_retrieve_response(response: httpx.Response) -> dict | None:
         """Handle the HTTP response for a record retrieval request.
 
         Args:
@@ -218,7 +218,7 @@ class KeystoneClient(ClientBase, HTTPClient):
     def _create_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data creation methods."""
 
-        def create_record(data: Optional[RequestData] = None, files: Optional[RequestFiles] = None) -> dict:
+        def create_record(data: RequestData | None = None, files: RequestFiles | None = None) -> dict:
             """Create a new API record.
 
             Args:
@@ -239,12 +239,12 @@ class KeystoneClient(ClientBase, HTTPClient):
         """Factory function for data retrieval methods."""
 
         def retrieve_record(
-            pk: Optional[int] = None,
-            filters: Optional[Dict[str, Any]] = None,
-            search: Optional[str] = None,
-            order: Optional[str] = None,
+            pk: int | None = None,
+            filters: dict[str, Any] | None = None,
+            search: str | None = None,
+            order: str | None = None,
             timeout: int = httpx.USE_CLIENT_DEFAULT
-        ) -> Union[None, dict, list[dict]]:
+        ) -> list[dict] | dict | None:
             """Retrieve one or more API records.
 
             A single record is returned when specifying a primary key, otherwise the returned
@@ -274,8 +274,8 @@ class KeystoneClient(ClientBase, HTTPClient):
 
         def update_record(
             pk: int,
-            data: Optional[RequestData] = None,
-            files: Optional[RequestFiles] = None
+            data: RequestData | None = None,
+            files: RequestFiles | None = None
         ) -> dict:
             """Update partial values for an existing API record.
 
@@ -369,7 +369,7 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
     def _create_factory(self, endpoint: Endpoint) -> Callable:
         """Factory function for data creation methods."""
 
-        async def create_record(data: Optional[RequestData] = None, files: Optional[RequestFiles] = None) -> dict:
+        async def create_record(data: RequestData | None = None, files: RequestFiles | None = None) -> dict:
             """Create a new API record.
 
             Args:
@@ -390,12 +390,12 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
         """Factory function for data retrieval methods."""
 
         async def retrieve_record(
-            pk: Optional[int] = None,
-            filters: Optional[Dict[str, Any]] = None,
-            search: Optional[str] = None,
-            order: Optional[str] = None,
+            pk: int | None = None,
+            filters: dict[str, Any] | None = None,
+            search: str | None = None,
+            order: str | None = None,
             timeout: int = httpx.USE_CLIENT_DEFAULT
-        ) -> Union[None, dict, list[dict]]:
+        ) -> list[dict] | dict | None:
             """Retrieve one or more API records.
 
             A single record is returned when specifying a primary key, otherwise the returned
@@ -425,8 +425,8 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
 
         async def update_record(
             pk: int,
-            data: Optional[RequestData] = None,
-            files: Optional[RequestFiles] = None
+            data: RequestData | None = None,
+            files: RequestFiles | None = None
         ) -> dict:
             """Update partial values for an existing API record.
 
