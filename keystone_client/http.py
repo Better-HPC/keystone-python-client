@@ -11,7 +11,7 @@ import atexit
 import logging
 import re
 import uuid
-from typing import Literal, Optional, Union
+from typing import Literal
 from urllib.parse import urljoin, urlparse
 
 import httpx
@@ -38,9 +38,9 @@ class HTTPBase(abc.ABC):
         verify_ssl: bool = True,
         follow_redirects: bool = False,
         max_redirects: int = 10,
-        timeout: Optional[int] = 15,
+        timeout: int | None = 15,
         limits: httpx.Limits = httpx.Limits(max_connections=100, max_keepalive_connections=20),
-        transport: Optional[httpx.BaseTransport] = None,
+        transport: httpx.BaseTransport | None = None,
     ) -> None:
         """Initialize a new HTTP session.
 
@@ -97,7 +97,7 @@ class HTTPBase(abc.ABC):
         path = re.sub(r"/{2,}", "/", parts.path).rstrip("/") + "/"
         return parts._replace(path=path).geturl()
 
-    def get_application_headers(self, overrides: Union[dict, None] = None) -> dict[str, str]:
+    def get_application_headers(self, overrides: dict | None = None) -> dict[str, str]:
         """Return application-specific headers for the current session."""
 
         headers = {self.CID_HEADER: self._cid}
@@ -110,7 +110,7 @@ class HTTPBase(abc.ABC):
         return headers
 
     @abc.abstractmethod
-    def _client_factory(self, **kwargs) -> Union[httpx.Client, httpx.AsyncClient]:
+    def _client_factory(self, **kwargs) -> httpx.Client | httpx.AsyncClient:
         """Create a new HTTP client instance with the provided settings."""
 
     @abc.abstractmethod
@@ -123,10 +123,10 @@ class HTTPBase(abc.ABC):
         method: HttpMethod,
         endpoint: str,
         *,
-        headers: Optional[dict] = None,
-        json: Optional[RequestContent] = None,
-        files: Optional[RequestFiles] = None,
-        params: Optional[QueryParamTypes] = None,
+        headers: dict | None = None,
+        json: RequestContent | None = None,
+        files: RequestFiles | None = None,
+        params: QueryParamTypes | None = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send an HTTP request (sync or async depending on the implementation)."""
@@ -135,7 +135,7 @@ class HTTPBase(abc.ABC):
     def http_get(
         self,
         endpoint: str,
-        params: Optional[QueryParamTypes] = None,
+        params: QueryParamTypes | None = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send a GET request."""
@@ -144,8 +144,8 @@ class HTTPBase(abc.ABC):
     def http_post(
         self,
         endpoint: str,
-        json: Optional[RequestData] = None,
-        files: Optional[RequestFiles] = None,
+        json: RequestData | None = None,
+        files: RequestFiles | None = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send a POST request."""
@@ -154,8 +154,8 @@ class HTTPBase(abc.ABC):
     def http_patch(
         self,
         endpoint: str,
-        json: Optional[RequestData] = None,
-        files: Optional[RequestFiles] = None,
+        json: RequestData | None = None,
+        files: RequestFiles | None = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send a PATCH request."""
@@ -164,8 +164,8 @@ class HTTPBase(abc.ABC):
     def http_put(
         self,
         endpoint: str,
-        json: Optional[RequestData] = None,
-        files: Optional[RequestFiles] = None,
+        json: RequestData | None = None,
+        files: RequestFiles | None = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send a PUT request."""
@@ -206,9 +206,9 @@ class HTTPClient(HTTPBase):
         endpoint: str,
         *,
         headers: dict = None,
-        json: Optional[RequestContent] = None,
-        files: Optional[RequestFiles] = None,
-        params: Optional[QueryParamTypes] = None,
+        json: RequestContent | None = None,
+        files: RequestFiles | None = None,
+        params: QueryParamTypes | None = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send an HTTP request.
@@ -243,7 +243,7 @@ class HTTPClient(HTTPBase):
     def http_get(
         self,
         endpoint: str,
-        params: Optional[QueryParamTypes] = None,
+        params: QueryParamTypes | None = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send a GET request to an API endpoint.
@@ -262,8 +262,8 @@ class HTTPClient(HTTPBase):
     def http_post(
         self,
         endpoint: str,
-        json: Optional[RequestData] = None,
-        files: Optional[RequestFiles] = None,
+        json: RequestData | None = None,
+        files: RequestFiles | None = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send a POST request to an API endpoint.
@@ -283,8 +283,8 @@ class HTTPClient(HTTPBase):
     def http_patch(
         self,
         endpoint: str,
-        json: Optional[RequestData] = None,
-        files: Optional[RequestFiles] = None,
+        json: RequestData | None = None,
+        files: RequestFiles | None = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send a PATCH request to an API endpoint.
@@ -304,8 +304,8 @@ class HTTPClient(HTTPBase):
     def http_put(
         self,
         endpoint: str,
-        json: Optional[RequestData] = None,
-        files: Optional[RequestFiles] = None,
+        json: RequestData | None = None,
+        files: RequestFiles | None = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send a PUT request to an API endpoint.
@@ -363,9 +363,9 @@ class AsyncHTTPClient(HTTPBase):
         endpoint: str,
         *,
         headers: dict = None,
-        json: Optional[dict] = None,
-        files: Optional[RequestFiles] = None,
-        params: Optional[QueryParamTypes] = None,
+        json: dict | None = None,
+        files: RequestFiles | None = None,
+        params: QueryParamTypes | None = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send an HTTP request.
@@ -400,7 +400,7 @@ class AsyncHTTPClient(HTTPBase):
     async def http_get(
         self,
         endpoint: str,
-        params: Optional[QueryParamTypes] = None,
+        params: QueryParamTypes | None = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send an asynchronous GET request to an API endpoint.
@@ -419,8 +419,8 @@ class AsyncHTTPClient(HTTPBase):
     async def http_post(
         self,
         endpoint: str,
-        json: Optional[RequestData] = None,
-        files: Optional[RequestFiles] = None,
+        json: RequestData | None = None,
+        files: RequestFiles | None = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send an asynchronous POST request to an API endpoint.
@@ -440,8 +440,8 @@ class AsyncHTTPClient(HTTPBase):
     async def http_patch(
         self,
         endpoint: str,
-        json: Optional[RequestData] = None,
-        files: Optional[RequestFiles] = None,
+        json: RequestData | None = None,
+        files: RequestFiles | None = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send an asynchronous PATCH request to an API endpoint.
@@ -461,8 +461,8 @@ class AsyncHTTPClient(HTTPBase):
     async def http_put(
         self,
         endpoint: str,
-        json: Optional[RequestData] = None,
-        files: Optional[RequestFiles] = None,
+        json: RequestData | None = None,
+        files: RequestFiles | None = None,
         timeout: int = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send an asynchronous PUT request to an API endpoint.
