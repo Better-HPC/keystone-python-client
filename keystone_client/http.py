@@ -15,7 +15,7 @@ from typing import Literal
 from urllib.parse import urljoin, urlparse
 
 import httpx
-from httpx._types import QueryParamTypes, RequestContent, RequestData, RequestFiles
+from httpx._types import CertTypes, QueryParamTypes, RequestContent, RequestData, RequestFiles
 
 from .log import DefaultContextAdapter
 
@@ -66,6 +66,7 @@ class HTTPBase(abc.ABC):
             timeout=timeout,
             limits=limits,
             transport=transport,
+            trust_env=False,
         )
 
         atexit.register(self.close)
