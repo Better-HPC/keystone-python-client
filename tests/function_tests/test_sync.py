@@ -5,7 +5,7 @@ from unittest import TestCase
 import httpx
 
 from keystone_client import KeystoneClient
-from .config import API_HOST, API_PASSWORD, API_USER
+from tests.function_tests.config import API_HOST, API_PASSWORD, API_USER
 
 
 class Authentication(TestCase):
