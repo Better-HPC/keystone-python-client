@@ -15,7 +15,7 @@ from typing import Literal
 from urllib.parse import urljoin, urlparse
 
 import httpx
-from httpx._types import CertTypes, QueryParamTypes, RequestContent, RequestData, RequestFiles
+from httpx._types import QueryParamTypes, RequestContent, RequestData, RequestFiles
 
 from .log import DefaultContextAdapter
 
@@ -56,7 +56,7 @@ class HTTPBase(abc.ABC):
 
         self._cid = str(uuid.uuid4())
         self._base_url = self.normalize_url(base_url)
-        self._log = DefaultContextAdapter(logger, extra={"cid": self._cid, "baseurl": self._base_url})
+        self._log = DefaultContextAdapter(logger, extra={"cid": self._cid, "baseurl": self._base_url, "status_code": ""})
 
         self._client = self._client_factory(
             base_url=self._base_url,
@@ -206,7 +206,7 @@ class HTTPClient(HTTPBase):
         method: HttpMethod,
         endpoint: str,
         *,
-        headers: dict = None,
+        headers: dict | None = None,
         json: RequestContent | None = None,
         files: RequestFiles | None = None,
         params: QueryParamTypes | None = None,
@@ -228,10 +228,10 @@ class HTTPClient(HTTPBase):
         """
 
         url = self.normalize_url(urljoin(self.base_url, endpoint))
-        self._log.info("Sending HTTP request", extra={"method": method, "endpoint": endpoint, "url": url})
+        self._log.debug("HTTP Request", extra={"method": method, "endpoint": endpoint, "url": url})
 
         application_headers = self.get_application_headers(headers)
-        return self._client.request(
+        response = self._client.request(
             method=method,
             url=url,
             headers=application_headers,
@@ -240,6 +240,15 @@ class HTTPClient(HTTPBase):
             params=params,
             timeout=timeout,
         )
+
+        self._log.info("HTTP Response", extra={
+            "method": method,
+            "endpoint": endpoint,
+            "url": url,
+            "status_code": response.status_code
+        })
+
+        return response
 
     def http_get(
         self,
@@ -363,7 +372,7 @@ class AsyncHTTPClient(HTTPBase):
         method: HttpMethod,
         endpoint: str,
         *,
-        headers: dict = None,
+        headers: dict | None = None,
         json: dict | None = None,
         files: RequestFiles | None = None,
         params: QueryParamTypes | None = None,
@@ -385,10 +394,10 @@ class AsyncHTTPClient(HTTPBase):
         """
 
         url = self.normalize_url(urljoin(self.base_url, endpoint))
-        self._log.info("Sending asynchronous HTTP request", extra={"method": method, "endpoint": endpoint, "url": url})
+        self._log.debug("Async HTTP request", extra={"method": method, "endpoint": endpoint, "url": url})
 
         application_headers = self.get_application_headers(headers)
-        return await self._client.request(
+        response = await self._client.request(
             method=method,
             url=url,
             headers=application_headers,
@@ -397,6 +406,15 @@ class AsyncHTTPClient(HTTPBase):
             params=params,
             timeout=timeout
         )
+
+        self._log.info("Async HTTP Response", extra={
+            "method": method,
+            "endpoint": endpoint,
+            "url": url,
+            "status_code": response.status_code
+        })
+
+        return response
 
     async def http_get(
         self,
