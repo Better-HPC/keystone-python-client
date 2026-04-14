@@ -138,14 +138,3 @@ class GetApplicationHeadersMethod(TestCase):
         headers = self.http_base.get_application_headers(overrides)
 
         self.assertEqual(custom_cid, headers[HTTPBase.CID_HEADER])
-
-
-class CloseAtExit(TestCase):
-    """Test resource cleanup at application exit."""
-
-    @patch('atexit.register')
-    def test_close_registered_with_atexit(self, mock_atexit_register: MagicMock) -> None:
-        """Verify the `close` method is registered with `atexit` on initialization."""
-
-        client = DummyHTTPBase('https://example.com/')
-        mock_atexit_register.assert_called_once_with(client.close)

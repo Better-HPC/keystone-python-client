@@ -15,7 +15,7 @@ from typing import Literal
 from urllib.parse import urljoin, urlparse
 
 import httpx
-from httpx._types import CertTypes, QueryParamTypes, RequestContent, RequestData, RequestFiles
+from httpx._types import QueryParamTypes, RequestContent, RequestData, RequestFiles
 
 from .log import DefaultContextAdapter
 
@@ -38,7 +38,7 @@ class HTTPBase(abc.ABC):
         verify_ssl: bool = True,
         follow_redirects: bool = False,
         max_redirects: int = 10,
-        timeout: int | None = 15,
+        timeout: int | float | None = 15,
         limits: httpx.Limits = httpx.Limits(max_connections=100, max_keepalive_connections=20),
         transport: httpx.BaseTransport | None = None,
     ) -> None:
@@ -54,10 +54,15 @@ class HTTPBase(abc.ABC):
             transport: Optional custom HTTPX transport.
         """
 
+        # Connection state
+        self._closed = False
+
+        # Logging context
         self._cid = str(uuid.uuid4())
         self._base_url = self.normalize_url(base_url)
-        self._log = DefaultContextAdapter(logger, extra={"cid": self._cid, "baseurl": self._base_url})
+        self._log = DefaultContextAdapter(logger, extra={"cid": self._cid, "baseurl": self._base_url, "status_code": ""})
 
+        # Underlying httpx client
         self._client = self._client_factory(
             base_url=self._base_url,
             verify=verify_ssl,
@@ -68,8 +73,6 @@ class HTTPBase(abc.ABC):
             transport=transport,
             trust_env=False,
         )
-
-        atexit.register(self.close)
 
     @property
     def base_url(self) -> str:
@@ -128,7 +131,7 @@ class HTTPBase(abc.ABC):
         json: RequestContent | None = None,
         files: RequestFiles | None = None,
         params: QueryParamTypes | None = None,
-        timeout: int = httpx.USE_CLIENT_DEFAULT,
+        timeout: int | float | None = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send an HTTP request (sync or async depending on the implementation)."""
 
@@ -137,7 +140,7 @@ class HTTPBase(abc.ABC):
         self,
         endpoint: str,
         params: QueryParamTypes | None = None,
-        timeout: int = httpx.USE_CLIENT_DEFAULT,
+        timeout: int | float | None = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send a GET request."""
 
@@ -147,7 +150,7 @@ class HTTPBase(abc.ABC):
         endpoint: str,
         json: RequestData | None = None,
         files: RequestFiles | None = None,
-        timeout: int = httpx.USE_CLIENT_DEFAULT,
+        timeout: int | float | None = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send a POST request."""
 
@@ -157,7 +160,7 @@ class HTTPBase(abc.ABC):
         endpoint: str,
         json: RequestData | None = None,
         files: RequestFiles | None = None,
-        timeout: int = httpx.USE_CLIENT_DEFAULT,
+        timeout: int | float | None = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send a PATCH request."""
 
@@ -167,7 +170,7 @@ class HTTPBase(abc.ABC):
         endpoint: str,
         json: RequestData | None = None,
         files: RequestFiles | None = None,
-        timeout: int = httpx.USE_CLIENT_DEFAULT,
+        timeout: int | float | None = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send a PUT request."""
 
@@ -175,13 +178,18 @@ class HTTPBase(abc.ABC):
     def http_delete(
         self,
         endpoint: str,
-        timeout: int = httpx.USE_CLIENT_DEFAULT,
+        timeout: int | float | None = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send a DELETE request."""
 
 
 class HTTPClient(HTTPBase):
     """Synchronous HTTP Client."""
+
+    def __init__(self, *args, **kwargs) -> None:
+
+        super().__init__(*args, **kwargs)
+        atexit.register(self.close)
 
     def __enter__(self) -> 'HTTPClient':
         return self
@@ -198,19 +206,23 @@ class HTTPClient(HTTPBase):
     def close(self) -> None:
         """Close any open server connections."""
 
+        if self._closed:
+            return
+
         self._log.info("Closing HTTP session")
         self._client.close()
+        self._closed = True
 
     def send_request(
         self,
         method: HttpMethod,
         endpoint: str,
         *,
-        headers: dict = None,
+        headers: dict | None = None,
         json: RequestContent | None = None,
         files: RequestFiles | None = None,
         params: QueryParamTypes | None = None,
-        timeout: int = httpx.USE_CLIENT_DEFAULT,
+        timeout: int | float | None = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send an HTTP request.
 
@@ -228,10 +240,10 @@ class HTTPClient(HTTPBase):
         """
 
         url = self.normalize_url(urljoin(self.base_url, endpoint))
-        self._log.info("Sending HTTP request", extra={"method": method, "endpoint": endpoint, "url": url})
+        self._log.debug("HTTP Request", extra={"method": method, "endpoint": endpoint, "url": url})
 
         application_headers = self.get_application_headers(headers)
-        return self._client.request(
+        response = self._client.request(
             method=method,
             url=url,
             headers=application_headers,
@@ -241,11 +253,20 @@ class HTTPClient(HTTPBase):
             timeout=timeout,
         )
 
+        self._log.info("HTTP Response", extra={
+            "method": method,
+            "endpoint": endpoint,
+            "url": url,
+            "status_code": response.status_code
+        })
+
+        return response
+
     def http_get(
         self,
         endpoint: str,
         params: QueryParamTypes | None = None,
-        timeout: int = httpx.USE_CLIENT_DEFAULT,
+        timeout: int | float | None = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send a GET request to an API endpoint.
 
@@ -265,7 +286,7 @@ class HTTPClient(HTTPBase):
         endpoint: str,
         json: RequestData | None = None,
         files: RequestFiles | None = None,
-        timeout: int = httpx.USE_CLIENT_DEFAULT,
+        timeout: int | float | None = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send a POST request to an API endpoint.
 
@@ -286,7 +307,7 @@ class HTTPClient(HTTPBase):
         endpoint: str,
         json: RequestData | None = None,
         files: RequestFiles | None = None,
-        timeout: int = httpx.USE_CLIENT_DEFAULT,
+        timeout: int | float | None = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send a PATCH request to an API endpoint.
 
@@ -307,7 +328,7 @@ class HTTPClient(HTTPBase):
         endpoint: str,
         json: RequestData | None = None,
         files: RequestFiles | None = None,
-        timeout: int = httpx.USE_CLIENT_DEFAULT,
+        timeout: int | float | None = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send a PUT request to an API endpoint.
 
@@ -323,7 +344,11 @@ class HTTPClient(HTTPBase):
 
         return self.send_request("put", endpoint, json=json, files=files, timeout=timeout)
 
-    def http_delete(self, endpoint: str, timeout: int = httpx.USE_CLIENT_DEFAULT) -> httpx.Response:
+    def http_delete(
+        self,
+        endpoint: str,
+        timeout: int | float | None = httpx.USE_CLIENT_DEFAULT,
+    ) -> httpx.Response:
         """Send a DELETE request to an endpoint.
 
         Args:
@@ -355,19 +380,23 @@ class AsyncHTTPClient(HTTPBase):
     async def close(self) -> None:
         """Close any open server connections."""
 
+        if self._closed:
+            return
+
         self._log.info("Closing asynchronous HTTP session")
         await self._client.aclose()
+        self._closed = True
 
     async def send_request(
         self,
         method: HttpMethod,
         endpoint: str,
         *,
-        headers: dict = None,
+        headers: dict | None = None,
         json: dict | None = None,
         files: RequestFiles | None = None,
         params: QueryParamTypes | None = None,
-        timeout: int = httpx.USE_CLIENT_DEFAULT,
+        timeout: int | float | None = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send an HTTP request.
 
@@ -385,10 +414,10 @@ class AsyncHTTPClient(HTTPBase):
         """
 
         url = self.normalize_url(urljoin(self.base_url, endpoint))
-        self._log.info("Sending asynchronous HTTP request", extra={"method": method, "endpoint": endpoint, "url": url})
+        self._log.debug("Async HTTP request", extra={"method": method, "endpoint": endpoint, "url": url})
 
         application_headers = self.get_application_headers(headers)
-        return await self._client.request(
+        response = await self._client.request(
             method=method,
             url=url,
             headers=application_headers,
@@ -398,11 +427,20 @@ class AsyncHTTPClient(HTTPBase):
             timeout=timeout
         )
 
+        self._log.info("Async HTTP Response", extra={
+            "method": method,
+            "endpoint": endpoint,
+            "url": url,
+            "status_code": response.status_code
+        })
+
+        return response
+
     async def http_get(
         self,
         endpoint: str,
         params: QueryParamTypes | None = None,
-        timeout: int = httpx.USE_CLIENT_DEFAULT,
+        timeout: int | float | None = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send an asynchronous GET request to an API endpoint.
 
@@ -422,7 +460,7 @@ class AsyncHTTPClient(HTTPBase):
         endpoint: str,
         json: RequestData | None = None,
         files: RequestFiles | None = None,
-        timeout: int = httpx.USE_CLIENT_DEFAULT,
+        timeout: int | float | None = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send an asynchronous POST request to an API endpoint.
 
@@ -443,7 +481,7 @@ class AsyncHTTPClient(HTTPBase):
         endpoint: str,
         json: RequestData | None = None,
         files: RequestFiles | None = None,
-        timeout: int = httpx.USE_CLIENT_DEFAULT,
+        timeout: int | float | None = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send an asynchronous PATCH request to an API endpoint.
 
@@ -464,7 +502,7 @@ class AsyncHTTPClient(HTTPBase):
         endpoint: str,
         json: RequestData | None = None,
         files: RequestFiles | None = None,
-        timeout: int = httpx.USE_CLIENT_DEFAULT,
+        timeout: int | float | None = httpx.USE_CLIENT_DEFAULT,
     ) -> httpx.Response:
         """Send an asynchronous PUT request to an API endpoint.
 
@@ -480,7 +518,11 @@ class AsyncHTTPClient(HTTPBase):
 
         return await self.send_request("put", endpoint, json=json, files=files, timeout=timeout)
 
-    async def http_delete(self, endpoint: str, timeout: int = httpx.USE_CLIENT_DEFAULT) -> httpx.Response:
+    async def http_delete(
+        self,
+        endpoint: str,
+        timeout: int | float | None = httpx.USE_CLIENT_DEFAULT,
+    ) -> httpx.Response:
         """Send an asynchronous DELETE request to an endpoint.
 
         Args:

@@ -78,3 +78,15 @@ class SendRequestMethod(TestCase):
         self.assertEqual(expected_method, record.method)
         self.assertEqual(expected_endpoint, record.endpoint)
         self.assertEqual(expected_url, record.url)
+
+
+
+class CloseAtExit(TestCase):
+    """Test resource cleanup at application exit."""
+
+    @patch('atexit.register')
+    def test_close_registered_with_atexit(self, mock_atexit_register: MagicMock) -> None:
+        """Verify the `close` method is registered with `atexit` on initialization."""
+
+        client = HTTPClient(base_url="https://example.com")
+        mock_atexit_register.assert_any_call(client.close)
