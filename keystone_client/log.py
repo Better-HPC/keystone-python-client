@@ -1,6 +1,6 @@
 """Components for integrating with the standard Python logging system.
 
-The `log` module defines extensions to Python’s logging framework that
+The `log` module defines extensions to Python's logging framework that
 extend log records with application-specific context. These components
 are initialized automatically with the package and are not intended
 for direct import.
@@ -29,9 +29,10 @@ class ContextFilter(logging.Filter):
         - method
         - endpoint
         - url
+        - status_code
     """
 
-    required_attr = ("cid", "baseurl", "method", "endpoint", "url")
+    required_attr = ("cid", "baseurl", "method", "endpoint", "url", "status_code")
 
     def filter(self, record: logging.LogRecord) -> Literal[True]:
         """Ensure a log record has all required contextual attributes.

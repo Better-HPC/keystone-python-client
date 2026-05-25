@@ -21,13 +21,14 @@ logging.getLogger('kclient').addHandler(handler)
 In addition to Python's built-in message fields, the `kclient` logger also exposes the following package-specific values.
 These fields are passed to all log messages and may be accessed via custom formatters or filters.
 
-| Field Name | Description                                                                |
-|------------|----------------------------------------------------------------------------|
-| `cid`      | Per-session logging id used to correlate requests across a client session. |
-| `baseurl`  | Base API server URL, including http protocol.                              |
-| `method`   | HTTP method for outgoing requests, or an empty string if not applicable.   |
-| `endpoint` | API endpoint for outgoing requests, or an empty string if not applicable.  |
-| `url`      | Full API URL for outgoing requests, or an empty string if not applicable.  |
+| Field Name    | Description                                                                |
+|---------------|----------------------------------------------------------------------------|
+| `cid`         | Per-session logging id used to correlate requests across a client session. |
+| `baseurl`     | Base API server URL, including http protocol.                              |
+| `method`      | HTTP method for outgoing requests, or an empty string if not applicable.   |
+| `endpoint`    | API endpoint for outgoing requests, or an empty string if not applicable.  |
+| `url`         | Full API URL for outgoing requests, or an empty string if not applicable.  |
+| `status_code` | HTTP response status code, or an empty string if not applicable.           |
 
 ## Session IDs
 
