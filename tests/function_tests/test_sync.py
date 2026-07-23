@@ -24,13 +24,13 @@ class Authentication(TestCase):
     def test_login_logout(self) -> None:
         """Verify users are successfully logged in/out when providing valid credentials."""
 
-        self.assertFalse(self.client.is_authenticated())
+        self.assertFalse(self.client.whoami())
 
         self.client.login(API_USER, API_PASSWORD)
-        self.assertTrue(self.client.is_authenticated())
+        self.assertTrue(self.client.whoami())
 
         self.client.logout()
-        self.assertFalse(self.client.is_authenticated())
+        self.assertFalse(self.client.whoami())
 
     def test_incorrect_credentials(self) -> None:
         """Verify an error is raised when authenticating with incorrect credentials."""
@@ -41,9 +41,9 @@ class Authentication(TestCase):
     def test_logout_unauthenticated(self) -> None:
         """Verify the `logout` method exits silently when logging out an unauthenticated user."""
 
-        self.assertFalse(self.client.is_authenticated())
+        self.assertFalse(self.client.whoami())
         self.client.logout()
-        self.assertFalse(self.client.is_authenticated())
+        self.assertFalse(self.client.whoami())
 
     def test_authentication_is_not_shared(self) -> None:
         """Test user authentication is tied to specific instances."""
@@ -52,8 +52,8 @@ class Authentication(TestCase):
         client2 = KeystoneClient(API_HOST)
 
         client1.login(API_USER, API_PASSWORD)
-        self.assertTrue(client1.is_authenticated())
-        self.assertFalse(client2.is_authenticated())
+        self.assertTrue(client1.whoami())
+        self.assertFalse(client2.whoami())
 
         client1.close()
         client2.close()
@@ -75,11 +75,11 @@ class UserMetadata(TestCase):
     def test_unauthenticated_user(self) -> None:
         """Verify an empty dictionary is returned for an unauthenticated user."""
 
-        self.assertEqual(dict(), self.client.is_authenticated())
+        self.assertEqual(dict(), self.client.whoami())
 
     def test_authenticated_user(self) -> None:
         """Verify user metadata is returned for an authenticated user."""
 
         self.client.login(API_USER, API_PASSWORD)
-        user_meta = self.client.is_authenticated()
+        user_meta = self.client.whoami()
         self.assertEqual(API_USER, user_meta['username'])

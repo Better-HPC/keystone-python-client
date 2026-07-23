@@ -110,7 +110,7 @@ class IsAuthenticatedMethod(IsolatedAsyncioTestCase):
             return httpx.Response(200, json=expected_data)
 
         client = AsyncKeystoneClient(base_url=self.api_url, transport=httpx.MockTransport(handler))
-        result = await client.is_authenticated()
+        result = await client.whoami()
         self.assertEqual(result, expected_data)
 
     async def test_unauthenticated_response(self) -> None:
@@ -122,7 +122,7 @@ class IsAuthenticatedMethod(IsolatedAsyncioTestCase):
             return httpx.Response(401, json={"detail": "Unauthorized"})
 
         client = AsyncKeystoneClient(base_url=self.api_url, transport=httpx.MockTransport(handler))
-        result = await client.is_authenticated()
+        result = await client.whoami()
         self.assertEqual(result, {})
 
     async def test_http_error_is_raised(self) -> None:
@@ -136,4 +136,4 @@ class IsAuthenticatedMethod(IsolatedAsyncioTestCase):
         client = AsyncKeystoneClient(base_url=self.api_url, transport=httpx.MockTransport(handler))
 
         with self.assertRaises(httpx.HTTPStatusError):
-            await client.is_authenticated()
+            await client.whoami()
