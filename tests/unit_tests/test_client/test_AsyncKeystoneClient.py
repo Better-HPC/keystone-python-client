@@ -28,7 +28,7 @@ class LoginMethod(IsolatedAsyncioTestCase):
             payload = json.loads(request.content.decode())
 
             self.assertEqual('POST', request.method)
-            self.assertEqual(AsyncKeystoneClient.LOGIN_ENDPOINT, url_path)
+            self.assertEqual(AsyncKeystoneClient._login_endpoint, url_path)
             self.assertEqual({"username": self.username, "password": self.password}, payload)
 
             return httpx.Response(200)
@@ -66,7 +66,7 @@ class LogoutMethod(IsolatedAsyncioTestCase):
             url_path = request.url.path.strip('/')
 
             self.assertEqual('POST', request.method)
-            self.assertEqual(AsyncKeystoneClient.LOGOUT_ENDPOINT, url_path)
+            self.assertEqual(AsyncKeystoneClient._logout_endpoint, url_path)
 
             return httpx.Response(200)
 
@@ -105,7 +105,7 @@ class IsAuthenticatedMethod(IsolatedAsyncioTestCase):
             url_path = request.url.path.strip('/')
 
             self.assertEqual('GET', request.method)
-            self.assertEqual(AsyncKeystoneClient.IDENTITY_ENDPOINT, url_path)
+            self.assertEqual(AsyncKeystoneClient._identity_endpoint, url_path)
 
             return httpx.Response(200, json=expected_data)
 

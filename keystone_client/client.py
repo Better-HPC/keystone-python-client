@@ -9,18 +9,16 @@ import abc
 
 import httpx
 from httpx import HTTPStatusError
+
 from keystone_client.http import AsyncHTTPClient, HTTPClient
-from keystone_client.schema import Endpoint, Schema
 
 
 class ClientBase(abc.ABC):
     """Base client class with shared application constants and helpers."""
 
-    schema = Schema()
-
-    LOGIN_ENDPOINT = Endpoint('authentication/login')
-    LOGOUT_ENDPOINT = Endpoint('authentication/logout')
-    IDENTITY_ENDPOINT = Endpoint('authentication/whoami')
+    _login_endpoint = 'authentication/login'
+    _logout_endpoint = 'authentication/logout'
+    _identity_endpoint = 'authentication/whoami'
 
     @abc.abstractmethod
     def login(self, username: str, password: str, timeout: int) -> None:
@@ -68,7 +66,7 @@ class KeystoneClient(ClientBase, HTTPClient):
         """
 
         self.http_post(
-            endpoint=self.LOGIN_ENDPOINT,
+            endpoint=self._login_endpoint,
             json={'username': username, 'password': password},
             timeout=timeout
         ).raise_for_status()
@@ -81,7 +79,7 @@ class KeystoneClient(ClientBase, HTTPClient):
         """
 
         response = self.http_post(
-            endpoint=self.LOGOUT_ENDPOINT,
+            endpoint=self._logout_endpoint,
             timeout=timeout
         )
 
@@ -101,7 +99,7 @@ class KeystoneClient(ClientBase, HTTPClient):
             timeout: Seconds before the request times out.
         """
 
-        response = self.http_get(self.IDENTITY_ENDPOINT, timeout=timeout)
+        response = self.http_get(self._identity_endpoint, timeout=timeout)
         return self._handle_identity_response(response)
 
 
@@ -121,7 +119,7 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
         """
 
         response = await self.http_post(
-            endpoint=self.LOGIN_ENDPOINT,
+            endpoint=self._login_endpoint,
             json={'username': username, 'password': password},
             timeout=timeout
         )
@@ -136,7 +134,7 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
         """
 
         response = await self.http_post(
-            endpoint=self.LOGOUT_ENDPOINT,
+            endpoint=self._logout_endpoint,
             timeout=timeout
         )
 
@@ -156,5 +154,5 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
             timeout: Seconds before the request times out.
         """
 
-        response = await self.http_get(self.IDENTITY_ENDPOINT, timeout=timeout)
+        response = await self.http_get(self._identity_endpoint, timeout=timeout)
         return self._handle_identity_response(response)
