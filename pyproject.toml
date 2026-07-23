@@ -1,16 +1,16 @@
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core==2.4.1"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.poetry]
+[project]
 name = "keystone-api-client"
 version = "0.0.0"
-description = "Python client for the Keystone API"
-authors = ["djperrefort <djperrefort@gmail.com>"]
 readme = "README.md"
-packages = [
-    { include = "keystone_client" },
-]
+description = "Python client for the Keystone API"
+authors = [{ name = "Better HPC LLC" }]
+keywords = ["Better", "HPC", "keystone", "api", "client"]
+packages = [{ include = "keystone_client" }]
+requires-python = ">=3.11,<4"
 classifiers = [
     "Intended Audience :: Developers",
     "Natural Language :: English",
@@ -18,13 +18,16 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Typing :: Typed"
 ]
+dependencies = [
+    "httpx>=0.28.1",
+]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-httpx = "^0.28.1"
+[project.optional-dependencies]
+dev = ["coverage==7.15.2", ]
 
-[tool.poetry.group.tests]
-optional = true
-
-[tool.poetry.group.tests.dependencies]
-coverage = "*"
+[tool.coverage.run]
+source = ["keystone_client"]
+branch = true
+omit = [
+    "*/tests/*",
+]
