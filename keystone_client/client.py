@@ -9,18 +9,16 @@ import abc
 
 import httpx
 from httpx import HTTPStatusError
+
 from keystone_client.http import AsyncHTTPClient, HTTPClient
-from keystone_client.schema import Endpoint, Schema
 
 
 class ClientBase(abc.ABC):
     """Base client class with shared application constants and helpers."""
 
-    schema = Schema()
-
-    LOGIN_ENDPOINT = Endpoint('authentication/login')
-    LOGOUT_ENDPOINT = Endpoint('authentication/logout')
-    IDENTITY_ENDPOINT = Endpoint('authentication/whoami')
+    LOGIN_ENDPOINT = 'authentication/login'
+    LOGOUT_ENDPOINT = 'authentication/logout'
+    IDENTITY_ENDPOINT = 'authentication/whoami'
 
     @abc.abstractmethod
     def login(self, username: str, password: str, timeout: int) -> None:
