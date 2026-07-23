@@ -9,7 +9,6 @@ readme = "README.md"
 description = "Python client for the Keystone API"
 authors = [{ name = "Better HPC LLC" }]
 keywords = ["Better", "HPC", "keystone", "api", "client"]
-packages = [{ include = "keystone_client" }]
 requires-python = ">=3.11,<4"
 classifiers = [
     "Intended Audience :: Developers",
@@ -24,6 +23,9 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["coverage==7.15.2", ]
+
+[tool.poetry]
+packages = [{ include = "keystone_client" }]
 
 [tool.coverage.run]
 source = ["keystone_client"]
