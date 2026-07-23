@@ -29,8 +29,13 @@ class ClientBase(abc.ABC):
         """Terminate the current user session."""
 
     @abc.abstractmethod
-    def is_authenticated(self) -> dict:
+    def whoami(self) -> dict:
         """Return metadata for the currently authenticated user."""
+
+    def is_authenticated(self) -> bool:
+        """Return a boolean indicating if the current session is authenticated."""
+
+        return bool(self.whoami())
 
     @staticmethod
     def _handle_identity_response(response: httpx.Response) -> dict:
@@ -90,7 +95,7 @@ class KeystoneClient(ClientBase, HTTPClient):
             if exception.response.status_code != 401:
                 raise
 
-    def is_authenticated(self, timeout: int = httpx.USE_CLIENT_DEFAULT) -> dict:
+    def whoami(self, timeout: int = httpx.USE_CLIENT_DEFAULT) -> dict:
         """Return metadata for the currently authenticated user.
 
         Returns an empty dictionary if the current session is not authenticated.
@@ -145,7 +150,7 @@ class AsyncKeystoneClient(ClientBase, AsyncHTTPClient):
             if exception.response.status_code != 401:
                 raise
 
-    async def is_authenticated(self, timeout: int = httpx.USE_CLIENT_DEFAULT) -> dict:
+    async def whoami(self, timeout: int = httpx.USE_CLIENT_DEFAULT) -> dict:
         """Return metadata for the currently authenticated user.
 
         Returns an empty dictionary if the current session is not authenticated.

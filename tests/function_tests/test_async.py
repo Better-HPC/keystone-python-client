@@ -24,13 +24,13 @@ class Authentication(IsolatedAsyncioTestCase):
     async def test_login_logout(self) -> None:
         """Verify users are successfully logged in/out when providing valid credentials."""
 
-        self.assertFalse(await self.client.is_authenticated())
+        self.assertFalse(await self.client.whoami())
 
         await self.client.login(API_USER, API_PASSWORD)
-        self.assertTrue(await self.client.is_authenticated())
+        self.assertTrue(await self.client.whoami())
 
         await self.client.logout()
-        self.assertFalse(await self.client.is_authenticated())
+        self.assertFalse(await self.client.whoami())
 
     async def test_incorrect_credentials(self) -> None:
         """Verify an error is raised when authenticating with incorrect credentials."""
@@ -41,9 +41,9 @@ class Authentication(IsolatedAsyncioTestCase):
     async def test_logout_unauthenticated(self) -> None:
         """Verify the `logout` method exits silently when logging out an unauthenticated user."""
 
-        self.assertFalse(await self.client.is_authenticated())
+        self.assertFalse(await self.client.whoami())
         await self.client.logout()
-        self.assertFalse(await self.client.is_authenticated())
+        self.assertFalse(await self.client.whoami())
 
     async def test_authentication_is_not_shared(self) -> None:
         """Test user authentication is tied to specific instances."""
@@ -52,8 +52,8 @@ class Authentication(IsolatedAsyncioTestCase):
         client2 = AsyncKeystoneClient(API_HOST)
 
         await client1.login(API_USER, API_PASSWORD)
-        self.assertTrue(await client1.is_authenticated())
-        self.assertFalse(await client2.is_authenticated())
+        self.assertTrue(await client1.whoami())
+        self.assertFalse(await client2.whoami())
 
         await client1.close()
         await client2.close()
@@ -75,11 +75,11 @@ class UserMetadata(IsolatedAsyncioTestCase):
     async def test_unauthenticated_user(self) -> None:
         """Verify an empty dictionary is returned for an unauthenticated user."""
 
-        self.assertEqual(dict(), await self.client.is_authenticated())
+        self.assertEqual(dict(), await self.client.whoami())
 
     async def test_authenticated_user(self) -> None:
         """Verify user metadata is returned for an authenticated user."""
 
         await self.client.login(API_USER, API_PASSWORD)
-        user_meta = await self.client.is_authenticated()
+        user_meta = await self.client.whoami()
         self.assertEqual(API_USER, user_meta['username'])
