@@ -28,7 +28,7 @@ class LoginMethod(TestCase):
             payload = json.loads(request.content.decode())
 
             self.assertEqual('POST', request.method)
-            self.assertEqual(KeystoneClient._login_endpoint, url_path)
+            self.assertEqual(KeystoneClient.LOGIN_ENDPOINT, url_path)
             self.assertEqual({"username": self.username, "password": self.password}, payload)
 
             return httpx.Response(200)
@@ -66,7 +66,7 @@ class LogoutMethod(TestCase):
             url_path = request.url.path.strip('/')
 
             self.assertEqual('POST', request.method)
-            self.assertEqual(KeystoneClient._logout_endpoint, url_path)
+            self.assertEqual(KeystoneClient.LOGOUT_ENDPOINT, url_path)
 
             return httpx.Response(200)
 
@@ -105,7 +105,7 @@ class IsAuthenticatedMethod(TestCase):
             url_path = request.url.path.strip('/')
 
             self.assertEqual('GET', request.method)
-            self.assertEqual(KeystoneClient._identity_endpoint, url_path)
+            self.assertEqual(KeystoneClient.IDENTITY_ENDPOINT, url_path)
 
             return httpx.Response(200, json=expected_data)
 
