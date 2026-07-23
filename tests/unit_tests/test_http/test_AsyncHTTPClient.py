@@ -1,4 +1,4 @@
-"""Unit tests for the `AsyncHTTPClient` method."""
+"""Unit tests for the `AsyncHTTPClient` class."""
 
 import logging
 from unittest import IsolatedAsyncioTestCase
@@ -13,7 +13,11 @@ from tests.unit_tests import utils
 
 @patch("httpx.AsyncClient")
 class CloseMethodAsync(IsolatedAsyncioTestCase):
-    """Test the termination of open connections."""
+    """Tests the `close` method.
+
+    Verifies any open connections are terminated when the method is called
+    directly, and when the client is exited via its context manager.
+    """
 
     async def test_close_on_function_call(self, mock_httpx_class: MagicMock) -> None:
         """Verify any open sessions are closed when calling the `close` method."""
@@ -35,9 +39,25 @@ class CloseMethodAsync(IsolatedAsyncioTestCase):
 
         mock_httpx_class.return_value.aclose.assert_called_once()
 
+    async def test_close_when_already_closed(self, mock_httpx_class: MagicMock) -> None:
+        """Verify calling `close` on an already closed client is a no-op."""
+
+        mock_httpx_class.return_value.aclose = AsyncMock()
+
+        client = AsyncHTTPClient(base_url="https://example.com")
+        await client.close()
+        await client.close()
+
+        mock_httpx_class.return_value.aclose.assert_called_once()
+
 
 class SendRequestMethodAsync(IsolatedAsyncioTestCase):
-    """Test HTTP requests issued by the `send_requests` method."""
+    """Tests the `send_request` method.
+
+    Verifies outgoing requests are addressed to the correctly normalized
+    URL, include the expected application headers, and produce a log
+    record describing the request.
+    """
 
     async def asyncSetUp(self) -> None:
         """Create a new async client instance using a dummy HTTP request handler."""
@@ -82,3 +102,35 @@ class SendRequestMethodAsync(IsolatedAsyncioTestCase):
         self.assertEqual(expected_method, record.method)
         self.assertEqual(expected_endpoint, record.endpoint)
         self.assertEqual(expected_url, record.url)
+
+
+class HttpMethodShortcutsAsync(IsolatedAsyncioTestCase):
+    """Tests the `http_get`, `http_post`, `http_patch`, `http_put`, and `http_delete` methods.
+
+    Verifies each shortcut method issues a request using its corresponding
+    HTTP verb against the target endpoint.
+    """
+
+    async def asyncSetUp(self) -> None:
+        """Create a new async client instance using a dummy HTTP request handler."""
+
+        self.base_url = 'https://test.api'
+        self.transport = httpx.MockTransport(utils.mock_request_handler)
+        self.client = AsyncHTTPClient(self.base_url, transport=self.transport)
+
+    async def test_sends_correct_http_verb(self) -> None:
+        """Verify each shortcut method issues a request with the matching HTTP verb."""
+
+        shortcuts = (
+            (self.client.http_get, 'GET'),
+            (self.client.http_post, 'POST'),
+            (self.client.http_patch, 'PATCH'),
+            (self.client.http_put, 'PUT'),
+            (self.client.http_delete, 'DELETE'),
+        )
+
+        for shortcut, expected_verb in shortcuts:
+            with self.subTest(verb=expected_verb):
+                response = await shortcut('v1/resource')
+                request_details = response.json()
+                self.assertEqual(expected_verb, request_details['method'])

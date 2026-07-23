@@ -2,7 +2,7 @@
 
 import uuid
 from unittest import TestCase
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from keystone_client.http import HTTPBase
 
@@ -38,7 +38,11 @@ class DummyHTTPBase(HTTPBase):
 
 
 class BaseUrlProperty(TestCase):
-    """Test the `base_url` property returns the correct value."""
+    """Tests the `base_url` property.
+
+    Verifies the value returned by the property reflects the
+    normalized form of the URL the instance was constructed with.
+    """
 
     def test_returns_normalized_url(self) -> None:
         """Verify the `base_url` property returns the normalized URL."""
@@ -49,7 +53,11 @@ class BaseUrlProperty(TestCase):
 
 
 class CidProperty(TestCase):
-    """Test the `cid` property returns a UUID value."""
+    """Tests the `cid` property.
+
+    Verifies the value returned by the property is a well-formed
+    identifier suitable for tracking a client session.
+    """
 
     def test_returns_valid_uuid(self) -> None:
         """Verify the `cid` property returns a valid UUID."""
@@ -63,30 +71,13 @@ class CidProperty(TestCase):
             self.fail(f"cid '{http_base.cid}' is not a valid UUID4")
 
 
-class NormalizeUrlMethod(TestCase):
-    """Test the normalization of URL paths."""
-
-    def test_trailing_slash_enforced(self) -> None:
-        """Verify the URL is returned with a single trailing slash."""
-
-        base_url = 'https://test.domain.com'
-        expected_url = base_url + '/'
-
-        # Test for various numbers of trailing slashes provided at init
-        self.assertEqual(expected_url, HTTPBase.normalize_url(base_url))
-        self.assertEqual(expected_url, HTTPBase.normalize_url(base_url + '/'))
-        self.assertEqual(expected_url, HTTPBase.normalize_url(base_url + '////'))
-
-    def test_no_intermediate_slashes(self) -> None:
-        """Verify duplicate slashes are removed from the URL path."""
-
-        base_url = 'https://test.domain.com///path/'
-        expected_url = 'https://test.domain.com/path/'
-        self.assertEqual(expected_url, HTTPBase.normalize_url(base_url))
-
-
 class GetApplicationHeadersMethod(TestCase):
-    """Test fetching a session's application headers."""
+    """Tests the `get_application_headers` method.
+
+    Verifies the returned headers include the application specific
+    values expected by the Keystone API, and that any caller supplied
+    overrides take precedence over those defaults.
+    """
 
     def setUp(self) -> None:
         """Create a HTTPBase instance with a mocked client."""
@@ -138,3 +129,30 @@ class GetApplicationHeadersMethod(TestCase):
         headers = self.http_base.get_application_headers(overrides)
 
         self.assertEqual(custom_cid, headers[HTTPBase.CID_HEADER])
+
+
+class NormalizeUrlMethod(TestCase):
+    """Tests the `normalize_url` method.
+
+    Verifies URLs are consistently reformatted into a format
+    compatible with the official API, regardless of variation
+    in slash placement or repetition in the input.
+    """
+
+    def test_trailing_slash_enforced(self) -> None:
+        """Verify the URL is returned with a single trailing slash."""
+
+        base_url = 'https://test.domain.com'
+        expected_url = base_url + '/'
+
+        # Test for various numbers of trailing slashes provided at init
+        self.assertEqual(expected_url, HTTPBase.normalize_url(base_url))
+        self.assertEqual(expected_url, HTTPBase.normalize_url(base_url + '/'))
+        self.assertEqual(expected_url, HTTPBase.normalize_url(base_url + '////'))
+
+    def test_no_intermediate_slashes(self) -> None:
+        """Verify duplicate slashes are removed from the URL path."""
+
+        base_url = 'https://test.domain.com///path/'
+        expected_url = 'https://test.domain.com/path/'
+        self.assertEqual(expected_url, HTTPBase.normalize_url(base_url))

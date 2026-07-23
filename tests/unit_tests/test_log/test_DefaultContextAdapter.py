@@ -7,7 +7,12 @@ from keystone_client.log import DefaultContextAdapter
 
 
 class ProcessMethod(unittest.TestCase):
-    """Test the injection of default values into logging `extras`."""
+    """Tests the `process` method.
+
+    Verifies that the log message and its context values are merged
+    correctly, with values explicitly provided by the caller always
+    taking precedence over the adapter's defaults.
+    """
 
     def setUp(self) -> None:
         """Instantiate testing fixtures."""
