@@ -18,7 +18,7 @@ Next, install the project and its dependencies.
 The `dev` dependency group is optional, but includes useful utilities for running application tests:
 
 ```bash
-poetry install --with dev
+poetry install --extras dev
 ```
 
 ## Common Tasks
