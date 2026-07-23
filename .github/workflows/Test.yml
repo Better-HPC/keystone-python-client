@@ -34,7 +34,7 @@ jobs:
   #         virtualenvs-create: false
 
   #     - name: Install dependencies
-  #       run: poetry install --with tests
+  #       run: poetry install --with dev
 
   #     - name: Run tests
   #       run: poetry run python -m unittest discover -s tests/function_tests
@@ -63,7 +63,7 @@ jobs:
           virtualenvs-create: false
 
       - name: Install dependencies
-        run: poetry install --with tests
+        run: poetry install --with dev
 
       - name: Run tests with coverage
         run: |
