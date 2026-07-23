@@ -32,6 +32,11 @@ class ClientBase(abc.ABC):
     def whoami(self) -> dict:
         """Return metadata for the currently authenticated user."""
 
+    def is_authenticated(self) -> bool:
+        """Return a boolean indicating if the current session is authenticated."""
+
+        return bool(self.whoami())
+
     @staticmethod
     def _handle_identity_response(response: httpx.Response) -> dict:
         """Handle identity check responses, returning empty dict on 401.
