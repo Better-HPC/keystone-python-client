@@ -8,7 +8,11 @@ from keystone_client.log import ContextFilter
 
 
 class FilterMethod(TestCase):
-    """Verify the assignment of default attributes by the `filter` method."""
+    """Tests the `filter` method.
+
+    Verifies that log records are populated with the expected
+    attributes without overwriting any values already present.
+    """
 
     @staticmethod
     def _create_log_record() -> LogRecord:
@@ -45,7 +49,7 @@ class FilterMethod(TestCase):
         self.assertEqual("", record.url)
 
     def test_existing_attributes_are_preserved(self) -> None:
-        """Verify existing attributes are not overwritted."""
+        """Verify existing attributes are not overwritten."""
 
         record = self._create_log_record()
         record.cid = "123"
@@ -64,7 +68,7 @@ class FilterMethod(TestCase):
         self.assertEqual("", record.url)
 
     def test_filter_always_returns_true(self) -> None:
-        """Verify the returned value is true."""
+        """Verify the returned value is `true`, indicating the record should propagate."""
 
         record = self._create_log_record()
         result = ContextFilter().filter(record)

@@ -9,7 +9,12 @@ from keystone_client import KeystoneClient
 
 
 class LoginMethod(TestCase):
-    """Test the structure of API login requests."""
+    """Tests the `login` method.
+
+    Verifies user credentials are submitted to the login endpoint in the
+    expected request format, and an error is raised when the request is
+    unsuccessful.
+    """
 
     def setUp(self) -> None:
         """Define common test variables."""
@@ -50,7 +55,11 @@ class LoginMethod(TestCase):
 
 
 class LogoutMethod(TestCase):
-    """Test the structure of API logout requests."""
+    """Tests the `logout` method.
+
+    Verifies a request is submitted to the logout endpoint in the expected
+    request format, and an error is raised when the request is unsuccessful.
+    """
 
     def setUp(self) -> None:
         """Define common test variables."""
@@ -86,8 +95,13 @@ class LogoutMethod(TestCase):
             client.logout()
 
 
-class IsAuthenticatedMethod(TestCase):
-    """Test the structure of requests to verify authentication status."""
+class WhoAmiIMethod(TestCase):
+    """Tests the `whoami` method.
+
+    Verifies user metadata is requested from the identity endpoint and
+    returned on success, an empty dictionary is returned when the session
+    is unauthenticated, and an error is raised for any other failure.
+    """
 
     def setUp(self) -> None:
         """Define common test variables."""
