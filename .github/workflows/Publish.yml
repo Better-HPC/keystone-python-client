@@ -42,16 +42,12 @@ jobs:
         run: poetry publish --repository bhpc
         env:
           POETRY_REPOSITORIES_BHPC_URL: https://artifacts.bhpc.dev/pypi/keystone-python/
-          POETRY_HTTP_BASIC_BHPC_USERNAME: ${{ vars.ARTIFACT_REGISTRY_USERNAME }}
+          POETRY_HTTP_BASIC_BHPC_USERNAME: ${{ secrets.ARTIFACT_REGISTRY_USERNAME }}
           POETRY_HTTP_BASIC_BHPC_PASSWORD: ${{ secrets.ARTIFACT_REGISTRY_PASSWORD }}
 
   trigger-docs:
     name: Trigger Docs
     runs-on: ubuntu-latest
-
-    environment:
-      name: docs
-      url: https://github.com/Better-HPC/keystone-docs
 
     steps:
       - name: Update docs

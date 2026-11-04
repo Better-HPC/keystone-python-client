@@ -39,7 +39,6 @@ jobs:
     with:
       version: ${{ needs.version.outputs.version }}
 
-
   publish:
     name: Publish
     needs: [ build ]
