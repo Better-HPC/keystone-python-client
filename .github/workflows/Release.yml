@@ -26,22 +26,23 @@ jobs:
           fi
 
           echo "version=$version" >> "$GITHUB_OUTPUT"
-
-  build:
-    name: Build
-    needs: version
-    uses: ./.github/workflows/Build.yml
-    with:
-      version: ${{ needs.version.outputs.version }}
-
+  
   test:
     name: Test
     uses: ./.github/workflows/Test.yml
     secrets: inherit
 
+  build:
+    name: Build
+    needs: [version, test]
+    uses: ./.github/workflows/Build.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
+
+
   publish:
     name: Publish
-    needs: [ test ]
+    needs: [ build ]
     uses: ./.github/workflows/Publish.yml
     secrets: inherit
     permissions:
