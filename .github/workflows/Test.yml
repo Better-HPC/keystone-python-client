@@ -12,7 +12,7 @@ jobs:
       api:
         image: artifacts.bhpc.dev/keystone-docker/keystone-api:latest
         credentials:
-          username: ${{ vars.ARTIFACT_REGISTRY_USERNAME }}
+          username: ${{ secrets.ARTIFACT_REGISTRY_USERNAME }}
           password: ${{ secrets.ARTIFACT_REGISTRY_PASSWORD }}
         ports:
           - 8000:8000
