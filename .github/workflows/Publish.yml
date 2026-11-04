@@ -14,11 +14,24 @@ jobs:
     name: Python Distribution
     runs-on: ubuntu-latest
 
-    environment:
-      name: cloudsmith
-      url: https://app.cloudsmith.com/better-hpc/keystone
-
     steps:
+      - name: Checkout source
+        uses: actions/checkout@v7
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.x'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: false
+
+      # Poetry only uploads dist files matching the project version
+      - name: Set package version
+        run: poetry version "${{ inputs.version }}"
+
       - name: Fetch build artifact
         uses: actions/download-artifact@v8
         with:
@@ -26,14 +39,11 @@ jobs:
           path: dist
 
       - name: Publish package
-        uses: cloudsmith-io/action@master
-        with:
-          api-key: ${{ secrets.CLOUDSMITH_API_KEY }}
-          command: "push"
-          format: "python"
-          owner: "better-hpc"
-          repo: "keystone"
-          file: "dist/keystone_api_client-${{ inputs.version }}.tar.gz"
+        run: poetry publish --repository bhpc
+        env:
+          POETRY_REPOSITORIES_BHPC_URL: https://artifacts.bhpc.dev/pypi/keystone-python/
+          POETRY_HTTP_BASIC_BHPC_USERNAME: ${{ vars.ARTIFACT_REGISTRY_USERNAME }}
+          POETRY_HTTP_BASIC_BHPC_PASSWORD: ${{ secrets.ARTIFACT_REGISTRY_PASSWORD }}
 
   trigger-docs:
     name: Trigger Docs

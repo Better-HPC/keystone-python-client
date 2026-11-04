@@ -19,7 +19,7 @@ jobs:
           version="${release_tag#v}"
 
           echo "Release tag: $release_tag"
-          echo "Derived release version: version"
+          echo "Release version: $version"
           if [[ -z "$version" ]]; then
             echo "::error::Derived version is empty."
             exit 1
@@ -36,16 +36,16 @@ jobs:
 
   test:
     name: Test
-    needs: build
     uses: ./.github/workflows/Test.yml
     secrets: inherit
 
   publish:
     name: Publish
-    needs: [ version, test ]
+    needs: [ build, test ]
     uses: ./.github/workflows/Publish.yml
     secrets: inherit
     permissions:
       id-token: write
+      contents: read
     with:
       version: ${{ needs.version.outputs.version }}
