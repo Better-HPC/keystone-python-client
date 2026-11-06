@@ -7,10 +7,13 @@ jobs:
   function-tests:
     name: Function Tests
     runs-on: ubuntu-latest
+    env:
+      POETRY_HTTP_BASIC_BHPC_PYPI_USERNAME: ${{ secrets.ARTIFACT_REGISTRY_USERNAME }}
+      POETRY_HTTP_BASIC_BHPC_PYPI_PASSWORD: ${{ secrets.ARTIFACT_REGISTRY_PASSWORD }}
 
     services:
       api:
-        image: artifacts.bhpc.dev/keystone-docker/keystone-api:latest
+        image: artifacts.bhpc.dev/keystone/keystone-api:latest
         credentials:
           username: ${{ secrets.ARTIFACT_REGISTRY_USERNAME }}
           password: ${{ secrets.ARTIFACT_REGISTRY_PASSWORD }}
@@ -45,6 +48,9 @@ jobs:
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
+    env:
+      POETRY_HTTP_BASIC_BHPC_PYPI_USERNAME: ${{ secrets.ARTIFACT_REGISTRY_USERNAME }}
+      POETRY_HTTP_BASIC_BHPC_PYPI_PASSWORD: ${{ secrets.ARTIFACT_REGISTRY_PASSWORD }}
 
     strategy:
       fail-fast: false

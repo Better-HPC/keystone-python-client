@@ -41,7 +41,7 @@ jobs:
 
   publish:
     name: Publish
-    needs: [ build ]
+    needs: [ version, build ]
     uses: ./.github/workflows/Publish.yml
     secrets: inherit
     permissions:

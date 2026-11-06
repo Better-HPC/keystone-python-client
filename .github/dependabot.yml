@@ -1,4 +1,13 @@
 version: 2
+
+registries:
+  bhpc-pypi:
+    type: python-index
+    url: https://artifacts.bhpc.dev/pypi/pypi/simple/
+    username: ${{secrets.ARTIFACT_REGISTRY_USERNAME}}
+    password: ${{secrets.ARTIFACT_REGISTRY_PASSWORD}}
+    replaces-base: true
+
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -11,6 +20,8 @@ updates:
 
   - package-ecosystem: "pip"
     directory: "/"
+    registries:
+      - bhpc-pypi
     schedule:
       interval: "monthly"
     groups:

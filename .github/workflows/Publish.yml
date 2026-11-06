@@ -41,7 +41,7 @@ jobs:
       - name: Publish package
         run: poetry publish --repository bhpc
         env:
-          POETRY_REPOSITORIES_BHPC_URL: https://artifacts.bhpc.dev/pypi/keystone-python/
+          POETRY_REPOSITORIES_BHPC_URL: https://artifacts.bhpc.dev/pypi/keystone-python-client/
           POETRY_HTTP_BASIC_BHPC_USERNAME: ${{ secrets.ARTIFACT_REGISTRY_USERNAME }}
           POETRY_HTTP_BASIC_BHPC_PASSWORD: ${{ secrets.ARTIFACT_REGISTRY_PASSWORD }}
 
