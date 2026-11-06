@@ -7,6 +7,9 @@ jobs:
   function-tests:
     name: Function Tests
     runs-on: ubuntu-latest
+    env:
+      POETRY_HTTP_BASIC_BHPC_PYPI_USERNAME: ${{ secrets.ARTIFACT_REGISTRY_USERNAME }}
+      POETRY_HTTP_BASIC_BHPC_PYPI_PASSWORD: ${{ secrets.ARTIFACT_REGISTRY_PASSWORD }}
 
     services:
       api:
@@ -45,6 +48,9 @@ jobs:
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
+    env:
+      POETRY_HTTP_BASIC_BHPC_PYPI_USERNAME: ${{ secrets.ARTIFACT_REGISTRY_USERNAME }}
+      POETRY_HTTP_BASIC_BHPC_PYPI_PASSWORD: ${{ secrets.ARTIFACT_REGISTRY_PASSWORD }}
 
     strategy:
       fail-fast: false

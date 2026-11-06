@@ -24,6 +24,15 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["coverage==7.15.2", ]
 
+[[tool.poetry.source]]
+name = "bhpc-pypi"
+url = "https://artifacts.bhpc.dev/pypi/pypi/simple/"
+priority = "primary"
+
+[[tool.poetry.source]]
+name = "pypi"
+priority = "supplemental"
+
 [tool.poetry]
 packages = [{ include = "keystone_client" }]
 
