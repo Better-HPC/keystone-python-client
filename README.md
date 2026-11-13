@@ -7,17 +7,39 @@ For the full Keystone project documentation, see [keystone.bhpc.dev](https://key
 
 ## Developer Setup
 
-This project uses the [Poetry](https://python-poetry.org/) package manager.
+This project uses the [Poetry](https://python-poetry.org/) package manager for Python.
+Upstream dependencies are sourced from the BHPC artifact registry.
+User authentication is required before Poetry can reach the required repositories.
+
+### Authenticating the Python Upstream
+
+Poetry reads credentials from a `~/.netrc` file, which should be created with restrictive permissions.
+
+```shell
+touch ~/.netrc
+chmod 600 ~/.netrc
+```
+
+Add an entry for the registry, replacing the placeholders with your credentials:
+
+```
+machine artifacts.bhpc.dev
+login <username>
+password <password>
+```
+
+### Installing Project Dependencies
+
 To initialize a new environment, start by defining your desired Python interpreter:
 
-```bash
+```shell
 poetry env use python3
 ```
 
 Next, install the project and its dependencies.
 The `dev` dependency group is optional, but includes useful utilities for running application tests:
 
-```bash
+```shell
 poetry install --extras dev
 ```
 
