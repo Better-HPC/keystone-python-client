@@ -2,6 +2,11 @@ name: 🤖 Test
 
 on:
   workflow_call:
+    inputs:
+      python-versions:
+        description: JSON list of Python versions to test against.
+        type: string
+        default: '["3.11", "3.12", "3.13", "3.14", "3.15"]'
 
 jobs:
   function-tests:
@@ -23,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ${{ fromJson(vars.PYTHON_VERSIONS) }}
+        python-version: ${{ fromJson(inputs.python-versions) }}
 
     steps:
       - name: Checkout repository
@@ -55,7 +60,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ${{ fromJson(vars.PYTHON_VERSIONS) }}
+        python-version: ${{ fromJson(inputs.python-versions) }}
 
     steps:
       - name: Checkout repository
