@@ -22,6 +22,7 @@ updates:
     directory: "/"
     registries:
       - bhpc-pypi
+    insecure-external-code-execution: allow
     schedule:
       interval: "monthly"
     groups:
